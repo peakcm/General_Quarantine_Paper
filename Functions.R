@@ -3,6 +3,7 @@
 # Corey Peak
 # Version 1.0
 # August 19, 2015
+# Testing Git Push
 
 #### Notes to work on #### 
 # Measure elasticity. (% change in R for % change in attribute) (% change in R for % change in attribute variance)
