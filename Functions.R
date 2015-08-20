@@ -3,7 +3,7 @@
 # Corey Peak
 # Version 1.0
 # August 19, 2015
-# Testing a commit to "Develop" branch
+# Testing a commit to "Develop" branch, try 2
 
 #### Notes to work on #### 
 # Measure elasticity. (% change in R for % change in attribute) (% change in R for % change in attribute variance)
