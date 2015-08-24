@@ -355,7 +355,7 @@ next_generation_fcn <- function(Pop,
   return(Pop_2)
 }
 
-# repeat_call_fcn
+#### repeat_call_fcn ####
 repeat_call_fcn <- function(n_pop, 
                             parms_T_inc, 
                             parms_T_lat, 
@@ -464,7 +464,7 @@ repeat_call_fcn <- function(n_pop,
         output[g,"obs_to_iso"] <- mean(Pop_next$t_iso - Pop_next$t_obs)
         output[g,"prop_lat_before_obs"] <- mean((Pop_next$T_lat < Pop_next$t_obs) == 1)
         if (parms_serial_interval$dist != "unknown" & subseq_interventions == "u"){
-          output[g,"ks"] <- serial_interval_fcn(Pop_prev, Pop_next, parms_serial_interval, plot="Add")
+          output[g,"ks"] <- serial_interval_fcn(Pop_prev, Pop_next, parms_serial_interval, plot="False")
         }
         
         Pop_prev <- NA
@@ -640,3 +640,107 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
 #     }
 #   }
 # }
+
+#### decile_plot_fcn ####
+decile_fcn <- function(data, params.set){
+  require(Hmisc)
+  data <- data
+  params <- names(data.frame(params.set))
+  if (is.element(paste(params[1], "_quantile",sep=""), names(data))){
+    for (col in params){
+      col_name <- paste(col, "_quantile",sep="")
+      data[,col_name] <- as.numeric(cut2(data[,col], g=10, levels.mean=TRUE))
+    }
+  } else {
+    for (col in params){
+      newcol <- as.numeric(cut2(data[,col], g=10, levels.mean=TRUE))
+      data <- cbind(data, newcol)
+      col_name <- paste(col, "_quantile",sep="")
+      names <- c(names(data)[1:ncol(data)-1], col_name)
+      names(data) <- names
+    }
+  }
+  return(data)
+}
+
+decile_plot_fcn <- function(data, params.set){      
+  if (length(params) == 1){
+    ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw()
+  } else if (length(params) == 2){
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    multiplot(p_1, p_2, cols=2)
+  } else if (length(params) == 3){
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    p_3 <- ggplot(data, aes(x=data[,9], y=data[,"ks"], group=as.factor(data[,9]))) + geom_boxplot() + theme_bw() + xlab(names(data)[9])
+    multiplot(p_1, p_2, p_3, cols=3)
+  } else if (length(params) == 4){    
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    p_3 <- ggplot(data, aes(x=data[,9], y=data[,"ks"], group=as.factor(data[,9]))) + geom_boxplot() + theme_bw() + xlab(names(data)[9])
+    p_4 <- ggplot(data, aes(x=data[,10], y=data[,"ks"], group=as.factor(data[,10]))) + geom_boxplot() + theme_bw() + xlab(names(data)[10])
+    multiplot(p_1, p_2, p_3, p_4, cols=4)
+  } else if (length(params) == 5){
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    p_3 <- ggplot(data, aes(x=data[,9], y=data[,"ks"], group=as.factor(data[,9]))) + geom_boxplot() + theme_bw() + xlab(names(data)[9])
+    p_4 <- ggplot(data, aes(x=data[,10], y=data[,"ks"], group=as.factor(data[,10]))) + geom_boxplot() + theme_bw() + xlab(names(data)[10])
+    p_5 <- ggplot(data, aes(x=data[,11], y=data[,"ks"], group=as.factor(data[,11]))) + geom_boxplot() + theme_bw() + xlab(names(data)[11])
+    multiplot(p_1, p_2, p_3, p_4, p_5, cols=5)
+  } else if (length(params) == 6){
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    p_3 <- ggplot(data, aes(x=data[,9], y=data[,"ks"], group=as.factor(data[,9]))) + geom_boxplot() + theme_bw() + xlab(names(data)[9])
+    p_4 <- ggplot(data, aes(x=data[,10], y=data[,"ks"], group=as.factor(data[,10]))) + geom_boxplot() + theme_bw() + xlab(names(data)[10])
+    p_5 <- ggplot(data, aes(x=data[,11], y=data[,"ks"], group=as.factor(data[,11]))) + geom_boxplot() + theme_bw() + xlab(names(data)[11])
+    p_6 <- ggplot(data, aes(x=data[,12], y=data[,"ks"], group=as.factor(data[,12]))) + geom_boxplot() + theme_bw() + xlab(names(data)[12])
+    multiplot(p_1, p_2, p_3, p_4, p_5, p_6, cols=6)
+  } else if (length(params) == 7){
+    p_1 <- ggplot(data, aes(x=data[,7], y=data[,"ks"], group=as.factor(data[,7]))) + geom_boxplot() + theme_bw() + xlab(names(data)[7])
+    p_2 <- ggplot(data, aes(x=data[,8], y=data[,"ks"], group=as.factor(data[,8]))) + geom_boxplot() + theme_bw() + xlab(names(data)[8])
+    p_3 <- ggplot(data, aes(x=data[,9], y=data[,"ks"], group=as.factor(data[,9]))) + geom_boxplot() + theme_bw() + xlab(names(data)[9])
+    p_4 <- ggplot(data, aes(x=data[,10], y=data[,"ks"], group=as.factor(data[,10]))) + geom_boxplot() + theme_bw() + xlab(names(data)[10])
+    p_5 <- ggplot(data, aes(x=data[,11], y=data[,"ks"], group=as.factor(data[,11]))) + geom_boxplot() + theme_bw() + xlab(names(data)[11])
+    p_6 <- ggplot(data, aes(x=data[,12], y=data[,"ks"], group=as.factor(data[,12]))) + geom_boxplot() + theme_bw() + xlab(names(data)[12])
+    p_7 <- ggplot(data, aes(x=data[,13], y=data[,"ks"], group=as.factor(data[,13]))) + geom_boxplot() + theme_bw() + xlab(names(data)[13])
+    multiplot(p_1, p_2, p_3, p_4, p_5, p_6, p_7, cols=7)
+  } else if (length(params) > 7){cat("too many parameters")}
+}
+
+#### multiplot ####
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
