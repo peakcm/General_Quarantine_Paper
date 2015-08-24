@@ -10,9 +10,10 @@ library(MASS)
 library(lhs)
 library(sensitivity)
 library(ggplot2)
+library(Hmisc)
 
 #### Experiment 3: Ebola Case Study ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experime nts_3_20150806_ebola1000reps.RData')
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData')
 # Need to redo
 
 set.seed(3)
@@ -46,7 +47,7 @@ names(parms_d_inf) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anch
 prob_CT <- 0.3 #27.4 to 31.1% of case patients were in the contact registry before identification. around 30% of new cases reported having any contacts they could have infected 
 
 # Less sure
-parms_d_inf = list("triangle", 3, 8, 6.5, "independent", "independent")
+parms_d_inf = list("uniform", 3, 11, 999, "independent", "independent")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 # Set d_symp = d_inf
 parms_d_symp = list("uniform", 999, 999, 999, 0, "d_inf")
@@ -60,7 +61,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 2000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -79,8 +80,8 @@ epsilon.min <- 0
 epsilon.max <- 7
 R_0.min <- 0.51
 R_0.max <- 5
-pi_t_triangle_center.min <- 0
-pi_t_triangle_center.max <- 1
+pi_t_triangle_center.min <- 0.25
+pi_t_triangle_center.max <- 0.50
 
 params.set <- cbind(
   gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
@@ -105,11 +106,11 @@ for (i in 1:times){
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
     
     if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
-      n_pop_input <- 100
+      n_pop_input <- 200
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
-      n_pop_input <- 100
+      n_pop_input <- 200
     } else if (subseq_interventions == "s" | subseq_interventions == "q" & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
-      n_pop_input <- 100
+      n_pop_input <- 200
     } else {n_pop_input <- n_pop}
     
     In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
@@ -206,6 +207,12 @@ plot(data$pi_t_triangle_center, log10(data$NNQ))
 plot(data$pi_t_triangle_center, data$Abs_Benefit)
 plot(data$pi_t_triangle_center, data$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
+layout(c(1))
+plot(data$pi_t_triangle_center, data$ks)
+
+data_store <- data
+data <- data[data$pi_t_triangle_center > 0.2 & data$pi_t_triangle_center < 0.5,]
+
 # Partial Rank Correlation using "ppcor" package
 require(ppcor)
 pcor(data[,c("R_s",names(data)[11:length(names(data))])], method=c("spearman"))$estimate[1,]
@@ -223,7 +230,7 @@ names(prcc_data) <- c("output","parameter","coef","bias","stderr","CImin","CImax
 prcc_data$output <- rep(names, each = length(dimensions))
 prcc_data$parameter <- rep(dimensions, times = length(names))
 for (output in names){
-  prcc <- pcc(data[,(length(names)+1):length(names(data))], data[,output], nboot = 1000, rank=TRUE, conf=1-bonferroni.alpha)
+  prcc <- pcc(data[,(length(names)+1):length(names(data))], data[,output], nboot = 100, rank=TRUE, conf=1-bonferroni.alpha)
   summary <- print(prcc)
   prcc_data[prcc_data$output == output,3:7] <- summary
 }
@@ -236,7 +243,7 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
   theme_bw() +
   geom_errorbar(data = prcc_data, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150807_ebola1000reps.RData")
+save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData")
 
 #### Experiment 4: Does variance in parms_R_0 matter? #### 
 # Compare output abs_benefit, R_s, etc. when the R_0 is set to the mean for all people
@@ -1849,10 +1856,6 @@ names(parms_pi_t) <- c("distribution","triangle_center")
 parms_serial_interval <- list("gamma", 2.5, 0.2)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-# # Ebola serial interval approximation from Eichner
-# parms_serial_interval <- list("lognormal", 12.7, 4.31)
-# names(parms_serial_interval) <- c("dist","parm1","parm2")
-
 # WHO NEJM
 # Liberia R0 1.83 (1.72, 1.94)
 parms_R_0 = list("uniform", 1.72, 1.94, 999, "independent", "independent")
@@ -1863,6 +1866,10 @@ names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anch
 # Set T_lat = T_inc
 parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# # Ebola incubation period from Eichner
+# parms_T_inc <- list("lognormal", 12.7, 4.31)
+# names(parms_T_inc) <- c("dist","parm1","parm2")
 
 # Dixon 2015 EID
 prob_CT <- 0.3 #27.4 to 31.1% of case patients were in the contact registry before identification. around 30% of new cases reported having any contacts they could have infected 
@@ -1900,7 +1907,6 @@ d_symp_upper.min <- 6
 d_symp_upper.max <- 16
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
-
 
 params.set <- cbind(
   T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
@@ -1955,19 +1961,31 @@ data$d_symp_upper <- params.set[,"d_symp_upper"]
 data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 data_store <- data
 
-# Serial Interval Inspection
+# Serial Interval Inspection Scatter
 layout(cbind(c(1),c(2),c(3),c(4)))
 plot(data$T_lat_offset, data$ks)
 plot(data$d_symp_lower, data$ks)
 plot(data$d_symp_upper, data$ks)
 plot(data$pi_t_triangle_center, data$ks)
+
+# Serial Interval Inspection Deciles
+data <- decile_fcn(data, params.set)
+decile_plot_fcn(data, params.set)
+
+# Serial Interval partial rank correlation
 pcor(data[,c("ks","T_lat_offset","d_symp_lower","d_symp_upper","pi_t_triangle_center")])$estimate[1,]
 pcor(data[,c("ks","T_lat_offset","d_symp_lower","d_symp_upper","pi_t_triangle_center")])$p.value[1,]
 
+# Narrow range in 10% increments
+data <- data[data$d_symp_upper > 1.1*min(data$d_symp_upper),] #Checking for monotonicity
+data <- data[data$pi_t_triangle_center < 0.9*max(data$pi_t_triangle_center),]
+data <- data[data$d_symp_upper < 0.9*max(data$d_symp_upper),]
+data <- data[data$d_symp_lower < 0.9*max(data$d_symp_lower),]
+data <- data[data$d_symp_upper > 1.1*min(data$d_symp_upper),]
+
 # Try to narrow the range of input parameters to improve serial interval fit
-data <- data[data$pi_t_triangle_center < 0.6,]
-data <- data[data$d_symp_upper < 13,]
-data <- data[data$d_symp_upper > 8,]
-data <- data[data$pi_t_triangle_center < 0.45,]
+summary(data)
+apply(data[,names(data.frame(params.set))], 2, min)
+apply(data[,names(data.frame(params.set))], 2, max)
 
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_6_20150807_4000reps.RData")
