@@ -641,8 +641,8 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
 #   }
 # }
 
-#### decile_fcn ####
-decile_fcn <- function(data, params.set){
+#### decile_plot_fcn ####
+decile_plot_fcn <- function(data, params.set){
   require(Hmisc)
   params <- names(data.frame(params.set))
   if (is.element(paste(params[1], "_quantile",sep=""), names(data))){
@@ -659,55 +659,9 @@ decile_fcn <- function(data, params.set){
       names(data) <- names
     }
   }
-  return(data)
-}
-
-#### decile_plot_fcn ####
-decile_plot_fcn <- function(data, params.set){      
-  params <- names(data.frame(params.set))
-  start <- length(names(data)) - length(grep("quantile", names(data))) + 1
-  if (length(params) == 1){
-    ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw()
-  } else if (length(params) == 2){
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    multiplot(p_1, p_2, cols=2)
-  } else if (length(params) == 3){
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    p_3 <- ggplot(data, aes(x=data[,start+2], y=data[,"ks"], group=as.factor(data[,start+2]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+2])
-    multiplot(p_1, p_2, p_3, cols=3)
-  } else if (length(params) == 4){    
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    p_3 <- ggplot(data, aes(x=data[,start+2], y=data[,"ks"], group=as.factor(data[,start+2]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+2])
-    p_4 <- ggplot(data, aes(x=data[,start+3], y=data[,"ks"], group=as.factor(data[,start+3]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+3])
-    multiplot(p_1, p_2, p_3, p_4, cols=4)
-  } else if (length(params) == 5){
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    p_3 <- ggplot(data, aes(x=data[,start+2], y=data[,"ks"], group=as.factor(data[,start+2]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+2])
-    p_4 <- ggplot(data, aes(x=data[,start+3], y=data[,"ks"], group=as.factor(data[,start+3]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+3])
-    p_5 <- ggplot(data, aes(x=data[,start+4], y=data[,"ks"], group=as.factor(data[,start+4]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+4])
-    multiplot(p_1, p_2, p_3, p_4, p_5, cols=5)
-  } else if (length(params) == 6){
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    p_3 <- ggplot(data, aes(x=data[,start+2], y=data[,"ks"], group=as.factor(data[,start+2]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+2])
-    p_4 <- ggplot(data, aes(x=data[,start+3], y=data[,"ks"], group=as.factor(data[,start+3]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+3])
-    p_5 <- ggplot(data, aes(x=data[,start+4], y=data[,"ks"], group=as.factor(data[,start+4]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+4])
-    p_6 <- ggplot(data, aes(x=data[,start+5], y=data[,"ks"], group=as.factor(data[,start+5]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+5])
-    multiplot(p_1, p_2, p_3, p_4, p_5, p_6, cols=6)
-  } else if (length(params) == 7){
-    p_1 <- ggplot(data, aes(x=data[,start], y=data[,"ks"], group=as.factor(data[,start]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start])
-    p_2 <- ggplot(data, aes(x=data[,start+1], y=data[,"ks"], group=as.factor(data[,start+1]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+1])
-    p_3 <- ggplot(data, aes(x=data[,start+2], y=data[,"ks"], group=as.factor(data[,start+2]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+2])
-    p_4 <- ggplot(data, aes(x=data[,start+3], y=data[,"ks"], group=as.factor(data[,start+3]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+3])
-    p_5 <- ggplot(data, aes(x=data[,start+4], y=data[,"ks"], group=as.factor(data[,start+4]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+4])
-    p_6 <- ggplot(data, aes(x=data[,start+5], y=data[,"ks"], group=as.factor(data[,start+5]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+5])
-    p_7 <- ggplot(data, aes(x=data[,start+6], y=data[,"ks"], group=as.factor(data[,start+6]))) + geom_boxplot() + theme_bw() + xlab(names(data)[start+6])
-    multiplot(p_1, p_2, p_3, p_4, p_5, p_6, p_7, cols=7)
-  } else if (length(params) > 7){cat("too many parameters")}
+  quant_vars <- names(data)[grep("quantile", names(data))]
+  data_melt <- melt.data.frame(data, id.vars = c("ks"), measure.vars = quant_vars)
+  ggplot(data_melt, aes(x=as.factor(value), y=ks)) + geom_boxplot() + facet_grid(.~variable) + theme_bw() + xlab("Decile")
 }
 
 #### multiplot ####
@@ -746,3 +700,4 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
