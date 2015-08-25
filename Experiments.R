@@ -11,6 +11,7 @@ library(lhs)
 library(sensitivity)
 library(ggplot2)
 library(Hmisc)
+library(reshape)
 
 #### Experiment 3: Ebola Case Study ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData')
@@ -43,7 +44,7 @@ names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor
 prob_CT <- 0.3 #27.4 to 31.1% of case patients were in the contact registry before identification. around 30% of new cases reported having any contacts they could have infected 
 
 # Less sure
-parms_d_symp = list("triangle", 1, 14, 7, "independent", "independent")
+parms_d_symp = list("uniform", 1, 13, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_inf = list("uniform", 3, 11, 999, 0, "d_symp")
@@ -58,7 +59,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 
 n_pop = 500
 num_generations <- 5
-times <- 50
+times <- 2000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -78,9 +79,9 @@ epsilon.max <- 7
 R_0.min <- 1
 R_0.max <- 3
 pi_t_triangle_center.min <- 0.00
-pi_t_triangle_center.max <- 0.30
-T_lat_offset.min <- -3
-T_lat_offset.max <- 3
+pi_t_triangle_center.max <- 0.50
+T_lat_offset.min <- -0.5
+T_lat_offset.max <- 0.5
 
 params.set <- cbind(
   gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
@@ -100,7 +101,6 @@ for (i in 1:times){
   parms_epsilon$parm2 <- as.numeric(params.set[i,"epsilon"])
   parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
   parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
-  
   parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set[i,"R_0"]), as.numeric(params.set[i,"R_0"]))
   
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
@@ -220,8 +220,9 @@ layout(t(c(1,2)))
 plot(data$pi_t_triangle_center, data$ks)
 plot(data$T_lat_offset_vector, data$ks)
 
+decile_plot_fcn(data, params.set)
+
 data_store <- data
-data <- data[data$pi_t_triangle_center > 0.2 & data$pi_t_triangle_center < 0.5,]
 
 # Partial Rank Correlation using "ppcor" package
 require(ppcor)
@@ -252,6 +253,18 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
   geom_hline(yintercept=0, color="red", size=0.25) +
   theme_bw() +
   geom_errorbar(data = prcc_data, aes(ymin = CImin, ymax = CImax), width = 0.1)
+
+data$resource_level <- NA
+data[data$gamma_vector > 0.85 & data$gamma_vector < 0.95 &
+       data$prob_CT_vector > 0.85 & data$prob_CT_vector < 0.95 &
+       data$CT_delay_vector > 0.0 & data$CT_delay_vector < 0.1 &
+       data$epsilon_vector > 0.0 & data$epsilon_vector < 0.5,
+     "resource_level"] <- "high"
+data[data$gamma_vector > 0.45 & data$gamma_vector < 0.55 &
+       data$prob_CT_vector > 0.45 & data$prob_CT_vector < 0.55 &
+       data$CT_delay_vector > 0.5 & data$CT_delay_vector < 1.5 &
+       data$epsilon_vector > 1.5 & data$epsilon_vector < 2.5,
+     "resource_level"] <- "low"
 
 save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData")
 
@@ -1853,7 +1866,7 @@ pcor(data[,c("ks","T_lat_offset","d_inf_lower","d_inf_upper","pi_t_triangle_cent
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_10_20150808_4000reps.RData")
 
 #### Experiment 12: Optimize serial interval for Ebola Case study #### 
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150809_4000reps.RData')
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150824_5000reps.RData')
 
 set.seed(12)
 
@@ -1868,7 +1881,7 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 # WHO NEJM
 # Liberia R0 1.83 (1.72, 1.94)
-parms_R_0 = list("uniform", 1.72, 1.94, 999, "independent", "independent")
+parms_R_0 = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 # All countries: Incubation period
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
@@ -1898,9 +1911,9 @@ names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anch
 parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-n_pop = 50
+n_pop = 200
 num_generations <- 5
-times <- 500
+times <- 5000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -1983,7 +1996,6 @@ plot(data$d_symp_upper, data$ks)
 plot(data$pi_t_triangle_center, data$ks)
 
 # Serial Interval Inspection Deciles
-data <- decile_fcn(data, params.set)
 decile_plot_fcn(data, params.set)
 
 # Narrow range in 10% increments
@@ -1998,10 +2010,12 @@ data <- data[data$d_symp_lower < sort(data$d_symp_lower)[round(nrow(data)*.9)],]
 apply(data[,names(data.frame(params.set))], 2, min)
 apply(data[,names(data.frame(params.set))], 2, max)
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150807_4000reps.RData")
+data_trim <- data
+
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150824_5000reps.RData")
 
 #### Experiment 13: Optimize serial interval for Ebola Case study (Step 2) #### 
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150809_4000reps.RData')
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150825_2500reps.RData')
 
 set.seed(13)
 
@@ -2035,7 +2049,7 @@ names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor
 prob_CT <- 0.3 #27.4 to 31.1% of case patients were in the contact registry before identification. around 30% of new cases reported having any contacts they could have infected 
 
 # Chowell 2014 and Lekone 2006 use ~6.5 days
-parms_d_symp = list("uniform", 1, 14, 999, "independent", "independent")
+parms_d_symp = list("uniform", 1, 16, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 # Set d_symp = d_inf
@@ -2050,28 +2064,32 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 
 n_pop = 100
 num_generations <- 5
-times <- 50
+times <- 1000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
-dimensions <- c("T_lat_offset","pi_t_triangle_center")
+dimensions <- c("T_lat_offset", "d_symp_spread","pi_t_triangle_center")
 
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
 
-T_lat_offset.min <- -1.5
+T_lat_offset.min <- -1.25
 T_lat_offset.max <- 0.5
+d_symp_spread.min <- 2
+d_symp_spread.max <- 6
 pi_t_triangle_center.min <- 0
-pi_t_triangle_center.max <- 0.3
+pi_t_triangle_center.max <- 0.5
 
 params.set <- cbind(
   T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
-  pi_t_triangle_center = lhs[,2]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
+  d_symp_spread = lhs[,2]*(d_symp_spread.max - d_symp_spread.min) + d_symp_spread.min,
+  pi_t_triangle_center = lhs[,3]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
 
 for (i in 1:times){
   cat('\nIteration',i, '\n')
   
   parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
+  parms_d_symp[c("parm1", "parm2")] <- c(as.numeric(7-params.set[i,"d_symp_spread"]), as.numeric(7+params.set[i,"d_symp_spread"]))
   parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
   
   for (subseq_interventions in c(background_intervention)){      
@@ -2108,32 +2126,33 @@ for (i in 1:times){
 }
 
 data$T_lat_offset <- params.set[,"T_lat_offset"]
+data$d_symp_spread <- params.set[,"d_symp_spread"]
 data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 data_store <- data
 
 # Serial Interval partial rank correlation
-pcor(data[,c("ks","T_lat_offset","pi_t_triangle_center")])$estimate[1,]
-pcor(data[,c("ks","T_lat_offset","pi_t_triangle_center")])$p.value[1,]
+pcor(data[,c("ks","T_lat_offset", "d_symp_spread","pi_t_triangle_center")])$estimate[1,]
+pcor(data[,c("ks","T_lat_offset","d_symp_spread","pi_t_triangle_center")])$p.value[1,]
 
 # Serial Interval Inspection Scatter
 layout(cbind(c(1),c(2),c(3)))
 plot(data$T_lat_offset, data$ks)
+plot(data$d_symp_spread, data$ks)
 plot(data$pi_t_triangle_center, data$ks)
 
 # Serial Interval Inspection Deciles
-data <- decile_fcn(data, params.set)
 decile_plot_fcn(data, params.set)
 
 # Narrow range in 10% increments
 data <- data[data$T_lat_offset < sort(data$T_lat_offset)[round(nrow(data)*.9)],]
 data <- data[data$T_lat_offset > sort(data$T_lat_offset)[round(nrow(data)*.1)],]
-data <- data[data$d_symp_upper > sort(data$d_symp_upper)[round(nrow(data)*.1)],]
+data <- data[data$d_symp_spread < sort(data$d_symp_spread)[round(nrow(data)*.9)],]
+data <- data[data$d_symp_spread > sort(data$d_symp_spread)[round(nrow(data)*.1)],]
 data <- data[data$pi_t_triangle_center < sort(data$pi_t_triangle_center)[round(nrow(data)*.9)],]
-data <- data[data$d_symp_upper < sort(data$d_symp_upper)[round(nrow(data)*.9)],]
-data <- data[data$d_symp_lower < sort(data$d_symp_lower)[round(nrow(data)*.9)],]
+data <- data[data$pi_t_triangle_center > sort(data$pi_t_triangle_center)[round(nrow(data)*.1)],]
 
 # Try to narrow the range of input parameters to improve serial interval fit
 apply(data[,names(data.frame(params.set))], 2, min)
 apply(data[,names(data.frame(params.set))], 2, max)
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150807_4000reps.RData")
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150825_2500reps.RData")
