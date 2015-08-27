@@ -15,12 +15,7 @@ library(reshape)
 
 #### Step 1a: Choose range of parameters ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150824_5000reps.RData')
-<<<<<<< HEAD
 set.seed(1)
-=======
-
-set.seed(12)
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
@@ -29,12 +24,6 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
-=======
-parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
-names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
@@ -48,12 +37,9 @@ names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor
 parms_d_symp = list("uniform", 3, 8, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
 parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-=======
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 # Interventions
 background_intervention = "u"
 
@@ -183,12 +169,6 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
-=======
-parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
-names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
@@ -202,12 +182,9 @@ names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor
 parms_d_symp = list("uniform", 3, 8, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
 parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-=======
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 # Interventions
 background_intervention = "u"
 
@@ -328,12 +305,9 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
 parms_d_symp = list("uniform", 1, 14, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-=======
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
@@ -347,12 +321,6 @@ names(parms_pi_t) <- c("distribution","triangle_center")
 parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-<<<<<<< HEAD
-=======
-parms_d_symp = list("uniform", 3, 8, 999, "independent", "independent")
-names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
->>>>>>> 220e31c53b530cec7dca289835e596f9c9f96d4a
 # Interventions
 background_intervention = "u"
 
