@@ -56,7 +56,7 @@ Draw_Dist_fcn <- function(Vector, distribution, parm1, parm2, parm3){
   }
   
   if (distribution == "lognormal"){
-    Draw_Dist <- rlnorm(Vector, meanlog = parm1, sdlog = parm2)
+    Draw_Dist <- rlnorm(Vector, meanlog = log(parm1), sdlog = log(parm2))
     Draw_Dist[Draw_Dist < 0] <- 0
   }
   return(Draw_Dist)
@@ -544,6 +544,14 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
                              ylab="Empirical Distribution", xlab="Days", main="Serial Intervals"))
       ks <- ks.test(x=output/24, "pweibull", shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2)
     }
+    if (parms_serial_interval$dist == "lognormal"){
+      fit <- fitdistr(output/24, "lognormal", lower=0.00001)
+      suppressWarnings(curve(multiplier*dlnorm(x, meanlog = as.numeric(fit$estimate[1]), sdlog = as.numeric(fit$estimate[2])), 
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2))
+      suppressWarnings(curve(multiplier*dlnorm(x, meanlog= log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2))
+      ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
+    }
     
   } else if (plot == "False"){
     #Need a multiplier for the curves to plot on the same axes    
@@ -555,6 +563,9 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
     }
     if (parms_serial_interval$dist == "weibull"){
       ks <- ks.test(x=output/24, "pweibull", shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2, exact=FALSE)
+    }
+    if (parms_serial_interval$dist == "lognormal"){
+      ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
     }
   }
   return(as.numeric(ks$statistic))
