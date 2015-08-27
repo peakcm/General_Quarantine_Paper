@@ -14,14 +14,14 @@ library(Hmisc)
 library(reshape)
 
 #### Step 1a: Choose range of parameters ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150825_Case_Study_SARS_1a')
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150826_Case_Study_SARS_1a')
 set.seed(1)
 
 # Fixed Disease Parameters
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("weibull", 1.7, 6, 999, "independent", "independent")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
@@ -34,7 +34,7 @@ names(parms_pi_t) <- c("distribution","triangle_center")
 parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_d_symp = list("uniform", 5, 15, 999, "independent", "independent")
+parms_d_symp = list("uniform", 2, 15, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
@@ -56,7 +56,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 200
 num_generations <- 5
-times <- 5000
+times <- 1000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -70,7 +70,7 @@ T_lat_offset.max <- 3
 d_symp_lower.min <- 1
 d_symp_lower.max <- 5
 d_symp_upper.min <- 6
-d_symp_upper.max <- 16
+d_symp_upper.max <- 40
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -157,7 +157,7 @@ apply(data[,names(data.frame(params.set))], 2, max)
 
 data_trim <- data
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150825_Case_Study_SARS_1a")
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150826_Case_Study_SARS_1a")
 
 #### Step 1b: Narrow down range of parameters ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150825_2500reps.RData')
@@ -168,7 +168,7 @@ set.seed(32)
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("weibull", 1.7, 6, 999, "independent", "independent")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
@@ -200,9 +200,9 @@ names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anch
 parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-n_pop = 100
+n_pop = 200
 num_generations <- 5
-times <- 5000
+times <- 2000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -211,14 +211,14 @@ dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_cen
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
 
-T_lat_offset.min <- -1.25
-T_lat_offset.max <- 0.5
+T_lat_offset.min <- -3
+T_lat_offset.max <- 1
 d_symp_lower.min <- 1
 d_symp_lower.max <- 5
-d_symp_upper.min <- 10
-d_symp_upper.max <- 16
+d_symp_upper.min <- 13
+d_symp_upper.max <- 32
 pi_t_triangle_center.min <- 0
-pi_t_triangle_center.max <- 0.75
+pi_t_triangle_center.max <- 0.88
 
 params.set <- cbind(
   T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
@@ -314,7 +314,7 @@ set.seed(3)
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("weibull", 1.7, 6, 999, "independent", "independent")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
@@ -553,7 +553,7 @@ set.seed(14)
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("weibull", 1.7, 6, 999, "independent", "independent")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
@@ -763,7 +763,7 @@ set.seed(15)
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("weibull", 1.7, 6, 999, "independent", "independent")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
