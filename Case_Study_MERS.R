@@ -14,7 +14,8 @@ library(Hmisc)
 library(reshape)
 
 #### Step 1a: Choose range of parameters ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150826_Case_Study_MERS_1a')
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150826_Case_Study_SARS_1a')
+
 set.seed(1)
 
 # Fixed Disease Parameters
