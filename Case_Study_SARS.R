@@ -994,7 +994,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 100
 num_generations <- 5
-times <- 100
+times <- 2000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -1003,11 +1003,11 @@ dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_cen
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
 
-T_lat_offset.min <- -3
-T_lat_offset.max <- 3
+T_lat_offset.min <- -7
+T_lat_offset.max <- 1
 d_symp_lower.min <- 1
-d_symp_lower.max <- 5
-d_symp_upper.min <- 6
+d_symp_lower.max <- 12
+d_symp_upper.min <- 13
 d_symp_upper.max <- 40
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
@@ -1021,10 +1021,10 @@ params.set <- cbind(
 for (i in 1:times){
   cat('\nIteration',i, '\n')
   
-  parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
-  parms_d_symp$parm1 <- as.numeric(params.set[i,"d_symp_lower"])
-  parms_d_symp$parm2 <- as.numeric(params.set[i,"d_symp_upper"])
-  parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
+  parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+  parms_d_symp$parm1 <- params.set[i,"d_symp_lower"]
+  parms_d_symp$parm2 <- params.set[i,"d_symp_upper"]
+  parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
   
   for (subseq_interventions in c(background_intervention)){      
     In_Out <- repeat_call_fcn(n_pop=n_pop, 
@@ -1074,50 +1074,62 @@ pi_t_triangle_center.min <- apply(data[,names(data.frame(params.set))], 2, min)$
 pi_t_triangle_center.max <- apply(data[,names(data.frame(params.set))], 2, max)$pi_t_triangle_center
 
 # plot
-layout(t(c(1,2,3)))
-plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     xlim = c(T_lat_offset.min, T_lat_offset.max),
-     ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
-plot(x=data$T_lat_offset, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     xlim = c(T_lat_offset.min, T_lat_offset.max),
-     ylim = c(d_symp_lower.min, d_symp_lower.max))
-plot(x=data$T_lat_offset, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     xlim = c(T_lat_offset.min, T_lat_offset.max),
-     ylim = c(d_symp_upper.min, d_symp_upper.max))  
+layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
+plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(d_symp_lower.min, d_symp_lower.max))
+plot(x=data$d_symp_upper, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(d_symp_upper.min, d_symp_upper.max))  
+plot(x=data$pi_t_triangle_center, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_upper.min, d_symp_upper.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
+plot(x=data$d_symp_lower, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_upper.min, d_symp_upper.max),
+     xlim = c(d_symp_lower.min, d_symp_lower.max))
+frame()
+plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_lower.min, d_symp_lower.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+frame()
+frame()
 
 # restrict to the best 25%
 data <- data[order(data$ks),]
 data2 <- data[1:round(nrow(data)*.25),]
 
-n=2
+n=10
 for (steps in seq(1:n)){
   # perturb
-  T_lat_offset_2 <- c(jitter(data2$T_lat_offset, amount=0.5),
-                      jitter(data2$T_lat_offset, amount=0.5),
-                      jitter(data2$T_lat_offset, amount=0.5),
-                      jitter(data2$T_lat_offset, amount=0.5))
-  d_symp_lower_2 <- c(jitter(data2$d_symp_lower, amount=0.5),
-                      jitter(data2$d_symp_lower, amount=0.5),
-                      jitter(data2$d_symp_lower, amount=0.5),
-                      jitter(data2$d_symp_lower, amount=0.5))
-  d_symp_upper_2 <- c(jitter(data2$d_symp_upper, amount=1),
-                            jitter(data2$d_symp_upper, amount=1),
-                            jitter(data2$d_symp_upper, amount=1),
-                            jitter(data2$d_symp_upper, amount=1))
-  pi_t_triangle_center_2 <- c(jitter(data2$pi_t_triangle_center, amount=0.1),
-                                    jitter(data2$pi_t_triangle_center, amount=0.1),
-                                    jitter(data2$pi_t_triangle_center, amount=0.1),
-                                    jitter(data2$pi_t_triangle_center, amount=0.1))
+  T_lat_offset_2 <- c(jitter(data2$T_lat_offset, amount=0.25),
+                      jitter(data2$T_lat_offset, amount=0.25),
+                      jitter(data2$T_lat_offset, amount=0.25),
+                      jitter(data2$T_lat_offset, amount=0.25))
+  d_symp_lower_2 <- c(jitter(data2$d_symp_lower, amount=0.25),
+                      jitter(data2$d_symp_lower, amount=0.25),
+                      jitter(data2$d_symp_lower, amount=0.25),
+                      jitter(data2$d_symp_lower, amount=0.25))
+  d_symp_upper_2 <- c(jitter(data2$d_symp_upper, amount=0.5),
+                            jitter(data2$d_symp_upper, amount=0.5),
+                            jitter(data2$d_symp_upper, amount=0.5),
+                            jitter(data2$d_symp_upper, amount=0.5))
+  pi_t_triangle_center_2 <- c(jitter(data2$pi_t_triangle_center, amount=0.05),
+                                    jitter(data2$pi_t_triangle_center, amount=0.05),
+                                    jitter(data2$pi_t_triangle_center, amount=0.05),
+                                    jitter(data2$pi_t_triangle_center, amount=0.05))
   pi_t_triangle_center_2[pi_t_triangle_center_2 < 0] <- 0
   pi_t_triangle_center_2[pi_t_triangle_center_2 > 1] <- 1
   
   for (i in 1:times){
     cat('\nIteration',i, '\n')
     
-    parms_T_lat$anchor_value <- as.numeric(T_lat_offset_2[i])
-    parms_d_symp$parm1 <- as.numeric(d_symp_lower_2[i])
-    parms_d_symp$parm2 <- as.numeric(d_symp_upper_2[i])
-    parms_pi_t$triangle_center <- as.numeric(pi_t_triangle_center_2[i])
+    parms_T_lat$anchor_value <- T_lat_offset_2[i]
+    parms_d_symp$parm1 <- d_symp_lower_2[i]
+    parms_d_symp$parm2 <- d_symp_upper_2[i]
+    parms_pi_t$triangle_center <- pi_t_triangle_center_2[i]
     
     for (subseq_interventions in c(background_intervention)){      
       In_Out <- repeat_call_fcn(n_pop=n_pop, 
@@ -1158,16 +1170,28 @@ for (steps in seq(1:n)){
   data$pi_t_triangle_center <- pi_t_triangle_center_2
   
   # plot
-  layout(t(c(1,2,3)))
-  plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       xlim = c(T_lat_offset.min, T_lat_offset.max),
-       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
-  plot(x=data$T_lat_offset, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       xlim = c(T_lat_offset.min, T_lat_offset.max),
-       ylim = c(d_symp_lower.min, d_symp_lower.max))
-  plot(x=data$T_lat_offset, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       xlim = c(T_lat_offset.min, T_lat_offset.max),
-       ylim = c(d_symp_upper.min, d_symp_upper.max))  
+  layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
+  plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+  plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_symp_lower.min, d_symp_lower.max))
+  plot(x=data$d_symp_upper, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_symp_upper.min, d_symp_upper.max))  
+  plot(x=data$pi_t_triangle_center, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_upper.min, d_symp_upper.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
+  plot(x=data$d_symp_lower, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_upper.min, d_symp_upper.max),
+       xlim = c(d_symp_lower.min, d_symp_lower.max))
+  frame()
+  plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_lower.min, d_symp_lower.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+  frame()
+  frame()
   
   # restrict to the best 25%
   data <- data[order(data$ks),]
