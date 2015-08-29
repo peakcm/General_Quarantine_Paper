@@ -60,7 +60,7 @@ times <- 1000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
-dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
+dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_width","pi_t_triangle_center")
 
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
@@ -1255,24 +1255,25 @@ lhs <- maximinLHS(times, length(dimensions))
 T_lat_offset.min <- -7
 T_lat_offset.max <- 2
 d_symp_lower.min <- 1
-d_symp_lower.max <- 12
-d_symp_upper.min <- 13
-d_symp_upper.max <- 40
+d_symp_lower.max <- 15
+d_symp_width.min <- 0
+d_symp_width.max <- 40
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
 params.set <- cbind(
   T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
   d_symp_lower = lhs[,2]*(d_symp_lower.max - d_symp_lower.min) + d_symp_lower.min,
-  d_symp_upper = lhs[,3]*(d_symp_upper.max - d_symp_upper.min) + d_symp_upper.min,
+  d_symp_width = lhs[,3]*(d_symp_width.max - d_symp_width.min) + d_symp_width.min,
   pi_t_triangle_center = lhs[,4]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
 
 for (i in 1:times){
   cat('\nIteration',i, '\n')
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_symp$parm1 <- params.set[i,"d_symp_lower"]
-  parms_d_symp$parm2 <- params.set[i,"d_symp_upper"]
+  parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, params.set[i,"d_symp_width"])
   parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+  
   In_Out <- repeat_call_fcn(n_pop=n_pop, 
                               parms_T_inc, 
                               parms_T_lat, 
@@ -1294,7 +1295,7 @@ for (i in 1:times){
 
 data$T_lat_offset <- params.set[,"T_lat_offset"]
 data$d_symp_lower <- params.set[,"d_symp_lower"]
-data$d_symp_upper <- params.set[,"d_symp_upper"]
+data$d_symp_width <- params.set[,"d_symp_width"]
 data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 
 # plot
@@ -1305,14 +1306,14 @@ plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor
 plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
      xlim = c(d_symp_lower.min, d_symp_lower.max))
-plot(x=data$d_symp_upper, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+plot(x=data$d_symp_width, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
-     xlim = c(d_symp_upper.min, d_symp_upper.max))  
-plot(x=data$pi_t_triangle_center, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     ylim = c(d_symp_upper.min, d_symp_upper.max),
+     xlim = c(d_symp_width.min, d_symp_width.max))  
+plot(x=data$pi_t_triangle_center, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_width.min, d_symp_width.max),
      xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
-plot(x=data$d_symp_lower, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     ylim = c(d_symp_upper.min, d_symp_upper.max),
+plot(x=data$d_symp_lower, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_width.min, d_symp_width.max),
      xlim = c(d_symp_lower.min, d_symp_lower.max))
 frame()
 plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
@@ -1323,7 +1324,7 @@ frame()
 
 T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 50
 d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 50
-d_symp_upper.perturb <- (max(data[,"d_symp_upper"]) - min(data[,"d_symp_upper"])) / 50
+d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 50
 pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 50
 
 threshold <- init_threshold
@@ -1331,11 +1332,11 @@ threshold <- init_threshold
 theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
 T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
 d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
-d_symp_upper.theta <- data[theta_pre_can,"d_symp_upper"] + runif(times, min=-1*d_symp_upper.perturb, max=d_symp_upper.perturb) #perturb and propose
+d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
 pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
 
 d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
-d_symp_upper.theta[d_symp_upper.theta < 1] <- 1
+d_symp_width.theta[d_symp_width.theta < 0] <- 0
 pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
 pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
 
@@ -1345,7 +1346,7 @@ for (steps in seq(from=2, to=SMC_times)){
     
     parms_T_lat$anchor_value <- T_lat_offset.theta[i]
     parms_d_symp$parm1 <- d_symp_lower.theta[i]
-    parms_d_symp$parm2 <- max(d_symp_upper.theta[i], d_symp_lower.theta[i])
+    parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, d_symp_width.theta[i])
     parms_pi_t$triangle_center <- pi_t_triangle_center.theta[i]
     
     In_Out <- repeat_call_fcn(n_pop=n_pop, 
@@ -1381,7 +1382,7 @@ for (steps in seq(from=2, to=SMC_times)){
   
   data$T_lat_offset <- T_lat_offset.theta
   data$d_symp_lower <- d_symp_lower.theta
-  data$d_symp_upper <- d_symp_upper.theta
+  data$d_symp_width <- d_symp_width.theta
   data$pi_t_triangle_center <- pi_t_triangle_center.theta
   
   # plot
@@ -1392,14 +1393,14 @@ for (steps in seq(from=2, to=SMC_times)){
   plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(d_symp_lower.min, d_symp_lower.max))
-  plot(x=data$d_symp_upper, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+  plot(x=data$d_symp_width, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
-       xlim = c(d_symp_upper.min, d_symp_upper.max))  
-  plot(x=data$pi_t_triangle_center, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       ylim = c(d_symp_upper.min, d_symp_upper.max),
+       xlim = c(d_symp_width.min, d_symp_width.max))  
+  plot(x=data$pi_t_triangle_center, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_width.min, d_symp_width.max),
        xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
-  plot(x=data$d_symp_lower, y=data$d_symp_upper, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       ylim = c(d_symp_upper.min, d_symp_upper.max),
+  plot(x=data$d_symp_lower, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_width.min, d_symp_width.max),
        xlim = c(d_symp_lower.min, d_symp_lower.max))
   frame()
   plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
@@ -1410,7 +1411,7 @@ for (steps in seq(from=2, to=SMC_times)){
   
   T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 25
   d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 25
-  d_symp_upper.perturb <- (max(data[,"d_symp_upper"]) - min(data[,"d_symp_upper"])) / 25
+  d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 25
   pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 25
   
   threshold <- threshold * reduce
@@ -1418,11 +1419,11 @@ for (steps in seq(from=2, to=SMC_times)){
   theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
   T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
   d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
-  d_symp_upper.theta <- data[theta_pre_can,"d_symp_upper"] + runif(times, min=-1*d_symp_upper.perturb, max=d_symp_upper.perturb) #perturb and propose
+  d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
   pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
   
   d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
-  d_symp_upper.theta[d_symp_upper.theta < 1] <- 1
+  d_symp_width.theta[d_symp_width.theta < 0] <- 0
   pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
   pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
 }
