@@ -954,7 +954,8 @@ names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
 init_threshold <- 0.5
 reduce <- 0.80
-SMC_times <- 8
+SMC_times <- 15
+ks_conv_criteria <- 0.10
 subseq_interventions <- "u"
 
 require(lhs)
@@ -1048,7 +1049,9 @@ d_symp_width.theta[d_symp_width.theta < 0] <- 0
 pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
 pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
 
-for (steps in seq(from=2, to=SMC_times)){
+SMC_break <- FALSE
+SMC_counter <- 2
+while (SMC_break == FALSE){
   for (i in 1:times){
     cat('\nIteration',i, '\n')
     
@@ -1097,7 +1100,8 @@ for (steps in seq(from=2, to=SMC_times)){
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
-       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = paste("Iteration ", i))
   plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(d_symp_lower.min, d_symp_lower.max))
@@ -1122,7 +1126,7 @@ for (steps in seq(from=2, to=SMC_times)){
   d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 25
   pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 25
   
-  threshold <- threshold * reduce
+  threshold <- max( ks_conv_criteria, threshold * reduce )
   
   theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
   T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
@@ -1134,4 +1138,16 @@ for (steps in seq(from=2, to=SMC_times)){
   d_symp_width.theta[d_symp_width.theta < 0] <- 0
   pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
   pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
+  
+  ks_conv_stat <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
+  if (ks_conv_stat <= ks_conv_criteria){
+    SMC_break <- TRUE
+    cat("Convergence acheived in", i, "iterations")
+    }
+  
+  SMC_counter <- SMC_counter + 1
+  if (SMC_counter >= SMC_times){
+    SMC_break <- TRUE
+    cat("Unable to converge by", SMC_counter, "iterations")
+    }
 }
