@@ -385,7 +385,8 @@ repeat_call_fcn <- function(n_pop,
                 gamma,
                 prob_CT,
                 parms_CT_delay,
-                parms_serial_interval) 
+                parms_serial_interval,
+                printing = TRUE) 
   names(input) <- c("n_pop", 
                     "parms_T_inc", 
                     "parms_T_lat", 
@@ -416,7 +417,7 @@ repeat_call_fcn <- function(n_pop,
   Pop_1 <- observe_and_isolate_fcn(Pop = Pop_1, intervention = background_intervention)
   children_list <- children_list_fcn(Pop = Pop_1, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = background_intervention, background_intervention = background_intervention)
   Num_Infected <- unlist(lapply(children_list, sum))
-  cat('Generation 1 : n=', nrow(Pop_1), 'Effective Reproductive Number:', mean(Num_Infected))
+  if (printing == TRUE){cat('Generation 1 : n=', nrow(Pop_1), 'Effective Reproductive Number:', mean(Num_Infected))}
   
   names <- c("n", "R", "obs_to_iso", "prop_lat_before_obs", "ks")
   output <- data.frame(matrix(rep(NA, num_generations*length(names)), nrow=num_generations))
@@ -458,7 +459,7 @@ repeat_call_fcn <- function(n_pop,
         Num_Infected <- NA
         Num_Infected <- unlist(lapply(children_list, sum))
         
-        cat('\nGeneration',g, ': n=', nrow(Pop_next), 'Effective Reproductive Number:', mean(Num_Infected))
+        if (printing == TRUE) {cat('\nGeneration',g, ': n=', nrow(Pop_next), 'Effective Reproductive Number:', mean(Num_Infected))}
         output[g,"n"] <- nrow(Pop_next)
         output[g,"R"] <- mean(Num_Infected)
         output[g,"obs_to_iso"] <- mean(Pop_next$t_iso - Pop_next$t_obs)
@@ -470,10 +471,10 @@ repeat_call_fcn <- function(n_pop,
         Pop_prev <- NA
         Pop_prev <- Pop_next
         
-      } else {cat('\nPopulation size dropped below 20')}
+      } else {if(printing==TRUE){cat('\nPopulation size dropped below 20')}}
     }
   }
-  cat('\n\n')
+  if (printing == TRUE){cat('\n\n')}
   
   output <- output[is.na(output$n)==0,]
   In_Out <- list(input, output)
