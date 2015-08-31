@@ -370,7 +370,8 @@ repeat_call_fcn <- function(n_pop,
                             gamma,
                             prob_CT,
                             parms_CT_delay,
-                            parms_serial_interval)
+                            parms_serial_interval,
+                            printing = TRUE)
 {
   input <- list(n_pop, parms_T_inc, 
                 parms_T_lat, 
@@ -385,8 +386,7 @@ repeat_call_fcn <- function(n_pop,
                 gamma,
                 prob_CT,
                 parms_CT_delay,
-                parms_serial_interval,
-                printing = TRUE) 
+                parms_serial_interval) 
   names(input) <- c("n_pop", 
                     "parms_T_inc", 
                     "parms_T_lat", 

@@ -702,19 +702,20 @@ parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Initialize
-n_pop = 200
+n_pop = 100
 num_generations <- 4
-times <- 5000
+times <- 1000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
 init_threshold <- 0.5
 reduce <- 0.80
-SMC_times <- 15
+SMC_times <- 3
 ks_conv_criteria <- 0.10
 ks_conv_stat <- rep(NA, SMC_times+1)
 subseq_interventions <- "u"
+printing = FALSE
 
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
@@ -735,7 +736,7 @@ params.set <- cbind(
   pi_t_triangle_center = lhs[,4]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
 
 for (i in 1:times){
-  cat('\nIteration',i, '\n')
+  if (printing == TRUE){cat('\nIteration',i, '\n')}
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_symp$parm1 <- params.set[i,"d_symp_lower"]
   parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, params.set[i,"d_symp_width"])
@@ -755,7 +756,8 @@ for (i in 1:times){
                               gamma,
                               prob_CT,
                               parms_CT_delay,
-                              parms_serial_interval)
+                              parms_serial_interval,
+                              printing = printing)
     data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
     data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
 }
@@ -768,6 +770,7 @@ data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 ks_conv_stat[1] <- sort(data$ks)[floor(times*0.975)] 
 
 # plot
+pdf(file = paste("Iteration_1.pdf"))
 layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
 plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -792,6 +795,7 @@ plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor
      xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
 frame()
 frame()
+dev.off()
 
 T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 50
 d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 50
@@ -815,7 +819,7 @@ SMC_break <- FALSE
 SMC_counter <- 2
 while (SMC_break == FALSE){
   for (i in 1:times){
-    cat('\nIteration',i, '\n')
+    if (printing == TRUE){cat('\nIteration',i, '\n')}
     
     parms_T_lat$anchor_value <- T_lat_offset.theta[i]
     parms_d_symp$parm1 <- d_symp_lower.theta[i]
@@ -836,7 +840,8 @@ while (SMC_break == FALSE){
                               gamma,
                               prob_CT,
                               parms_CT_delay,
-                              parms_serial_interval)
+                              parms_serial_interval,
+                              printing = printing)
     if (subseq_interventions == background_intervention){
       data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
       data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
@@ -861,6 +866,7 @@ while (SMC_break == FALSE){
   ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
   
   # plot
+  pdf(paste("Iteration_",PMC_counter,".pdf", sep = ""))
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -885,11 +891,12 @@ while (SMC_break == FALSE){
        xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
   frame()
   frame()
+  dev.off()
   
   T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 25
   d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 25
   d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 25
-  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_22center"])) / 25
+  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 25
   
   threshold <- max( ks_conv_criteria, threshold * reduce )
   
@@ -912,7 +919,7 @@ while (SMC_break == FALSE){
   SMC_counter <- SMC_counter + 1
   if (SMC_counter >= SMC_times){
     SMC_break <- TRUE
-    cat("Unable to converge by", SMC_counter, "iterations")
+    cat("Unable to converge by", SMC_counter, "SMC iterations")
     }
 }
 
