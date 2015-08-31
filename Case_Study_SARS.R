@@ -700,9 +700,9 @@ parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Initialize
-n_pop = 100
+n_pop = 200
 num_generations <- 5
-times <- 1000
+times <- 5000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -908,6 +908,8 @@ for (steps in seq(1:n)){
 
 #### Particle Filter with weights and threshold ####
 
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData')
+
 # Fixed Disease Parameters
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
@@ -1100,6 +1102,8 @@ while (SMC_break == FALSE){
   data$d_symp_width <- d_symp_width.theta
   data$pi_t_triangle_center <- pi_t_triangle_center.theta
   
+  ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
+  
   # plot
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
@@ -1108,7 +1112,8 @@ while (SMC_break == FALSE){
        main = paste("Iteration ", SMC_counter))
   plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
-       xlim = c(d_symp_lower.min, d_symp_lower.max))
+       xlim = c(d_symp_lower.min, d_symp_lower.max),
+       main = paste("KS = ", ks_conv_stat[SMC_counter]))
   plot(x=data$d_symp_width, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(d_symp_width.min, d_symp_width.max))  
@@ -1143,7 +1148,6 @@ while (SMC_break == FALSE){
   pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
   pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
   
-  ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
   if (ks_conv_stat[SMC_counter] <= ks_conv_criteria){
     SMC_break <- TRUE
     cat("Convergence acheived in", i, "iterations")
@@ -1155,3 +1159,6 @@ while (SMC_break == FALSE){
     cat("Unable to converge by", SMC_counter, "iterations")
     }
 }
+
+# write.table(ks_conv_stat, "~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20150829_SARS_ParticleFilter.csv")
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData")
