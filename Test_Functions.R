@@ -45,6 +45,8 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 parms_serial_interval <- list("gamma", 2.5, 0.2)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
+background_intervention <- "u"
+
 #### Test Create_Pop ####
 Pop <- Create_Pop(n_pop=500, parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation = 1, background_intervention = "u", parms_CT_delay, gamma)
 Pop[1,]
