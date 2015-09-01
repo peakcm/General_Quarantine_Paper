@@ -711,9 +711,14 @@ names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
 init_threshold <- 0.5
 reduce <- 0.80
+<<<<<<< HEAD
 SMC_times <- 3
 ks_conv_criteria <- 0.10
 ks_conv_stat <- rep(NA, SMC_times+1)
+=======
+SMC_times <- 15
+ks_conv_criteria <- 0.10
+>>>>>>> 062fa11c43843e2c1c8f5637cd20df07e9851012
 subseq_interventions <- "u"
 printing = FALSE
 
@@ -871,7 +876,11 @@ while (SMC_break == FALSE){
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+<<<<<<< HEAD
        main = paste("Iteration ", SMC_counter))
+=======
+       main = paste("Iteration ", i))
+>>>>>>> 062fa11c43843e2c1c8f5637cd20df07e9851012
   plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(d_symp_lower.min, d_symp_lower.max),
@@ -911,7 +920,12 @@ while (SMC_break == FALSE){
   pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
   pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
   
+<<<<<<< HEAD
   if (ks_conv_stat[SMC_counter] <= ks_conv_criteria){
+=======
+  ks_conv_stat <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
+  if (ks_conv_stat <= ks_conv_criteria){
+>>>>>>> 062fa11c43843e2c1c8f5637cd20df07e9851012
     SMC_break <- TRUE
     cat("Convergence acheived in", i, "iterations")
     }
@@ -919,7 +933,11 @@ while (SMC_break == FALSE){
   SMC_counter <- SMC_counter + 1
   if (SMC_counter >= SMC_times){
     SMC_break <- TRUE
+<<<<<<< HEAD
     cat("Unable to converge by", SMC_counter, "SMC iterations")
+=======
+    cat("Unable to converge by", SMC_counter, "iterations")
+>>>>>>> 062fa11c43843e2c1c8f5637cd20df07e9851012
     }
 }
 
