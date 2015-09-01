@@ -770,7 +770,7 @@ names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
 init_threshold <- 0.5
 reduce <- 0.80
-SMC_times <- 5
+SMC_times <- 10
 ks_conv_criteria <- 0.10
 ks_conv_stat <- rep(NA, SMC_times+1)
 subseq_interventions <- "u"
@@ -833,7 +833,7 @@ ks_conv_stat[1] <- sort(data$ks)[floor(times*0.975)]
 ks_conv_stat[1]
 
 # plot
-pdf(file = paste("Iteration_1_2000_test.pdf"))
+pdf(file = paste("Iteration_1_2000.pdf"))
 layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
 plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -929,7 +929,7 @@ while (SMC_break == FALSE){
   ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
   
   # plot
-  pdf(paste("Iteration_",SMC_counter,"_2000_test.pdf", sep = ""))
+  pdf(paste("Iteration_",SMC_counter,"_2000.pdf", sep = ""))
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -986,5 +986,5 @@ while (SMC_break == FALSE){
   }
 }
 
-write.table(ks_conv_stat, "20150901_SARS_ParticleFilter_2000_test.csv")
-save.image("20150901_SARS_ParticleFilter_2000_test.RData")
+write.table(ks_conv_stat, "20150901_SARS_ParticleFilter_2000.csv")
+save.image("20150901_SARS_ParticleFilter_2000.RData")
