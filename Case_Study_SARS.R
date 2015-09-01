@@ -866,7 +866,7 @@ while (SMC_break == FALSE){
   ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
   
   # plot
-  pdf(paste("Iteration_",PMC_counter,".pdf", sep = ""))
+  pdf(paste("Iteration_",SMC_counter,".pdf", sep = ""))
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -923,5 +923,5 @@ while (SMC_break == FALSE){
     }
 }
 
-# write.table(ks_conv_stat, "~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20150829_SARS_ParticleFilter.csv")
+# write.table(ks_conv_stat, "20150829_SARS_ParticleFilter.csv")
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData")
