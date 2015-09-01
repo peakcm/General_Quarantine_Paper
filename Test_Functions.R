@@ -8,39 +8,42 @@
 library(MASS)
 
 #### Define a sample of initial parameters ####
-# parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
-# names(parms_T_inc) <- c("dist","parm1","parm2",  "parm3","parm3", "anchor_value", "anchor_target")
+n_pop = 500
 
-parms_T_inc = list("triangle", 1, 21, 10, "independent", "independent")
-names(parms_T_inc) <- c("dist","parm1","parm2", "parm3", "anchor_value", "anchor_target")
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
 
-parms_T_lat = list("gamma", 1.75, 0.182, 999, "independent", "independent")
+parms_serial_interval <- list("gamma", 2.5, 0.2)
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_R_0 = list("uniform", 1.72, 1.94, 999, "independent", "independent")
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_d_inf = list("uniform", 5, 10, 999, "independent", "independent")
+parms_d_inf = list("confit", 7.5, 6.8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+prob_CT <- 0.3 #27.4 to 31.1% of case patients were in the contact registry before identification. around 30% of new cases reported having any contacts they could have infected 
+
+parms_d_inf = list("triangle", 3, 8, 6.5, "independent", "independent")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_d_symp = list("uniform", 5, 10, 999, "independent", "independent")
+parms_d_symp = list("uniform", 999, 999, 999, 0, "d_inf")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_R_0 = list("confit", 1.7, 1.2, 999, "independent", "independent")
-names(parms_R_0) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
-parms_epsilon = list("uniform", 0, 0, 999, "independent", "independent")
+parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
 names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-gamma = 0.9
-
-prob_CT = 1
-
-background_intervention = "u"
-intervention = "u"
-
-parms_pi_t <- list("triangle", 0.20)
-names(parms_pi_t) <- c("distribution","triangle_center")
+parms_serial_interval <- list("gamma", 2.5, 0.2)
+names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 #### Test Create_Pop ####
 Pop <- Create_Pop(n_pop=500, parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation = 1, background_intervention = "u", parms_CT_delay, gamma)
@@ -87,10 +90,12 @@ Pop_2 <- next_generation_fcn(Pop,
                              generation = 2,
                              prob_CT,
                              parms_CT_delay,
-                             gamma)
+                             gamma,
+                             n_pop)
 
 #### Test three generations of infection ####
 n_pop = 1000
+
 Pop_alpha <- Create_Pop(n_pop, 
                         parms_T_inc, 
                         parms_T_lat, 
@@ -108,6 +113,7 @@ children_list <- children_list_fcn(Pop_alpha, parms_pi_t$distribution, parms_pi_
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 1 : n=', nrow(Pop_alpha), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
 
+intervention = "u"
 Pop_beta <- next_generation_fcn(Pop_alpha,
                                 children_list,
                                 parms_T_inc,
@@ -194,6 +200,34 @@ curve(dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval
       from=0, to=30, col="green", lwd=2,
       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 
+# Lessler Incubation Period
+parms_serial_interval <- list("lognormal", 4, 1.81)
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(dlnorm(x, mean= log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
+      from=0, to=30, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+# MERS
+parms_serial_interval <- list("lognormal", 7.6, 1.77)
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(dlnorm(x, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
+      from=0, to=30, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.05]
+sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.50]
+sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.95]
+
+parms_serial_interval <- list("gamma", 16, 1.3)
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=20, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+sort(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))[1000000*0.50]
+
+
 # Ebola serial interval approximation from WHO
 parms_serial_interval <- list("gamma", 2.5, 0.2)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
@@ -201,21 +235,21 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
       from=0, to=40, col="green", lwd=2,
       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+# 
+# # Ebola serial interval approximation from Eichner
+# parms_serial_interval <- list("lognormal", 12.7, 4.31)
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# curve(dlnorm(x, meanlog=log(parms_serial_interval$parm1), sdlog=log(sqrt(parms_serial_interval$parm2))),
+#       from=0, to=40, col="green", lwd=2,
+#       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 
-# Ebola serial interval approximation from Eichner
-parms_serial_interval <- list("lognormal", 12.7, 4.31)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dlnorm(x, meanlog=log(parms_serial_interval$parm1), sdlog=log(sqrt(parms_serial_interval$parm2))),
-      from=0, to=40, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-
-# Pertussis serial interval approximation
-parms_serial_interval <- list("weibull", 2, 22)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2),
-      from=0, to=84, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-hist(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2),breaks = seq(from=0, to=84, by=7))
-summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
+# # Pertussis serial interval approximation
+# parms_serial_interval <- list("weibull", 2, 22)
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# curve(dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2),
+#       from=0, to=84, col="green", lwd=2,
+#       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+# hist(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2),breaks = seq(from=0, to=84, by=7))
+# summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
