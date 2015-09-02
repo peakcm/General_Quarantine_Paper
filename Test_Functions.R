@@ -6,9 +6,10 @@
 
 #### Load Libraries ####
 library(MASS)
+library(parallel)
 
 #### Define a sample of initial parameters ####
-n_pop = 500
+n_pop = 5000
 
 parms_pi_t <- list("triangle", 0.50)
 names(parms_pi_t) <- c("distribution","triangle_center")
@@ -96,8 +97,7 @@ Pop_2 <- next_generation_fcn(Pop,
                              n_pop)
 
 #### Test three generations of infection ####
-n_pop = 1000
-
+time.start <- proc.time()
 Pop_alpha <- Create_Pop(n_pop, 
                         parms_T_inc, 
                         parms_T_lat, 
@@ -153,6 +153,7 @@ Pop_gamma <- observe_and_isolate_fcn(Pop_gamma, intervention = intervention)
 children_list <- children_list_fcn(Pop_gamma, parms_pi_t$distribution, parms_pi_t$triangle_center, gamma, intervention = intervention, background_intervention)
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 3 : n=', nrow(Pop_gamma), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
+print(proc.time() - time.start)
 
 #### Plot Results from alpha, beta, gamma runs ####
 plot((Pop_alpha$t_iso - Pop_alpha$T_inc)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), ylab = "Days from Symptoms to Isolation", xlab = "Person")
