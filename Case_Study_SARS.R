@@ -503,6 +503,8 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
 #### Case Study in High Resource Setting ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150901_SARS_ParticleFilter_2000.RData')
 
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_HRSetting.RData')
+
 set.seed(14)
 
 # Fixed Disease Parameters
@@ -675,6 +677,9 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "Abs_Benefit"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "NNQ"])
 
+quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
+quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
+
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "R_0"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "R_hsb"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "R_s"])
@@ -711,22 +716,11 @@ ggplot(prcc_data.hr, aes(x = parameter, y= coef)) +
   theme_bw() +
   geom_errorbar(data.hr = prcc_data.hr, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
-data$resource_level <- NA
-data[data$gamma_vector > 0.85 & data$gamma_vector < 0.95 &
-       data$prob_CT_vector > 0.85 & data$prob_CT_vector < 0.95 &
-       data$CT_delay_vector > 0.0 & data$CT_delay_vector < 0.1 &
-       data$epsilon_vector > 0.0 & data$epsilon_vector < 0.5,
-     "resource_level"] <- "high"
-data[data$gamma_vector > 0.45 & data$gamma_vector < 0.55 &
-       data$prob_CT_vector > 0.45 & data$prob_CT_vector < 0.55 &
-       data$CT_delay_vector > 0.5 & data$CT_delay_vector < 1.5 &
-       data$epsilon_vector > 1.5 & data$epsilon_vector < 2.5,
-     "resource_level"] <- "low"
-
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150904_SARS_HRSetting.RData")
-
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_HRSetting.RData")
 
 #### Case Study in Low Resource Setting ####
+
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_LRSetting.RData')
 
 set.seed(15)
 
@@ -766,46 +760,41 @@ names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anch
 parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
+# Settings
 n_pop = 500
 num_generations <- 5
-times <- 10
+times <- 298
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
-data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
-names(data) <- names
-dimensions <- c("R_0","pi_t_triangle_center", "T_lat_offset")
+data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.lr) <- names
 
-require(lhs)
-lhs <- maximinLHS(times, length(dimensions))
-
-R_0.min <- 1
-R_0.max <- 3
-pi_t_triangle_center.min <- 0.00
-pi_t_triangle_center.max <- 0.50
-T_lat_offset.min <- -0.5
-T_lat_offset.max <- 0.5
-
+# sample from posterior distribution
+sample <- sample(x = row.names(data), size = times, replace = FALSE)
 params.set <- cbind(
-  R_0 = lhs[,1]*(R_0.max - R_0.min) + R_0.min,
-  pi_t_triangle_center = lhs[,2]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min,
-  T_lat_offset = lhs[,3]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min)
+  T_lat_offset = data[sample, "T_lat_offset"],
+  d_symp_lower = data[sample, "d_symp_lower"],
+  d_symp_width = data[sample, "d_symp_width"],
+  pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
+  R_0 = runif(n = times, min = 2.2, max = 3.6))
 
 for (i in 1:times){
   cat('\nIteration',i, '\n')
   
-  parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
-  parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
-  parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set[i,"R_0"]), as.numeric(params.set[i,"R_0"]))
+  parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+  parms_d_symp$parm1 <- params.set[i,"d_symp_lower"]
+  parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, params.set[i,"d_symp_width"])
+  parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+  parms_R_0$parm1 <- params.set[i,"R_0"]
+  parms_R_0$parm2 <- params.set[i,"R_0"]
   
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
-    
     if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
-      n_pop_input <- 300
+      n_pop_input <- 200
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
-      n_pop_input <- 300
+      n_pop_input <- 200
     } else if (subseq_interventions == "s" | subseq_interventions == "q" & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
-      n_pop_input <- 300
+      n_pop_input <- 200
     } else {n_pop_input <- n_pop}
-    
     In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
                               parms_T_inc, 
                               parms_T_lat, 
@@ -822,105 +811,132 @@ for (i in 1:times){
                               parms_CT_delay,
                               parms_serial_interval)
     if (subseq_interventions == background_intervention){
-      data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-      data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+      data.lr[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
     }
     if (subseq_interventions == "hsb"){
-      data[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
     }
     if (subseq_interventions == "s"){
-      data[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
     }
     if (subseq_interventions == "q"){
-      data[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-      data[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+      data.lr[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
     }
   }
 }
 
-data[,"Abs_Benefit"] <- data[,"R_s"] - data[,"R_q"]
-data[,"Rel_Benefit"] <- data[,"Abs_Benefit"] / data[,"R_s"]
-data[,"NNQ"] <- 1 / data[,"Abs_Benefit"]
-data[data$NNQ < 1,"NNQ"] <- 1
-data[data$NNQ > 9999,"NNQ"] <- 9999
-data[data$NNQ == Inf,"NNQ"] <- 9999
-data[,"Abs_Benefit_per_Qday"] <- data[,"Abs_Benefit"] / data[,"obs_to_iso_q"]
-data$R_0_vector <- params.set[,"R_0"]
-data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data$T_lat_offset_vector <- params.set[,"T_lat_offset"]
+data.lr[,"Abs_Benefit"] <- data.lr[,"R_s"] - data.lr[,"R_q"]
+data.lr[,"Rel_Benefit"] <- data.lr[,"Abs_Benefit"] / data.lr[,"R_s"]
+data.lr[,"NNQ"] <- 1 / data.lr[,"Abs_Benefit"]
+data.lr[data.lr$NNQ < 1,"NNQ"] <- 1
+data.lr[data.lr$NNQ > 9999,"NNQ"] <- 9999
+data.lr[data.lr$NNQ == Inf,"NNQ"] <- 9999
+data.lr[,"Abs_Benefit_per_Qday"] <- data.lr[,"Abs_Benefit"] / data.lr[,"obs_to_iso_q"]
+data.lr$d_symp_lower_vector <- params.set[,"d_symp_lower"]
+data.lr$d_symp_width_vector <- params.set[,"d_symp_width"]
+data.lr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+data.lr$R_0_vector <- params.set[,"R_0"]
+data.lr$T_lat_offset_vector <- params.set[,"T_lat_offset"]
 
 layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data$R_0_vector, data$R_0, ylim=c(0, max(data$R_0)))
-plot(data$R_0_vector, data$R_s, ylim=c(0, max(data$R_0)))
-plot(data$R_0_vector, data$R_q, ylim=c(0, max(data$R_0)))
-plot(data$R_0_vector, log10(data$NNQ))
-plot(data$R_0_vector, data$Abs_Benefit)
-plot(data$R_0_vector, data$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
+plot(data.lr$R_0_vector, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$R_0_vector, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$R_0_vector, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$R_0_vector, log10(data.lr$NNQ))
+plot(data.lr$R_0_vector, data.lr$Abs_Benefit)
+plot(data.lr$R_0_vector, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
 layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data$pi_t_triangle_center, data$R_0, ylim=c(0, max(data$R_0)))
-plot(data$pi_t_triangle_center, data$R_s, ylim=c(0, max(data$R_0)))
-plot(data$pi_t_triangle_center, data$R_q, ylim=c(0, max(data$R_0)))
-plot(data$pi_t_triangle_center, log10(data$NNQ))
-plot(data$pi_t_triangle_center, data$Abs_Benefit)
-plot(data$pi_t_triangle_center, data$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
+plot(data.lr$pi_t_triangle_center, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$pi_t_triangle_center, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$pi_t_triangle_center, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$pi_t_triangle_center, log10(data.lr$NNQ))
+plot(data.lr$pi_t_triangle_center, data.lr$Abs_Benefit)
+plot(data.lr$pi_t_triangle_center, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
 layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data$T_lat_offset_vector, data$R_0, ylim=c(0, max(data$R_0)))
-plot(data$T_lat_offset_vector, data$R_s, ylim=c(0, max(data$R_0)))
-plot(data$T_lat_offset_vector, data$R_q, ylim=c(0, max(data$R_0)))
-plot(data$T_lat_offset_vector, log10(data$NNQ))
-plot(data$T_lat_offset_vector, data$Abs_Benefit)
-plot(data$T_lat_offset_vector, data$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
+plot(data.lr$T_lat_offset_vector, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$T_lat_offset_vector, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$T_lat_offset_vector, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$T_lat_offset_vector, log10(data.lr$NNQ))
+plot(data.lr$T_lat_offset_vector, data.lr$Abs_Benefit)
+plot(data.lr$T_lat_offset_vector, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
-summary(data$R_0)
-summary(data$R_hsb)
-summary(data$R_s)
-summary(data$R_q)
-summary(data$Abs_Benefit)
-summary(data$NNQ)
+layout(cbind(c(1,2,3),c(4,5,6)))
+plot(data.lr$d_symp_lower_vector, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_lower_vector, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_lower_vector, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_lower_vector, log10(data.lr$NNQ))
+plot(data.lr$d_symp_lower_vector, data.lr$Abs_Benefit)
+plot(data.lr$d_symp_lower_vector, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
-summary(data[data$T_lat_offset_vector > 0, "R_0"])
-summary(data[data$T_lat_offset_vector > 0, "R_hsb"])
-summary(data[data$T_lat_offset_vector > 0, "R_s"])
-summary(data[data$T_lat_offset_vector > 0, "R_q"])
-summary(data[data$T_lat_offset_vector > 0, "Abs_Benefit"])
-summary(data[data$T_lat_offset_vector > 0, "NNQ"])
+layout(cbind(c(1,2,3),c(4,5,6)))
+plot(data.lr$d_symp_width_vector, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_width_vector, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_width_vector, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
+plot(data.lr$d_symp_width_vector, log10(data.lr$NNQ))
+plot(data.lr$d_symp_width_vector, data.lr$Abs_Benefit)
+plot(data.lr$d_symp_width_vector, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
-summary(data[data$T_lat_offset_vector < 0, "R_0"])
-summary(data[data$T_lat_offset_vector < 0, "R_hsb"])
-summary(data[data$T_lat_offset_vector < 0, "R_s"])
-summary(data[data$T_lat_offset_vector < 0, "R_q"])
-summary(data[data$T_lat_offset_vector < 0, "Abs_Benefit"])
-summary(data[data$T_lat_offset_vector < 0, "NNQ"])
+summary(data.lr$R_0)
+summary(data.lr$R_hsb)
+summary(data.lr$R_s)
+summary(data.lr$R_q)
+summary(data.lr$Abs_Benefit)
+summary(data.lr$NNQ)
+
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 , "R_0"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_hsb"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "Abs_Benefit"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
+
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "R_0"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "R_hsb"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "R_s"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "R_q"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "Abs_Benefit"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "NNQ"])
 
 # Partial Rank Correlation using "ppcor" package
 require(ppcor)
-pcor(data[,c("R_s",names(data)[11:length(names(data))])], method=c("spearman"))$estimate[1,]
-pcor(data[,c("R_s",names(data)[11:length(names(data))])], method=c("spearman"))$p.value[1,]
-pcor(data[,c("Abs_Benefit",names(data)[11:length(names(data))])], method=c("spearman"))$estimate[1,]
-pcor(data[,c("Abs_Benefit",names(data)[11:length(names(data))])], method=c("spearman"))$p.value[1,]
-pcor(data[,c("Abs_Benefit_per_Qday", names(data)[11:length(names(data))])], method=c("spearman"))$estimate[1,]
-pcor(data[,c("Abs_Benefit_per_Qday", names(data)[11:length(names(data))])], method=c("spearman"))$p.value[1,]
+pcor(data.lr[,c("R_s",names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$estimate[1,]
+pcor(data.lr[,c("R_s",names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$p.value[1,]
+pcor(data.lr[,c("Abs_Benefit",names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$estimate[1,]
+pcor(data.lr[,c("Abs_Benefit",names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$p.value[1,]
+pcor(data.lr[,c("Abs_Benefit_per_Qday", names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$estimate[1,]
+pcor(data.lr[,c("Abs_Benefit_per_Qday", names(data.lr)[11:length(names(data.lr))])], method=c("spearman"))$p.value[1,]
 
 # Partial Rank Correlation using "sensitivity" package
-require(sensitivity)
+dimensions <- c("R_0", "pi_t_triangle_center","T_lat_offset","d_symp_lower","d_symp_width")
 bonferroni.alpha <- 0.05/length(dimensions)
-prcc_data <- data.frame(matrix(rep(NA, 7*length(names)*length(dimensions)), ncol=7)) 
-names(prcc_data) <- c("output","parameter","coef","bias","stderr","CImin","CImax")
-prcc_data$output <- rep(names, each = length(dimensions))
-prcc_data$parameter <- rep(dimensions, times = length(names))
+prcc_data.lr <- data.frame(matrix(rep(NA, 7*length(names)*length(dimensions)), ncol=7)) 
+names(prcc_data.lr) <- c("output","parameter","coef","bias","stderr","CImin","CImax")
+prcc_data.lr$output <- rep(names, each = length(dimensions))
+prcc_data.lr$parameter <- rep(dimensions, times = length(names))
 for (output in names){
-  prcc <- pcc(data[,(length(names)+1):length(names(data))], data[,output], nboot = 100, rank=TRUE, conf=1-bonferroni.alpha)
+  prcc <- pcc(data.lr[,(length(names)+1):length(names(data.lr))], data.lr[,output], nboot = 100, rank=TRUE, conf=1-bonferroni.alpha)
   summary <- print(prcc)
-  prcc_data[prcc_data$output == output,3:7] <- summary
+  prcc_data.lr[prcc_data.lr$output == output,3:7] <- summary
 }
 
-require(ggplot2)
-ggplot(prcc_data, aes(x = parameter, y= coef)) +
+ggplot(prcc_data.lr, aes(x = parameter, y= coef)) +
   facet_grid(output ~ .) +
   geom_point() +
   geom_hline(yintercept=0, color="red", size=0.25) +
   theme_bw() +
-  geom_errorbar(data = prcc_data, aes(ymin = CImin, ymax = CImax), width = 0.1)
+  geom_errorbar(data.lr = prcc_data.lr, aes(ymin = CImin, ymax = CImax), width = 0.1)
+
+# save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_LRSetting.RData')
+
+
+#### Plot R_q and R_s ####
+
+plot(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4))
+points(data.lr$R_s, data.lr$R_q, xlim = c(0, 4), ylim = c(0, 4), col="blue", pch = 16)
+points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="white", pch = 1)
+points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="darkblue", pch = 20)
 
