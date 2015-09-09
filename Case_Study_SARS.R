@@ -934,9 +934,59 @@ ggplot(prcc_data.lr, aes(x = parameter, y= coef)) +
 
 
 #### Plot R_q and R_s ####
-
-plot(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4))
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
+# save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
+layout(c(1))
+plot(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4), xlab = "R_s", ylab = "R_q")
 points(data.lr$R_s, data.lr$R_q, xlim = c(0, 4), ylim = c(0, 4), col="blue", pch = 16)
 points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="white", pch = 1)
 points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="darkblue", pch = 20)
 
+# color is R0, shape is HR or LR
+# color bar along x and y for R0
+# add lines X and Y
+
+data.hr$Setting <- "HR"
+data.lr$Setting <- "LR"
+data.hr.lr <- rbind(data.hr, data.lr)
+
+ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
+  geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
+  annotate("rect", xmin = 0, xmax = 1, ymin = 1, ymax = 4, alpha = .1, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = 4, ymin = 0, ymax = 1, alpha = .1, fill = "blue") +
+  annotate("rect", xmin = 0, xmax = 1, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
+  annotate("text", x = 2.5, y = 0.9, label = "Control with Quarantine", col = "blue") +
+  annotate("text", x = 0.5, y = 3.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+  geom_point(aes(x=R_s, y=R_q, col = R_0, shape=Setting) ) +
+  xlim(0,4) + ylim(0,4) +
+  scale_colour_gradient(low="yellow", high="darkred") +
+  scale_shape_manual(name = "Setting",
+                     values = c(17, 1),
+                     labels = c("High Resource", "Low Resource")) +
+  guides(shape = guide_legend(reverse=TRUE)) +
+  xlab("Effective Reproductive Number under Symptom Monitoring") +
+  ylab("Effective Reproductive Number under Quarantine") +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ggtitle("SARS")
+
+ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
+  annotate("rect", xmin = 2.2, xmax = 3.6, ymin = 0.5, ymax = 1, alpha = .1, fill = "green") +
+  geom_hline(y=1, col = "grey") +
+  geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
+  geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
+  stat_smooth(aes(x=R_0, y=R_s, shape = Setting), method = "loess", color="darkgreen", size = 1.2) +
+  stat_smooth(aes(x=R_0, y=R_q, shape = Setting), method = "loess", color="blue", size = 1.2) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_shape_manual(name = "Setting",
+                     values = c(17, 1),
+                     labels = c("High Resource", "Low Resource")) +
+  guides(shape = guide_legend(reverse=TRUE)) +
+  xlab("Basic Reproductive Number (Ro)") + ylab("Effective Reproductive Number under\nSymptom Monitoring or Quarantine (Re)") +
+  ggtitle("SARS")
+  
+ 
+  
+  
+  
+
+  
