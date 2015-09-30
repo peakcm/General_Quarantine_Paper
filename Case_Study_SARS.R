@@ -53,7 +53,7 @@ parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Initialize
-n_pop = 100
+n_pop = 1000
 num_generations <- 4
 times <- 1000
 names <- c("R_0","ks")
