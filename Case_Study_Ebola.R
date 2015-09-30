@@ -14,8 +14,8 @@ library(Hmisc)
 library(reshape)
 
 #### Step 1a: Choose range of parameters ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150824_5000reps.RData')
-set.seed(1)
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData')
+# set.seed(1)
 
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
@@ -55,12 +55,19 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 
 # Initialize
 n_pop = 200
-num_generations <- 5
-times <- 5000
+num_generations <- 4
+times <- 200
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
+init_threshold <- 0.5
+reduce <- 0.80
+SMC_times <- 3
+ks_conv_criteria <- 0.10
+ks_conv_stat <- rep(NA, SMC_times+1)
+subseq_interventions <- "u"
+printing = TRUE
 
 require(lhs)
 lhs <- maximinLHS(times, length(dimensions))
@@ -69,26 +76,118 @@ T_lat_offset.min <- -2
 T_lat_offset.max <- 2
 d_symp_lower.min <- 1
 d_symp_lower.max <- 5
-d_symp_upper.min <- 6
-d_symp_upper.max <- 16
+d_symp_width.min <- 1
+d_symp_width.max <- 20
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
 params.set <- cbind(
   T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
   d_symp_lower = lhs[,2]*(d_symp_lower.max - d_symp_lower.min) + d_symp_lower.min,
-  d_symp_upper = lhs[,3]*(d_symp_upper.max - d_symp_upper.min) + d_symp_upper.min,
+  d_symp_width = lhs[,3]*(d_symp_width.max - d_symp_width.min) + d_symp_width.min,
   pi_t_triangle_center = lhs[,4]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
+
+start.time <- proc.time()
 
 for (i in 1:times){
   cat('\nIteration',i, '\n')
   
   parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
   parms_d_symp$parm1 <- as.numeric(params.set[i,"d_symp_lower"])
-  parms_d_symp$parm2 <- as.numeric(params.set[i,"d_symp_upper"])
+  parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, params.set[i,"d_symp_width"])
   parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
   
-  for (subseq_interventions in c(background_intervention)){      
+  In_Out <- repeat_call_fcn(n_pop=n_pop, 
+                            parms_T_inc, 
+                            parms_T_lat, 
+                            parms_d_inf, 
+                            parms_d_symp, 
+                            parms_R_0, 
+                            parms_epsilon, 
+                            parms_pi_t,
+                            num_generations,
+                            background_intervention,
+                            subseq_interventions,
+                            gamma,
+                            prob_CT,
+                            parms_CT_delay,
+                            parms_serial_interval,
+                            printing = printing)
+  data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+  data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+}
+print(proc.time() - start.time)
+
+data$T_lat_offset <- params.set[,"T_lat_offset"]
+data$d_symp_lower <- params.set[,"d_symp_lower"]
+data$d_symp_width <- params.set[,"d_symp_width"]
+data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+ks_conv_stat[1] <- sort(data$ks)[floor(times*0.975)] 
+
+data_store <- data
+
+# plot
+# pdf(file = paste("Iteration_1.pdf"))
+
+pairs(~pi_t_triangle_center + T_lat_offset + d_symp_lower + d_symp_width, data=data, col = rainbow(1000)[floor(data$ks*1000)+1])
+pairs(~pi_t_triangle_center + T_lat_offset + d_symp_lower + d_symp_width, data=data, diag.panel=panel.hist)
+
+
+layout(rbind(c(1,2,3,4),c(5,6,7,8),c(7,8,9)))
+plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+     main = paste("Iteration 1"))
+plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(d_symp_lower.min, d_symp_lower.max),
+     main = paste("KS = ", round(ks_conv_stat[1],2)))
+plot(x=data$d_symp_width, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(T_lat_offset.min, T_lat_offset.max),
+     xlim = c(d_symp_width.min, d_symp_width.max))  
+plot(x=data$pi_t_triangle_center, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_width.min, d_symp_width.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
+plot(x=data$d_symp_lower, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_width.min, d_symp_width.max),
+     xlim = c(d_symp_lower.min, d_symp_lower.max))
+frame()
+plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+     ylim = c(d_symp_lower.min, d_symp_lower.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+frame()
+frame()
+# dev.off()
+
+T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 50
+d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 50
+d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 50
+pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 50
+
+threshold <- init_threshold
+
+theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
+T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
+d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
+d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
+pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
+
+d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
+d_symp_width.theta[d_symp_width.theta < 0] <- 0
+pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
+pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
+
+SMC_break <- FALSE
+SMC_counter <- 2
+while (SMC_break == FALSE){
+  for (i in 1:times){
+    if (printing == TRUE){cat('\nIteration',i, '\n')}
+    
+    parms_T_lat$anchor_value <- T_lat_offset.theta[i]
+    parms_d_symp$parm1 <- d_symp_lower.theta[i]
+    parms_d_symp$parm2 <- parms_d_symp$parm1 + max(0, d_symp_width.theta[i])
+    parms_pi_t$triangle_center <- pi_t_triangle_center.theta[i]
+    
     In_Out <- repeat_call_fcn(n_pop=n_pop, 
                               parms_T_inc, 
                               parms_T_lat, 
@@ -103,7 +202,8 @@ for (i in 1:times){
                               gamma,
                               prob_CT,
                               parms_CT_delay,
-                              parms_serial_interval)
+                              parms_serial_interval,
+                              printing = printing)
     if (subseq_interventions == background_intervention){
       data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
       data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
@@ -119,43 +219,74 @@ for (i in 1:times){
       data[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
     }
   }
+  
+  data$T_lat_offset <- T_lat_offset.theta
+  data$d_symp_lower <- d_symp_lower.theta
+  data$d_symp_width <- d_symp_width.theta
+  data$pi_t_triangle_center <- pi_t_triangle_center.theta
+  
+  ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
+  
+  # plot
+#   pdf(paste("Iteration_",SMC_counter,".pdf", sep = ""))
+  layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
+  plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = paste("Iteration ", SMC_counter))
+  plot(x=data$d_symp_lower, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_symp_lower.min, d_symp_lower.max),
+       main = paste("KS = ", round(ks_conv_stat[SMC_counter],2)))
+  plot(x=data$d_symp_width, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_symp_width.min, d_symp_width.max))  
+  plot(x=data$pi_t_triangle_center, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_width.min, d_symp_width.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max)) 
+  plot(x=data$d_symp_lower, y=data$d_symp_width, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_width.min, d_symp_width.max),
+       xlim = c(d_symp_lower.min, d_symp_lower.max))
+  frame()
+  plot(x=data$pi_t_triangle_center, y=data$d_symp_lower, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_symp_lower.min, d_symp_lower.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+  frame()
+  frame()
+#   dev.off()
+  
+  T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 25
+  d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 25
+  d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 25
+  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 25
+  
+  threshold <- max( ks_conv_criteria, threshold * reduce )
+  
+  theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
+  T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
+  d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
+  d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
+  pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
+  
+  d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
+  d_symp_width.theta[d_symp_width.theta < 0] <- 0
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
+  
+  if (ks_conv_stat[SMC_counter] <= ks_conv_criteria){
+    SMC_break <- TRUE
+    cat("Convergence acheived in", i, "iterations")
+  }
+  
+  SMC_counter <- SMC_counter + 1
+  if (SMC_counter >= SMC_times){
+    SMC_break <- TRUE
+    cat("Unable to converge by", SMC_counter, "SMC iterations")
+  }
 }
 
-data$T_lat_offset <- params.set[,"T_lat_offset"]
-data$d_symp_lower <- params.set[,"d_symp_lower"]
-data$d_symp_upper <- params.set[,"d_symp_upper"]
-data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data_store <- data
-
-# Serial Interval partial rank correlation
-pcor(data[,c("ks","T_lat_offset","d_symp_lower","d_symp_upper","pi_t_triangle_center")])$estimate[1,]
-pcor(data[,c("ks","T_lat_offset","d_symp_lower","d_symp_upper","pi_t_triangle_center")])$p.value[1,]
-
-# Serial Interval Inspection Scatter
-layout(cbind(c(1),c(2),c(3),c(4)))
-plot(data$T_lat_offset, data$ks )
-plot(data$d_symp_lower, data$ks)
-plot(data$d_symp_upper, data$ks)
-plot(data$pi_t_triangle_center, data$ks)
-
-# Serial Interval Inspection Deciles
-decile_plot_fcn(data, params.set)
-
-# Narrow range in 10% increments
-data <- data[data$T_lat_offset < sort(data$T_lat_offset)[round(nrow(data)*.9)],]
-data <- data[data$T_lat_offset > sort(data$T_lat_offset)[round(nrow(data)*.1)],]
-data <- data[data$d_symp_upper > sort(data$d_symp_upper)[round(nrow(data)*.1)],]
-data <- data[data$pi_t_triangle_center < sort(data$pi_t_triangle_center)[round(nrow(data)*.9)],]
-data <- data[data$d_symp_upper < sort(data$d_symp_upper)[round(nrow(data)*.9)],]
-data <- data[data$d_symp_lower < sort(data$d_symp_lower)[round(nrow(data)*.9)],]
-
-# Try to narrow the range of input parameters to improve serial interval fit
-apply(data[,names(data.frame(params.set))], 2, min)
-apply(data[,names(data.frame(params.set))], 2, max)
-
-data_trim <- data
-
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_12_20150824_5000reps.RData")
+# write.table(ks_conv_stat, "20150829_Ebola_ParticleFilter.csv")
+# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData")
 
 #### Step 1b: Narrow down range of parameters ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_13_20150825_2500reps.RData')
