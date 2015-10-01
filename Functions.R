@@ -8,10 +8,6 @@
 #### Notes to work on #### 
 # Measure elasticity. (% change in R for % change in attribute) (% change in R for % change in attribute variance)
 #
-# pi_t distributions:
-# exp_1.1, exp_1.2, exp_1.3, exp_e do not seem to produce the right number of people in the second generation
-# ebola data-driven distribution
-#
 # Add a duration of quaratine and symptom monitoring. don't isolate people if symptom onset is after T_obs + d_CT
 # start the timer from when they are placed under S or Q. Alternatively, start timer at day of infection (as if they could guess)
 # compare abs_benefit per Q day under conditions where we modify prob_CT, d_CT, and epsilon (how frequently you check ppl)
@@ -260,23 +256,7 @@ pi_t_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, d
       pi_t <- rep(R_0 / (d_inf), d_inf) # Uniform Distribution
     }
   
-  } else if (distribution == "exp_1.1"){
-    pi_t <- 1.1^(1:d_inf)
-    pi_t <- R_0 * pi_t / sum(pi_t)
-  
-  } else if (distribution == "exp_1.2"){
-    pi_t <- 1.2^(1:d_inf)
-    pi_t <- R_0 * pi_t / sum(pi_t)
-    
-  } else if (distribution == "exp_1.3"){
-    pi_t <- 1.3^(1:d_inf)
-    pi_t <- R_0 * pi_t / sum(pi_t)
-    
-  } else if (distribution == "exp_e"){
-    pi_t <- exp(1:d_inf)
-    pi_t <- R_0 * pi_t / sum(pi_t)
-    
-  } else {cat("Error 4: pi_t_fcn you must define an appropriate distribution (eg. uniform, linear_increase)")}
+  }  else {cat("Error 4: pi_t_fcn you must define an appropriate distribution (eg. uniform, linear_increase, triangle)")}
   
   # Now scale pi_t down by (1-gamma) after isolation (or beginning of quarantine)
   if (intervention == "q"){    # If you're under quarantine
@@ -738,3 +718,4 @@ panel.hist <- function(x, ...)
   y <- h$counts; y <- y/max(y)
   rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
 }
+
