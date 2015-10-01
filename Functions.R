@@ -366,7 +366,8 @@ repeat_call_fcn <- function(n_pop,
                             parms_serial_interval,
                             printing = TRUE,
                             dispersion = 1,
-                            max_pop = TRUE)
+                            max_pop = TRUE,
+                            min_infections = 20)
 {
   input <- list(n_pop, parms_T_inc, 
                 parms_T_lat, 
@@ -426,7 +427,7 @@ repeat_call_fcn <- function(n_pop,
   
   if (num_generations > 1){
     for (g in seq(from=2, to=num_generations)){
-      if (sum(Num_Infected) > 20){
+      if (sum(Num_Infected) > min_infections){
         Pop_next <- NA
         Pop_next <- next_generation_fcn(Pop = Pop_prev,
                                         children_list,
