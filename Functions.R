@@ -365,7 +365,8 @@ repeat_call_fcn <- function(n_pop,
                             parms_CT_delay,
                             parms_serial_interval,
                             printing = TRUE,
-                            dispersion = 1)
+                            dispersion = 1,
+                            max_pop = TRUE)
 {
   input <- list(n_pop, parms_T_inc, 
                 parms_T_lat, 
@@ -441,10 +442,12 @@ repeat_call_fcn <- function(n_pop,
                                         gamma,
                                         n_pop)
 
-        if (nrow(Pop_next) > (n_pop)){   #don't let the populations get bigger than the initial
-          Pop_next <- Pop_next[1:(n_pop),]
+        if (max_pop == TRUE){
+          if (nrow(Pop_next) > (n_pop)){   #don't let the populations get bigger than the initial
+            Pop_next <- Pop_next[1:(n_pop),]
+          }
         }
-        
+                
         Pop_next <- observe_and_isolate_fcn(Pop = Pop_next, intervention = subseq_interventions)
         
         children_list <- NA
