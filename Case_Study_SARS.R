@@ -981,7 +981,7 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
                      values = c(17, 1),
                      labels = c("High Resource", "Low Resource")) +
   guides(shape = guide_legend(reverse=TRUE)) +
-  xlab("Basic Reproductive Number (Ro)") + ylab("Effective Reproductive Number under\nSymptom Monitoring or Quarantine (Re)") +
+  xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
   ggtitle("SARS")
   
  
