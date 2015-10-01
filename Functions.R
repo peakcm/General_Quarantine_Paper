@@ -16,6 +16,15 @@
 # start the timer from when they are placed under S or Q. Alternatively, start timer at day of infection (as if they could guess)
 # compare abs_benefit per Q day under conditions where we modify prob_CT, d_CT, and epsilon (how frequently you check ppl)
 
+#### rpois.od ####
+# Courtesy of https://stat.ethz.ch/pipermail/r-help/2002-June/022425.html
+rpois.od<-function (n, lambda,d=1) {
+  if (d==1)
+    rpois(n, lambda)
+  else
+    rnbinom(n, size=(lambda/(d-1)), mu=lambda)
+}
+
 #### Draw_Dist_fcn #### 
 # Draw from Distributions of Disease Attributes
 Draw_Dist_fcn <- function(Vector, distribution, parm1, parm2, parm3){
@@ -293,20 +302,24 @@ pi_t_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, d
 
 #### infection_times_fcn ####
 # Infection times from one individual
-infection_times_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention){
+infection_times_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention, dispersion = 1){
   if (sum( sum(is.na(T_lat), is.na(d_inf), is.na(R_0))) > 0){cat("Error 1: infection_times_fcn")}
   pi_t <- pi_t_fcn(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention)
   children <- rep(NA, length(pi_t))
   if (sum(is.na(pi_t)) > 0 | sum(pi_t < 0) > 0){cat("Error 2: infection_times_fcn")}
-  children <- sapply(pi_t, function(x) rpois(1, lambda = x))
+  if (dispersion == 1){ # It's not necessary to have this if...else clause, but I wonder if rpois is faster than rpois.od when d = 1
+    children <- sapply(pi_t, function(x) rpois(1, lambda = x))
+  } else {
+    children <- sapply(pi_t, function(x) rpois.od(1, lambda = x, d = dispersion))
+  } 
   return(children)
 }
 
 #### children_list_fcn ####
 # Create a list of the children of the population
-children_list_fcn <- function(Pop, pi_t_distribution, triangle_center, gamma, intervention, background_intervention){
+children_list_fcn <- function(Pop, pi_t_distribution, triangle_center, gamma, intervention, background_intervention, dispersion = 1){
   children_list <- as.list(seq(1:nrow(Pop)))
-  children_list <- apply(Pop, 1, function(x) list(infection_times_fcn(as.numeric(x['T_lat']), as.numeric(x['d_inf']), as.numeric(x['t_iso']), as.numeric(x['t_obs']), as.numeric(x['R_0']),as.numeric(x['R_0_hsb_adjusted']), gamma, pi_t_distribution, triangle_center, intervention, background_intervention)))
+  children_list <- apply(Pop, 1, function(x) list(infection_times_fcn(as.numeric(x['T_lat']), as.numeric(x['d_inf']), as.numeric(x['t_iso']), as.numeric(x['t_obs']), as.numeric(x['R_0']),as.numeric(x['R_0_hsb_adjusted']), gamma, pi_t_distribution, triangle_center, intervention, background_intervention, dispersion)))
   children_list <- lapply(children_list, "[[", 1)  #This removes one layer of [[ ]] from the list
   return(children_list)
 }
@@ -371,7 +384,8 @@ repeat_call_fcn <- function(n_pop,
                             prob_CT,
                             parms_CT_delay,
                             parms_serial_interval,
-                            printing = TRUE)
+                            printing = TRUE,
+                            dispersion = 1)
 {
   input <- list(n_pop, parms_T_inc, 
                 parms_T_lat, 
@@ -415,7 +429,7 @@ repeat_call_fcn <- function(n_pop,
                       parms_CT_delay,
                       gamma)
   Pop_1 <- observe_and_isolate_fcn(Pop = Pop_1, intervention = background_intervention)
-  children_list <- children_list_fcn(Pop = Pop_1, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = background_intervention, background_intervention = background_intervention)
+  children_list <- children_list_fcn(Pop = Pop_1, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = background_intervention, background_intervention = background_intervention, dispersion)
   Num_Infected <- unlist(lapply(children_list, sum))
   if (printing == TRUE){cat('Generation 1 : n=', nrow(Pop_1), 'Effective Reproductive Number:', mean(Num_Infected))}
   
@@ -454,7 +468,7 @@ repeat_call_fcn <- function(n_pop,
         Pop_next <- observe_and_isolate_fcn(Pop = Pop_next, intervention = subseq_interventions)
         
         children_list <- NA
-        children_list <- children_list_fcn(Pop = Pop_next, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = subseq_interventions, background_intervention)
+        children_list <- children_list_fcn(Pop = Pop_next, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = subseq_interventions, background_intervention, dispersion)
         
         Num_Infected <- NA
         Num_Infected <- unlist(lapply(children_list, sum))
@@ -714,7 +728,7 @@ decile_plot_fcn <- function(data, params.set){
 # }
 # 
 
-#### Put histograms on the diagonal using the pairs function
+#### Put histograms on the diagonal using the pairs function ####
 panel.hist <- function(x, ...)
 {
   usr <- par("usr"); on.exit(par(usr))
