@@ -1044,4 +1044,116 @@ pcor(data[,c("ks","T_lat_offset","d_inf_lower","d_inf_upper","pi_t_triangle_cent
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_10_20150808_4000reps.RData")
 
 #### Experiment 16 ####
+# Make a spaghetti plot with many trials starting with one individual and tracing how many are in his infection tree as a function of generations. Then apply an intervention in generation 4 or so. Color code by u, hsb, s, q
 
+# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_16_20151001.RData')
+# save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_16_20151001.RData')
+
+# Ebola-ish
+parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, -2, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("triangle", 1, 15, 8, "independent", "independent")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+background_intervention = "u"
+
+prob_CT <- 0.9
+
+gamma <- 0.9
+
+parms_epsilon = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Settings
+n_pop = 50
+num_generations_u <- 3
+num_generations_intervention <- 4
+times = 25
+names <- c("generation", "count", "trial", "intervention")
+data <- data.frame(matrix(rep(NA, length(names)*times*(num_generations_u + num_generations_intervention - 1)*4), nrow=times*(num_generations_u + num_generations_intervention - 1)*4))
+names(data) <- names
+data$generation <- rep(seq(1, (num_generations_u + num_generations_intervention - 1)), times = times*4)
+data$trial <- rep(seq(1:(times*4)), each = 6)
+data$intervention <- rep(c("u", "hsb", "s", "q"), each = times * (num_generations_u + num_generations_intervention - 1))
+data$intervention <- factor(data$intervention, levels = c("u", "hsb", "s", "q"))
+
+for (i in 1:times){
+  for (subseq_interventions in c("u", "hsb", "s","q")){      
+    In_Out.pre <- repeat_call_fcn(n_pop, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations = num_generations_u,
+                              background_intervention,
+                              subseq_interventions = "u",
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              cap_pop = FALSE,
+                              min_infections = 1)
+    pre <- In_Out.pre$output[,"n"]
+    
+    In_Out.post <- repeat_call_fcn(n_pop = In_Out.pre$output[num_generations_u,"n"], 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations = num_generations_intervention,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              cap_pop = FALSE,
+                              min_infections = 1)
+    post <- In_Out.post$output[,"n"]
+    
+    count <- c(pre, post[-1])
+    
+    data[is.na(data$count) == 1 & data$intervention == subseq_interventions, "count"][1:length(count)] <- count
+  }
+}
+
+ggplot(data, aes(x=generation, y=count, group=trial, color=intervention)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  geom_vline(x=4, col = "grey") +
+  geom_line(alpha = 0.3) +
+  stat_smooth(aes(group = intervention), size = 2, method = "loess", se = FALSE) +
+  scale_x_continuous(breaks = seq(1:length(count))) +
+  xlab("Generation") + ylab("Incident Cases") +
+  scale_color_discrete(name="Intervention",
+                    breaks=c("u", "hsb", "s", "q"),
+                    labels=c("None", "Health-\nSeeking\nBehavior", "Symptom\nMonitoring", "Quarantine")) +
+  theme(legend.direction = "vertical", 
+        legend.position = "right",
+        legend.key=element_rect(size=5, color="white"),
+        legend.key.size = unit(2, "lines"))
+  
