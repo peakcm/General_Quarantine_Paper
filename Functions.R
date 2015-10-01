@@ -318,12 +318,15 @@ next_generation_fcn <- function(Pop,
                                 prob_CT,
                                 parms_CT_delay,
                                 gamma,
-                                n_pop){
+                                n_pop,
+                                cap_pop = TRUE){
+  if (cap_pop == TRUE){pop_limit <- n_pop
+  } else {pop_limit <- 9999}
   n_pop_next <- sum(unlist(lapply(children_list, sum)))
   Pop_2 <- Create_Pop(n_pop_next , parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation, Pop[1,"background_intervention"], parms_CT_delay, gamma)
   index = 1
   for (i in 1:length(children_list)){     # for each list of children
-    if (index <= n_pop){
+    if (index <= pop_limit){
       if (sum(children_list[[i]]==1)>0){    # if there is at least 1 onward infection by person i
         count <- sum(children_list[[i]]==1)   
         for (j in seq(from=0, to=count-1)){           # for each child j infected by person i
@@ -366,7 +369,7 @@ repeat_call_fcn <- function(n_pop,
                             parms_serial_interval,
                             printing = TRUE,
                             dispersion = 1,
-                            max_pop = TRUE,
+                            cap_pop = TRUE,
                             min_infections = 20)
 {
   input <- list(n_pop, parms_T_inc, 
@@ -441,9 +444,10 @@ repeat_call_fcn <- function(n_pop,
                                         prob_CT = prob_CT,
                                         parms_CT_delay,
                                         gamma,
-                                        n_pop)
+                                        n_pop,
+                                        cap_pop)
 
-        if (max_pop == TRUE){
+        if (cap_pop == TRUE){
           if (nrow(Pop_next) > (n_pop)){   #don't let the populations get bigger than the initial
             Pop_next <- Pop_next[1:(n_pop),]
           }
@@ -469,7 +473,7 @@ repeat_call_fcn <- function(n_pop,
         Pop_prev <- NA
         Pop_prev <- Pop_next
         
-      } else {if(printing==TRUE){cat('\nPopulation size dropped below 20')}}
+      } else {if(printing==TRUE){cat('\nPopulation size dropped below min_infections')}}
     }
   }
   if (printing == TRUE){cat('\n\n')}
