@@ -665,8 +665,6 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vec
 
 #### Case Study in Low Resource Setting ####
 
-set.seed(15)
-
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
 names(parms_serial_interval) <- c("dist","parm1","parm2")
@@ -706,7 +704,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 500
+times <- 2000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
@@ -830,28 +828,28 @@ summary(data.lr$R_q)
 summary(data.lr$Abs_Benefit)
 summary(data.lr$NNQ)
 
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 , "R_0"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_hsb"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "Abs_Benefit"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 , "R_0"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "R_hsb"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "R_s"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "R_q"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "Abs_Benefit"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "NNQ"])
 
-quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
-quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
+quantile(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "R_s"], c(0.025, 0.50, 0.975))
+quantile(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4, "R_q"], c(0.025, 0.50, 0.975))
 
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "R_0"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "R_hsb"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "R_s"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "R_q"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "Abs_Benefit"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector >= 0, "NNQ"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "R_0"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "R_hsb"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "R_s"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "R_q"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "Abs_Benefit"])
+summary(data.lr[data.lr$R_0 > 1 & data.lr$R_0 < 2.4 & data.lr$T_lat_offset_vector >= 0, "NNQ"])
 
 #### Plot R_q and R_s ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Ebola/20151001_plot.RData')
 # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Ebola/20151001_plot.RData')
 layout(c(1))
-plot(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4), xlab = "R_s", ylab = "R_q")
+plot(data.hr[data.hr$R_0 > 1 & data.hr$R_0 < 2.4, "R_s"], data.hr[data.hr$R_0 > 1 & data.hr$R_0 < 2.4, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4), xlab = "R_s", ylab = "R_q")
 points(data.lr$R_s, data.lr$R_q, xlim = c(0, 4), ylim = c(0, 4), col="blue", pch = 16)
 points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="white", pch = 1)
 points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="darkblue", pch = 20)
@@ -864,7 +862,7 @@ data.hr$Setting <- "HR"
 data.lr$Setting <- "LR"
 data.hr.lr <- rbind(data.hr, data.lr)
 
-ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
+ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
   geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
   annotate("rect", xmin = 0, xmax = 1, ymin = 1, ymax = 4, alpha = .1, fill = "yellow") + 
   annotate("rect", xmin = 1, xmax = 4, ymin = 0, ymax = 1, alpha = .1, fill = "blue") +
@@ -883,8 +881,8 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   ggtitle("Ebola")
 
-ggplot(data = data.hr.lr[data.hr.lr$R_0 > 2.2 & data.hr.lr$R_0 < 3.6,]) +
-  annotate("rect", xmin = 2.2, xmax = 3.6, ymin = 0.5, ymax = 1, alpha = .1, fill = "green") +
+ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
+  annotate("rect", xmin = 1, xmax = 2.4, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
   geom_hline(y=1, col = "grey") +
   geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
   geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
