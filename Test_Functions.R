@@ -256,3 +256,5 @@ curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$pa
 #       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 # hist(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2),breaks = seq(from=0, to=84, by=7))
 # summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
+
+#### Test if overdispersion is working ####
