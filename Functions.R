@@ -12,7 +12,7 @@
 # start the timer from when they are placed under S or Q. Alternatively, start timer at day of infection (as if they could guess)
 # compare abs_benefit per Q day under conditions where we modify prob_CT, d_CT, and epsilon (how frequently you check ppl)
 
-#### rpois.od ####
+#### Generic: rpois.od ####
 # Courtesy of https://stat.ethz.ch/pipermail/r-help/2002-June/022425.html
 rpois.od<-function (n, lambda,d=1) {
   if (d==1)
