@@ -259,6 +259,7 @@ curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$pa
 # summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
 
 #### Test overdispersion super spreading feature ####
+
 parms_R_0 = list("uniform", 2, 2, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
@@ -275,6 +276,7 @@ for (dispersion in 1:9){
        main = paste("Dispersion =", dispersion),
        xlab = "Number of Infections")
   text(x= 10, y=3000, labels = paste("Mean R =", mean(Num_Infected), "\n 95th percentile =", sort(Num_Infected)[length(Num_Infected)*0.95]))
+
 }
 
 #### Test magrittr pipeline ####
