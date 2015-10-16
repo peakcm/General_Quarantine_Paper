@@ -881,6 +881,7 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   ggtitle("Ebola")
 
+data.hr.lr.melt <- melt(data.hr.lr, id = )
 ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
   annotate("rect", xmin = 1, xmax = 2.4, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
   geom_hline(y=1, col = "grey") +
