@@ -240,9 +240,6 @@ pairs.panels(data[3:6],pch=21,
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData")
 
 #### Ranking of Intervention Sensitivities ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData')
-
-set.seed(3)
 
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
@@ -477,11 +474,7 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
   theme_bw() +
   geom_errorbar(data = prcc_data, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData")
-
 #### Case Study in High Resource Setting ####
-
-set.seed(14)
 
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
@@ -881,7 +874,6 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   ggtitle("Ebola")
 
-data.hr.lr.melt <- melt(data.hr.lr, id = )
 ggplot(data = data.hr.lr[data.hr.lr$R_0 > 1 & data.hr.lr$R_0 < 2.4,]) +
   annotate("rect", xmin = 1, xmax = 2.4, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
   geom_hline(y=1, col = "grey") +

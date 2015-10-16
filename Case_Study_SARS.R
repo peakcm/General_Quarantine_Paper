@@ -8,9 +8,9 @@
 library(ppcor)
 library(MASS)
 library(lhs)
+library(Hmisc)
 library(sensitivity)
 library(ggplot2)
-library(Hmisc)
 library(reshape)
 
 #### Particle Filter with weights and threshold ####
@@ -280,9 +280,6 @@ while (SMC_break == FALSE){
 # write.table(ks_conv_stat, "20150829_SARS_ParticleFilter.csv")
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData")
 
-#### Sample from posterior distribution ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150901_SARS_ParticleFilter_2000.RData')
-
 #### Ranking of Intervention Sensitivities ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_3_20150821.RData')
 
@@ -551,7 +548,7 @@ names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
 
-# sample from posterior distribution
+# sample from joint posterior distribution
 sample <- sample(x = row.names(data), size = times, replace = FALSE)
 params.set <- cbind(
   T_lat_offset = data[sample, "T_lat_offset"],
@@ -768,7 +765,7 @@ names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
 
-# sample from posterior distribution
+# sample from joint posterior distribution
 sample <- sample(x = row.names(data), size = times, replace = FALSE)
 params.set <- cbind(
   T_lat_offset = data[sample, "T_lat_offset"],
@@ -931,7 +928,6 @@ ggplot(prcc_data.lr, aes(x = parameter, y= coef)) +
   geom_errorbar(data.lr = prcc_data.lr, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
 # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_LRSetting.RData')
-
 
 #### Plot R_q and R_s ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
