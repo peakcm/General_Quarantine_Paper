@@ -258,8 +258,24 @@ curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$pa
 # hist(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2),breaks = seq(from=0, to=84, by=7))
 # summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
 
-#### Test if overdispersion is working ####
+#### Test overdispersion super spreading feature ####
+parms_R_0 = list("uniform", 2, 2, 999, "independent", "independent")
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
+par(mfrow = c(3,3))
+
+Pop <- Create_Pop(n_pop=5000, parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation = 1, background_intervention = "u", parms_CT_delay, gamma) %>%
+  observe_and_isolate_fcn(intervention = "u")
+
+for (dispersion in 1:9){
+  children_list <- children_list_fcn(Pop, pi_t_distribution=parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma=0.9, intervention = "u", background_intervention = "u", dispersion = dispersion)
+  
+  Num_Infected <- unlist(lapply(children_list, sum))
+  hist(Num_Infected, breaks = seq(0, max(Num_Infected)), xlim = c(0, 20), ylim = c(0, 4000), 
+       main = paste("Dispersion =", dispersion),
+       xlab = "Number of Infections")
+  text(x= 10, y=3000, labels = paste("Mean R =", mean(Num_Infected), "\n 95th percentile =", sort(Num_Infected)[length(Num_Infected)*0.95]))
+}
 
 #### Test magrittr pipeline ####
 dog <- c(5,5) %>% sum %>% class
