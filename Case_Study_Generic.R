@@ -16,6 +16,11 @@ library(psych)
 
 #### Disease: SARS ####
 
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "SARS"
+root <- paste(date, disease, sep = "_")
+
 # Fixed Disease Parameters
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
@@ -66,14 +71,19 @@ pi_t_triangle_center.max <- 1
 
 #### Disease: Ebola ####
 
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "Ebola"
+root <- paste(date, disease, sep = "_")
+
 # Fixed Disease Parameters
 parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
+parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent") # approximation from WHO
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent")
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Variable Disease Parameters
@@ -83,7 +93,7 @@ names(parms_pi_t) <- c("distribution","triangle_center")
 parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_d_symp = list("triangle", 1, 8, 2, "independent", "independent")
+parms_d_symp = list("uniform", 1, 8, 999, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_inf = list("uniform", 3, 8, 999, 0, "d_symp")
@@ -92,16 +102,15 @@ names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor
 # Ranges for particle filter
 T_lat_offset.min <- -0.5
 T_lat_offset.max <- 2
-d_symp_peak.min <- 0
-d_symp_peak.max <- 1
-d_symp_max.min <- 15
-d_symp_max.max <- 30
+d_symp_lower.min <- 1
+d_symp_lower.max <- 5
+d_symp_width.min <- 1
+d_symp_width.max <- 25
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
-# Save and load workspaces
+# Load workspaces
 
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData")
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData')
 
 # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Ebola/20151001_plot.RData')
@@ -123,9 +132,9 @@ parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Initialize
-n_pop = 1000
+n_pop = 200
 num_generations <- 4
-times <- 1000
+times <- 200
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -183,7 +192,7 @@ data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 ks_conv_stat[1] <- sort(data$ks)[floor(times*0.975)] 
 
 # Save scatterplots
-pdf(file = paste("Iteration_1.pdf"))
+pdf(file = paste(root,"SMC_Iteration_1.pdf", sep="_"))
 layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
 plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -211,9 +220,9 @@ frame()
 dev.off()
 
 # Plot scatterplot with cumulative distributions
-pairs.panels(data[3:6],pch=21,
-             bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
+pairs.panels(data[3:6],pch=21, bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
 
+# Perturb candidates
 T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 50
 d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 50
 d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 50
@@ -221,16 +230,24 @@ pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,
 
 threshold <- init_threshold
 
-theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
-T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
-d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
-d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
-pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
+#sample pre-candidate theta parameter sets from previous generation
+theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) 
 
-d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
-d_symp_width.theta[d_symp_width.theta < 0] <- 0
-pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
-pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
+#perturb and propose
+T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) 
+d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) 
+d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) 
+pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) 
+
+# Restrict range of candidates to the original range for the disease
+T_lat_offset.theta[T_lat_offset.theta < T_lat_offset.min] <- T_lat_offset.min
+T_lat_offset.theta[T_lat_offset.theta > T_lat_offset.max] <- T_lat_offset.max
+d_symp_lower.theta[d_symp_lower.theta < d_symp_lower.min] <- d_symp_lower.min
+d_symp_lower.theta[d_symp_lower.theta > d_symp_lower.max] <- d_symp_lower.max
+d_symp_width.theta[d_symp_width.theta < d_symp_width.min] <- d_symp_width.min
+d_symp_width.theta[d_symp_width.theta > d_symp_width.max] <- d_symp_width.max
+pi_t_triangle_center.theta[pi_t_triangle_center.theta < pi_t_triangle_center.min] <- pi_t_triangle_center.min
+pi_t_triangle_center.theta[pi_t_triangle_center.theta > pi_t_triangle_center.max] <- pi_t_triangle_center.max
 
 SMC_break <- FALSE
 SMC_counter <- 2
@@ -283,7 +300,7 @@ while (SMC_break == FALSE){
   ks_conv_stat[SMC_counter] <- sort(data$ks)[floor(times*0.975)]  # Calculate the upper end of the inner 95% credible interval
   
   # Save scatterplots
-  pdf(paste("Iteration_",SMC_counter,".pdf", sep = ""))
+  pdf(paste(root, "_SMC_Iteration_",SMC_counter,".pdf", sep = ""))
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
@@ -311,8 +328,7 @@ while (SMC_break == FALSE){
   dev.off()
   
   # Plot scatterplot with cumulative distributions
-  pairs.panels(data[3:6],pch=21,
-               bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
+  pairs.panels(data[3:6],pch=21,bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
   
   T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 25
   d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 25
@@ -321,16 +337,24 @@ while (SMC_break == FALSE){
   
   threshold <- max( ks_conv_criteria, threshold * reduce )
   
-  theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) #sample pre-candidate theta parameter sets from previous generation
-  T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb) #perturb and propose
-  d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) #perturb and propose
-  d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) #perturb and propose
-  pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) #perturb and propose
+  #sample pre-candidate theta parameter sets from previous generation
+  theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= (1/data[data$ks <= threshold,]$ks), replace=TRUE) 
   
-  d_symp_lower.theta[d_symp_lower.theta < 1] <- 1
-  d_symp_width.theta[d_symp_width.theta < 0] <- 0
-  pi_t_triangle_center.theta[pi_t_triangle_center.theta > 1] <- 1
-  pi_t_triangle_center.theta[pi_t_triangle_center.theta < 0] <- 0
+  #perturb and propose
+  T_lat_offset.theta <- data[theta_pre_can,"T_lat_offset"] + runif(times, min=-1*T_lat_offset.perturb, max=T_lat_offset.perturb)
+  d_symp_lower.theta <- data[theta_pre_can,"d_symp_lower"] + runif(times, min=-1*d_symp_lower.perturb, max=d_symp_lower.perturb) 
+  d_symp_width.theta <- data[theta_pre_can,"d_symp_width"] + runif(times, min=-1*d_symp_width.perturb, max=d_symp_width.perturb) 
+  pi_t_triangle_center.theta <- data[theta_pre_can,"pi_t_triangle_center"] + runif(times, min=-1*pi_t_triangle_center.perturb, max=pi_t_triangle_center.perturb) 
+  
+  # Restrict range of candidates to the original range for the disease
+  T_lat_offset.theta[T_lat_offset.theta < T_lat_offset.min] <- T_lat_offset.min
+  T_lat_offset.theta[T_lat_offset.theta > T_lat_offset.max] <- T_lat_offset.max
+  d_symp_lower.theta[d_symp_lower.theta < d_symp_lower.min] <- d_symp_lower.min
+  d_symp_lower.theta[d_symp_lower.theta > d_symp_lower.max] <- d_symp_lower.max
+  d_symp_width.theta[d_symp_width.theta < d_symp_width.min] <- d_symp_width.min
+  d_symp_width.theta[d_symp_width.theta > d_symp_width.max] <- d_symp_width.max
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta < pi_t_triangle_center.min] <- pi_t_triangle_center.min
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta > pi_t_triangle_center.max] <- pi_t_triangle_center.max
   
   if (ks_conv_stat[SMC_counter] <= ks_conv_criteria){
     SMC_break <- TRUE
@@ -344,9 +368,10 @@ while (SMC_break == FALSE){
   }
 }
 
-# write.table(ks_conv_stat, "20150829_SARS_ParticleFilter.csv")
+write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_SMC.RData", sep=""))
 
-#### Ranking of Intervention Sensitivities ####
+#### PRCC Ranking of Intervention Sensitivities ####
 
 # Interventions
 background_intervention = "u"
@@ -574,6 +599,8 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
   theme_bw() +
   geom_errorbar(data = prcc_data, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_PRCC.RData", sep=""))
+
 #### Case Study in High Resource Setting ####
 
 # Interventions
@@ -744,6 +771,8 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vec
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "R_q"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "Abs_Benefit"])
 summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset_vector < 0, "NNQ"])
+
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_HR.RData", sep=""))
 
 #### Case Study in Low Resource Setting ####
 
@@ -916,6 +945,8 @@ summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vec
 summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "Abs_Benefit"])
 summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset_vector < 0, "NNQ"])
 
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_HR.RData", sep=""))
+
 #### Plot R_q and R_s ####
 
 # Set range for relevant R_0 values
@@ -969,3 +1000,6 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_
   guides(shape = guide_legend(reverse=TRUE)) +
   xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
   ggtitle("Disease: SARS")
+
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_Plots.RData", sep=""))
+
