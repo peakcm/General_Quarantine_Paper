@@ -7,6 +7,7 @@
 #### Load Libraries ####
 library(MASS)
 library(parallel)
+library(magrittr)
 
 #### Define a sample of initial parameters ####
 n_pop = 5000
@@ -258,3 +259,11 @@ curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$pa
 # summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
 
 #### Test if overdispersion is working ####
+
+
+#### Test magrittr pipeline ####
+dog <- c(5,5) %>% sum %>% class
+
+Pop <- Create_Pop(n_pop=500, parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation = 1, background_intervention = "u", parms_CT_delay, gamma)
+
+Pop2 <- Pop %>% observe_and_isolate_fcn(intervention = "u")
