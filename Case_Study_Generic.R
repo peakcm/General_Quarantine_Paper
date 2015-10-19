@@ -141,7 +141,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 200
 num_generations <- 4
-times <- 500
+times <- 200
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -199,33 +199,33 @@ ks_conv_stat[1] <- sort(data$ks)[floor(times*0.975)]
 # Save scatterplots
 pdf(file = paste(root,"SMC_Iteration_1.pdf", sep="_"))
 layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
-frame() #histogram of T_lat_offset
+hist(data$T_lat_offset, xlim = c(T_lat_offset.min, T_lat_offset.max),
+     main = "T_lat_offset", xlab = "days")
 plot(x=data$d_inf, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
      xlim = c(d_inf.min, d_inf.max),
-     main = paste("KS = ", round(ks_conv_stat[1],2)))
+     main = paste("KS = ", round(ks_conv_stat[1],3)), xlab = "days", ylab = "days")
 plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
      xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
-     main = paste("Iteration 1"))
+     main = paste("Iteration 1",), xlab = "proportion", ylab = "days")
 plot(x=data$T_lat_offset, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     ylim = c(d_inf.max, d_inf.max),
-     xlim = c(T_lat_offset.min, T_lat_offset.min))
-frame() #histogram of d_inf
+     ylim = c(d_inf.min, d_inf.max),
+     xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "days")
+hist(data$d_inf, xlim = c(d_inf.min, d_inf.max),
+     main = "d_inf", xlab = "days")  
 plot(x=data$pi_t_triangle_center, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     ylim = c(d_inf.max, d_inf.max),
-     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+     ylim = c(d_inf.min, d_inf.max),
+     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max), xlab = "proportion", ylab = "days")
 plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
-     xlim = c(T_lat_offset.min, T_lat_offset.max)) 
+     xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "proportion") 
 plot(x=data$d_inf, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-     ylim = c(d_inf.min, d_inf.max),
-     xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
-frame() #histogram of pi_t_triangle_center
+     ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+     xlim = c(d_inf.min, d_inf.max), xlab = "days", ylab = "proportion")
+hist(data$pi_t_triangle_center, xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+     main = "pi_t_triangle_center", xlab = "proportion") 
 dev.off()
-
-# Plot scatterplot with cumulative distributions
-pairs.panels(data[3:6],pch=21, bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
 
 # Perturb candidates
 T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[1]
@@ -301,34 +301,33 @@ while (SMC_break == FALSE){
   # Save scatterplots
   pdf(paste(root, "_SMC_Iteration_",SMC_counter,".pdf", sep = ""))
   layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
-  frame() #histogram of T_lat_offset
+  hist(data$T_lat_offset, xlim = c(T_lat_offset.min, T_lat_offset.max),
+       main = "T_lat_offset", xlab = "days")
   plot(x=data$d_inf, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(d_inf.min, d_inf.max),
-       main = paste("KS = ", round(ks_conv_stat[1],2)))
+       main = paste("KS = ", round(ks_conv_stat[SMC_counter],3)), xlab = "days", ylab = "days")
   plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(T_lat_offset.min, T_lat_offset.max),
        xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
-       main = paste("Iteration 1"))
+       main = paste("Iteration ", SMC_counter), xlab = "proportion", ylab = "days")
   plot(x=data$T_lat_offset, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       ylim = c(d_inf.max, d_inf.max),
-       xlim = c(T_lat_offset.min, T_lat_offset.min))
-  frame() #histogram of d_inf
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "days")
+  hist(data$d_inf, xlim = c(d_inf.min, d_inf.max),
+       main = "d_inf", xlab = "days")  
   plot(x=data$pi_t_triangle_center, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       ylim = c(d_inf.max, d_inf.max),
-       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max), xlab = "proportion", ylab = "days")
   plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
        ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
-       xlim = c(T_lat_offset.min, T_lat_offset.max)) 
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "proportion") 
   plot(x=data$d_inf, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
-       ylim = c(d_inf.min, d_inf.max),
-       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max))
-  frame() #histogram of pi_t_triangle_center
+       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       xlim = c(d_inf.min, d_inf.max), xlab = "days", ylab = "proportion")
+  hist(data$pi_t_triangle_center, xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = "pi_t_triangle_center", xlab = "proportion")  
   dev.off()
-  dev.off()
-  
-  # Plot scatterplot with cumulative distributions
-  pairs.panels(data[3:6],pch=21,bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
   
   T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[SMC_counter]
   d_inf.perturb <- (max(data[,"d_inf"]) - min(data[,"d_inf"])) * perturb[SMC_counter]
