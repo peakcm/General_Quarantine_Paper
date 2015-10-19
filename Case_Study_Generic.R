@@ -14,6 +14,22 @@ library(ggplot2)
 library(reshape)
 library(psych)
 
+#### Load Workspaces ####
+desired_root <- 20151016_Ebola # Paste the desired root here "YYYYMMDD_DISEASE"
+
+# If workspaces are in main folder
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_SMC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_PRCC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_HR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_LR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_Plots.RData", sep=""))
+
+# If workspaces are in their own folder, named the same as the root
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_SMC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_PRCC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_HR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_LR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_Plots.RData", sep=""))
 #### Disease: SARS ####
 
 # Name the trial
@@ -108,13 +124,6 @@ d_symp_width.min <- 1
 d_symp_width.max <- 25
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
-
-# Load workspaces
-
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_Ebola_ParticleFilter.RData')
-
-# save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Ebola/20151001_plot.RData')
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Ebola/20151001_plot.RData')
 
 #### Particle Filter with weights and threshold ####
 
