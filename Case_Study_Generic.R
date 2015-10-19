@@ -30,6 +30,7 @@ desired_root <- 20151016_Ebola # Paste the desired root here "YYYYMMDD_DISEASE"
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_HR.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_LR.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "/", root, "_Plots.RData", sep=""))
+
 #### Disease: SARS ####
 
 # Name the trial
@@ -143,18 +144,19 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 200
 num_generations <- 4
-times <- 200
+times <- 500
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
 dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","pi_t_triangle_center")
 init_threshold <- 0.5
 reduce <- 0.80
-SMC_times <- 3
+SMC_times <- 10
+perturb <- seq(from = 1/25, to = 1/100, length.out = SMC_times)
 ks_conv_criteria <- 0.10
 ks_conv_stat <- rep(NA, SMC_times+1)
 subseq_interventions <- "u"
-printing = FALSE
+printing = TRUE
 
 lhs <- maximinLHS(times, length(dimensions))
 params.set <- cbind(
@@ -232,10 +234,10 @@ dev.off()
 pairs.panels(data[3:6],pch=21, bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
 
 # Perturb candidates
-T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 50
-d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 50
-d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 50
-pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 50
+T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[1]
+d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) * perturb[1]
+d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) * perturb[1]
+pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) * perturb[1]
 
 threshold <- init_threshold
 
@@ -339,10 +341,10 @@ while (SMC_break == FALSE){
   # Plot scatterplot with cumulative distributions
   pairs.panels(data[3:6],pch=21,bg = rainbow(1000)[floor(data$ks*1000)+1], ellipses = FALSE, smooth=FALSE, rug=FALSE) 
   
-  T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) / 25
-  d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) / 25
-  d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) / 25
-  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) / 25
+  T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[SMC_counter]
+  d_symp_lower.perturb <- (max(data[,"d_symp_lower"]) - min(data[,"d_symp_lower"])) * perturb[SMC_counter]
+  d_symp_width.perturb <- (max(data[,"d_symp_width"]) - min(data[,"d_symp_width"])) * perturb[SMC_counter]
+  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) * perturb[SMC_counter]
   
   threshold <- max( ks_conv_criteria, threshold * reduce )
   
@@ -367,14 +369,12 @@ while (SMC_break == FALSE){
   
   if (ks_conv_stat[SMC_counter] <= ks_conv_criteria){
     SMC_break <- TRUE
-    cat("Convergence acheived in", i, "iterations")
-  }
-  
-  SMC_counter <- SMC_counter + 1
-  if (SMC_counter >= SMC_times){
+    cat("Convergence acheived in", SMC_counter, "iterations")
+  } else if (SMC_counter >= SMC_times){
     SMC_break <- TRUE
     cat("Unable to converge by", SMC_counter, "SMC iterations")
   }
+  SMC_counter <- SMC_counter + 1
 }
 
 write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
