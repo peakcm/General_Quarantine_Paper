@@ -484,7 +484,7 @@ repeat_call_fcn <- function(n_pop,
   return(In_Out)
 }
 
-##### serial_interval_fcn ####
+#### serial_interval_fcn ####
 # Generate Serial Interval Distribution
 serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
   output <- rep(NA, length(Pop2$ID))
