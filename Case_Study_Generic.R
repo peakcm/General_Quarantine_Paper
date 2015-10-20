@@ -364,6 +364,72 @@ while (SMC_break == FALSE){
 write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_SMC.RData", sep=""))
 
+#### Try a new version of the particle filter based on C Worby ####
+SMC <- function(no_particles, perturb, init.thresh, schedule, reduce, end = 10, root,
+                parms_serial_interval,
+                parms_T_inc,
+                parms_R_0,
+                parms_pi_t
+                parms_T_lat,
+                parms_d_inf,
+                parms_d_symp,
+                T_lat_offset.min,
+                T_lat_offset.max,
+                d_inf.min,
+                d_inf.max,
+                pi_t_triangle_center.min,
+                pi_t_triangle_center.max,
+                n_pop, num_generations){
+  # Initialize
+  background_intervention = "u"
+  prob_CT <- 1
+  gamma <- 1
+  parms_epsilon = list("uniform", 1, 1, 999, "independent", "independent")
+    names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+  parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+    names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+  subseq_interventions <- "u"
+  printing = TRUE
+  names <- c("R_0","ks")
+  data <- data.frame(matrix(rep(NA, length(names)*no_particles), nrow=no_particles))
+  names(data) <- names
+  dimensions <- c("T_lat_offset", "d_inf","pi_t_triangle_center")
+  
+  t <- 1  # start at generation 1
+  while (endcon){
+    if (t==1){
+      threshold <- init.thresh
+    } else if (schedule == "simple"){
+      threshold <- reduce*threshold
+    }
+    
+    cat("Threshold level for generation ", t, " is ", round(threshold, 4), "\n", sep="")
+    acc <- 1
+    ks <- numeric(no_particles)
+    
+    T_lat_offset.weights <- cbind(T_lat_offset.weights, rep(0, no_particles))
+    
+    
+    particles <- cbind(particles, rep(0, no_particles))
+    
+    
+    attempts <- c(attempts, 0)
+    
+    while (acc <= no_particles){
+      attempts[t] <- attempts[t] +1
+      theta_per_can <- sample(particles[,t], 1, prob = weights[,t]) # sample particles from previous generation
+      theta_can <- max(1, sample(c(-1,1),1)*rpois(1,perturb) + theta_per_can) #perturb and propose
+      
+      # simulate data using theta_can
+      sim_data <- 
+      
+    }
+    
+    
+  }
+  
+}
+
 #### PRCC Ranking of Intervention Sensitivities ####
 
 # Interventions
