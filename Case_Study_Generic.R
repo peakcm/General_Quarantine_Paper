@@ -208,7 +208,7 @@ plot(x=data$d_inf, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+
 plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(T_lat_offset.min, T_lat_offset.max),
      xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
-     main = paste("Iteration 1",), xlab = "proportion", ylab = "days")
+     main = paste("Iteration 1"), xlab = "proportion", ylab = "days")
 plot(x=data$T_lat_offset, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
      ylim = c(d_inf.min, d_inf.max),
      xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "days")
@@ -429,6 +429,165 @@ SMC <- function(no_particles, perturb, init.thresh, schedule, reduce, end = 10, 
   }
   
 }
+
+#### Particle Filter with fractional weights and adaptive threshold ####
+
+# Interventions
+background_intervention = "u"
+
+prob_CT <- 1
+
+gamma <- 1
+
+parms_epsilon = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Initialize
+n_pop = 200
+num_generations <- 4
+times <- 50
+names <- c("R_0","ks")
+data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data) <- names
+dimensions <- c("T_lat_offset", "d_inf","pi_t_triangle_center")
+adaptive_thresh <- 0.80
+SMC_times <- 6
+perturb <- seq(from = 1/25, to = 1/50, length.out = SMC_times)
+ks_conv_criteria <- 0.10 # convergence if median ks is within [ks_conv_criteria] percent of previous two 
+ks_conv_stat <- rep(NA, SMC_times)
+subseq_interventions <- "u"
+printing = FALSE
+
+SMC_break <- FALSE
+SMC_counter <- 1
+while (SMC_break == FALSE){
+  cat('\nSMC iteration',SMC_counter, '\n')
+  
+  if (SMC_counter == 1){    
+    lhs <- maximinLHS(times, length(dimensions))
+    T_lat_offset.theta <- lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min
+    d_inf.theta <- lhs[,2]*(d_inf.max - d_inf.min) + d_inf.min
+    pi_t_triangle_center.theta <- lhs[,3]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min
+  }
+    
+  for (i in 1:times){
+    cat(".")
+    if (i%%10 == 0){cat("|")}
+    
+    parms_T_lat$anchor_value <- T_lat_offset.theta[i]
+    parms_d_inf$parm2 <- d_inf.theta[i]
+    parms_pi_t$triangle_center <- pi_t_triangle_center.theta[i]
+    
+    In_Out <- repeat_call_fcn(n_pop=n_pop, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              printing = printing)
+      data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+  }
+  
+  data$T_lat_offset <- T_lat_offset.theta
+  data$d_inf <- d_inf.theta
+  data$pi_t_triangle_center <- pi_t_triangle_center.theta
+  data$weight <- (1/data$ks) / sum(1/data$ks)
+  
+  ks_conv_stat[SMC_counter] <- median(data$ks)
+  
+  # Save scatterplots
+  pdf(paste(root, "_SMC_Iteration_",SMC_counter,".pdf", sep = ""))
+  layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
+  hist(data$T_lat_offset, xlim = c(T_lat_offset.min, T_lat_offset.max),
+       main = "T_lat_offset", xlab = "days")
+  plot(x=data$d_inf, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_inf.min, d_inf.max),
+       main = paste("KS = ", round(ks_conv_stat[SMC_counter],3)), xlab = "days", ylab = "days")
+  plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = paste("Iteration ", SMC_counter), xlab = "proportion", ylab = "days")
+  plot(x=data$T_lat_offset, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "days")
+  hist(data$d_inf, xlim = c(d_inf.min, d_inf.max),
+       main = "d_inf", xlab = "days")  
+  plot(x=data$pi_t_triangle_center, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max), xlab = "proportion", ylab = "days")
+  plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "proportion") 
+  plot(x=data$d_inf, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       xlim = c(d_inf.min, d_inf.max), xlab = "days", ylab = "proportion")
+  hist(data$pi_t_triangle_center, xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = "pi_t_triangle_center", xlab = "proportion")  
+  dev.off()
+  
+  T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[SMC_counter]
+  d_inf.perturb <- (max(data[,"d_inf"]) - min(data[,"d_inf"])) * perturb[SMC_counter]
+  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) * perturb[SMC_counter]
+  
+  #Adaptive threshold
+  sorted.ks <- sort(data$ks)
+  threshold <- sorted.ks[round(adaptive_thresh*length(sorted.ks))]
+  
+  #sample pre-candidate theta parameter sets from previous generation
+  theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= data[data$ks <= threshold,"weight"], replace=TRUE)
+  
+  #perturb and propose
+  T_lat_offset.theta <- sapply(data[theta_pre_can, "T_lat_offset"], function(x) rnorm(n=1, mean=x, sd=(T_lat_offset.max - T_lat_offset.min) * perturb[SMC_counter]))
+  d_inf.theta <- sapply(data[theta_pre_can, "d_inf"], function(x) rnorm(n=1, mean=x, sd=(d_inf.max - d_inf.min) * perturb[SMC_counter]))
+  pi_t_triangle_center.theta <- sapply(data[theta_pre_can, "pi_t_triangle_center"], function(x) rnorm(n=1, mean=x, sd=(pi_t_triangle_center.max - pi_t_triangle_center.min) * perturb[SMC_counter]))
+  
+  # Restrict range of candidates to the original range for the disease
+  T_lat_offset.theta[T_lat_offset.theta < T_lat_offset.min] <- T_lat_offset.min
+  T_lat_offset.theta[T_lat_offset.theta > T_lat_offset.max] <- T_lat_offset.max
+  d_inf.theta[d_inf.theta < d_inf.min] <- d_inf.min
+  d_inf.theta[d_inf.theta > d_inf.max] <- d_inf.max
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta < pi_t_triangle_center.min] <- pi_t_triangle_center.min
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta > pi_t_triangle_center.max] <- pi_t_triangle_center.max
+  
+  cat('\nMedian KS is ', ks_conv_stat[SMC_counter], "\n")
+  
+  # Check for "convergence"
+  if (SMC_counter > 3){
+    if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-1])/ks_conv_stat[SMC_counter-1] <= ks_conv_criteria){
+      if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-2])/ks_conv_stat[SMC_counter-2] <= ks_conv_criteria){
+        SMC_break <- TRUE
+        cat("\nConvergence acheived in", SMC_counter, "iterations")
+        break
+      }
+    }
+  }
+  
+  if (SMC_counter >= SMC_times){
+    SMC_break <- TRUE
+    cat("\nUnable to converge by", SMC_counter, "SMC iterations")
+    break
+  }
+  
+  SMC_counter <- SMC_counter + 1
+  
+}
+
+write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_SMC.RData", sep=""))
 
 #### PRCC Ranking of Intervention Sensitivities ####
 
