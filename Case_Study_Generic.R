@@ -428,107 +428,21 @@ data.prcc$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 data.prcc$T_lat_offset <- params.set[,"T_lat_offset"]
 data.prcc$d_inf <- params.set[,"d_inf"]
 
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$gamma, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$gamma, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$gamma, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$gamma, log10(data.prcc$NNQ))
-plot(data.prcc$gamma, data.prcc$Abs_Benefit)
-plot(data.prcc$gamma, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$prob_CT, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$prob_CT, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$prob_CT, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$prob_CT, log10(data.prcc$NNQ))
-plot(data.prcc$prob_CT, data.prcc$Abs_Benefit)
-plot(data.prcc$prob_CT, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$CT_delay, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$CT_delay, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$CT_delay, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$CT_delay, log10(data.prcc$NNQ))
-plot(data.prcc$CT_delay, data.prcc$Abs_Benefit)
-plot(data.prcc$CT_delay, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$epsilon, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$epsilon, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$epsilon, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$epsilon, log10(data.prcc$NNQ))
-plot(data.prcc$epsilon, data.prcc$Abs_Benefit)
-plot(data.prcc$epsilon, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$R_0, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$R_0, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$R_0, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$R_0, log10(data.prcc$NNQ))
-plot(data.prcc$R_0, data.prcc$Abs_Benefit)
-plot(data.prcc$R_0, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$pi_t_triangle_center, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$pi_t_triangle_center, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$pi_t_triangle_center, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$pi_t_triangle_center, log10(data.prcc$NNQ))
-plot(data.prcc$pi_t_triangle_center, data.prcc$Abs_Benefit)
-plot(data.prcc$pi_t_triangle_center, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$T_lat_offset, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$T_lat_offset, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$T_lat_offset, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$T_lat_offset, log10(data.prcc$NNQ))
-plot(data.prcc$T_lat_offset, data.prcc$Abs_Benefit)
-plot(data.prcc$T_lat_offset, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.prcc$dispersion, data.prcc$R_0, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$dispersion, data.prcc$R_s, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$dispersion, data.prcc$R_q, ylim=c(0, max(data.prcc$R_0)))
-plot(data.prcc$dispersion, log10(data.prcc$NNQ))
-plot(data.prcc$dispersion, data.prcc$Abs_Benefit)
-plot(data.prcc$dispersion, data.prcc$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(t(c(1,2)))
-plot(data.prcc$pi_t_triangle_center, data.prcc$ks)
-plot(data.prcc$T_lat_offset, data.prcc$ks)
-
-decile_plot_fcn(data.prcc, params.set)
-
-data.prcc_store <- data.prcc
-
-# Partial Rank Correlation using "ppcor" package
-require(ppcor)
-pcor(data.prcc[,c("R_s",names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$estimate[1,]
-pcor(data.prcc[,c("R_s",names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$p.value[1,]
-pcor(data.prcc[,c("Abs_Benefit",names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$estimate[1,]
-pcor(data.prcc[,c("Abs_Benefit",names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$p.value[1,]
-pcor(data.prcc[,c("Abs_Benefit_per_Qday", names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$estimate[1,]
-pcor(data.prcc[,c("Abs_Benefit_per_Qday", names(data.prcc)[11:length(names(data.prcc))])], method=c("spearman"))$p.value[1,]
-
-# Partial Rank Correlation using "sensitivity" package
-require(sensitivity)
-bonferroni.alpha <- 0.05/length(dimensions)
-data.prcc_sensitivity <- data.frame(matrix(rep(NA, 7*length(names)*(ncol(params.set)-1)), ncol=7)) 
-names(data.prcc_sensitivity) <- c("output","parameter","coef","bias","stderr","CImin","CImax")
-data.prcc_sensitivity$output <- rep(names, each = (ncol(params.set)-1))
-data.prcc_sensitivity$parameter <- rep(names(params.set)[-ncol(params.set)], times = length(names))
-for (output in names){
-  prcc <- pcc(data.prcc[,(length(names)+1):length(names(data.prcc))], data.prcc[,output], nboot = 100, rank=TRUE, conf=1-bonferroni.alpha)
-  summary <- print(prcc)
-  data.prcc_sensitivity[data.prcc_sensitivity$output == output,3:7] <- summary
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.prcc)[11:18]){
+  panel_plot_fcn(data = data.prcc, covariate = covariate)
+  cat ("Press [enter] to continue")
+  line <- readline()
 }
 
-require(ggplot2)
-ggplot(prcc_data.prcc, aes(x = parameter, y= coef)) +
-  facet_grid(output ~ .) +
-  geom_point() +
-  geom_hline(yintercept=0, color="red", size=0.25) +
-  theme_bw() +
-  geom_errorbar(data.prcc = prcc_data.prcc, aes(ymin = CImin, ymax = CImax), width = 0.1)
+# Compare ks value across deciles of covariates
+decile_plot_fcn(data.prcc, params.set)
+
+# Calculate PRCC and plot
+output <- plot_prcc_fcn(input_data = data.prcc, params.set = params.set, names = names, 
+                        nboot = 100, package = "sensitivity")
+output[1] # data
+output[2] # plot
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_PRCC.RData", sep=""))
 
@@ -630,37 +544,13 @@ data.hr$R_0 <- params.set[,"R_0"]
 data.hr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.hr$dispersion <- params.set[,"dispersion"]
 
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.hr$R_0, data.hr$R_0, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$R_0, data.hr$R_s, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$R_0, data.hr$R_q, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$R_0, log10(data.hr$NNQ))
-plot(data.hr$R_0, data.hr$Abs_Benefit)
-plot(data.hr$R_0, data.hr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
 
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.hr$pi_t_triangle_center, data.hr$R_0, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$pi_t_triangle_center, data.hr$R_s, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$pi_t_triangle_center, data.hr$R_q, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$pi_t_triangle_center, log10(data.hr$NNQ))
-plot(data.hr$pi_t_triangle_center, data.hr$Abs_Benefit)
-plot(data.hr$pi_t_triangle_center, data.hr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.hr$T_lat_offset, data.hr$R_0, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$T_lat_offset, data.hr$R_s, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$T_lat_offset, data.hr$R_q, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$T_lat_offset, log10(data.hr$NNQ))
-plot(data.hr$T_lat_offset, data.hr$Abs_Benefit)
-plot(data.hr$T_lat_offset, data.hr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.hr$d_inf, data.hr$R_0, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$d_inf, data.hr$R_s, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$d_inf, data.hr$R_q, ylim=c(0, max(data.hr$R_0)))
-plot(data.hr$d_inf, log10(data.hr$NNQ))
-plot(data.hr$d_inf, data.hr$Abs_Benefit)
-plot(data.hr$d_inf, data.hr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.hr)[11:15]){
+  panel_plot_fcn(data = data.hr, covariate = covariate)
+  cat ("Press [enter] to continue")
+  line <- readline()
+}
 
 summary(data.hr$R_0)
 summary(data.hr$R_hsb)
@@ -678,13 +568,6 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "NNQ"])
 
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
-
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "R_0"])
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "R_hsb"])
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "R_s"])
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "R_q"])
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "Abs_Benefit"])
-summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 & data.hr$T_lat_offset > 0, "NNQ"])
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_HR.RData", sep=""))
 
@@ -786,45 +669,12 @@ data.lr$R_0 <- params.set[,"R_0"]
 data.lr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.lr$dispersion <- params.set[,"dispersion"]
 
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.lr$R_0, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$R_0, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$R_0, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$R_0, log10(data.lr$NNQ))
-plot(data.lr$R_0, data.lr$Abs_Benefit)
-plot(data.lr$R_0, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.lr$pi_t_triangle_center, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$pi_t_triangle_center, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$pi_t_triangle_center, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$pi_t_triangle_center, log10(data.lr$NNQ))
-plot(data.lr$pi_t_triangle_center, data.lr$Abs_Benefit)
-plot(data.lr$pi_t_triangle_center, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.lr$T_lat_offset, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$T_lat_offset, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$T_lat_offset, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$T_lat_offset, log10(data.lr$NNQ))
-plot(data.lr$T_lat_offset, data.lr$Abs_Benefit)
-plot(data.lr$T_lat_offset, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.lr$d_inf, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$d_inf, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$d_inf, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$d_inf, log10(data.lr$NNQ))
-plot(data.lr$v, data.lr$Abs_Benefit)
-plot(data.lr$d_inf, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
-
-layout(cbind(c(1,2,3),c(4,5,6)))
-plot(data.lr$dispersion, data.lr$R_0, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$dispersion, data.lr$R_s, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$dispersion, data.lr$R_q, ylim=c(0, max(data.lr$R_0)))
-plot(data.lr$dispersion, log10(data.lr$NNQ))
-plot(data.lr$dispersion, data.lr$Abs_Benefit)
-plot(data.lr$dispersion, data.lr$Abs_Benefit_per_Qday, ylim=c(-0.4, 0.4))
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.lr)[11:15]){
+  panel_plot_fcn(data = data.lr, covariate = covariate)
+  cat ("Press [enter] to continue")
+  line <- readline()
+}
 
 summary(data.lr$R_0)
 summary(data.lr$R_hsb)
@@ -842,13 +692,6 @@ summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
 
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
-
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "R_0"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "R_hsb"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "R_s"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "R_q"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "Abs_Benefit"])
-summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 & data.lr$T_lat_offset > 0, "NNQ"])
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_LR.RData", sep=""))
 
