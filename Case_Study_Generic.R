@@ -340,7 +340,8 @@ params.set <- cbind(params.set,
                     R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min)
 params.set <- data.frame(params.set)
 
-for (i in 1:times){
+i=1
+while (i <= times){
   cat(".")
   if (i%%10 == 0){cat("|")}
   
@@ -401,9 +402,9 @@ for (i in 1:times){
         is.na(data.prcc[i,"R_hsb"])==1 |
         is.na(data.prcc[i,"R_s"])==1 |
         is.na(data.prcc[i,"R_q"])==1){
-    i=i-1  #re-run that set
+    i=i  #re-run that set
     cat("x")
-  }
+  } else {i = i+1}
   
 }
 
