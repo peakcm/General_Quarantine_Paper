@@ -725,3 +725,19 @@ panel.hist <- function(x, ...){
   rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
 }
 
+#### panel_plot_fcn ####
+panel_plot_fcn <- function(data, covariate, outputs = c("R_0","R_s","R_q","NNQ","Abs_Benefit","Abs_Benefit_per_Qday"),...){
+  layout(cbind(c(1,2,3),c(4,5,6)))
+  for (output in outputs){
+    if (output == "NNQ"){
+      plot(data[,as.character(covariate)], log10(data[,as.character(output)]),
+           xlab = as.character(covariate),
+           ylab = paste("log(",as.character(output),")"))
+    } else {
+      plot(data[,as.character(covariate)], data[,as.character(output)], 
+           ylim=c(0, max(data[,as.character(output)])),
+           xlab = as.character(covariate),
+           ylab = as.character(output))
+    }
+  }  
+}
