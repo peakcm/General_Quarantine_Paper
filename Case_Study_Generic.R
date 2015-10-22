@@ -22,7 +22,7 @@ desired_root <- "20151021_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_PRCC.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_HR.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_LR.RData", sep=""))
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", v, "_Plots.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
 
 # If workspaces are in their own folder, named the same as the root
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
@@ -438,13 +438,21 @@ for (covariate in names(data.prcc)[11:18]){
 # Compare ks value across deciles of covariates
 decile_plot_fcn(data.prcc, params.set)
 
-# Calculate PRCC and plot
-output <- plot_prcc_fcn(input_data = data.prcc, params.set = params.set, names = names, 
-                        nboot = 100, package = "sensitivity")
-output[1] # data
-output[2] # plot
+# Calculate PRCC
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit", "Rel_Benefit", "NNQ", "obs_to_iso_q", "Abs_Benefit_per_Qday","ks")
+indep_var <- c( "gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf")
+output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
+                        nboot = 100, package = "sensitivity", standardize = TRUE)
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_PRCC.RData", sep=""))
+# Plot PRCC
+ggplot(output, aes(x = parameter, y= coef)) +
+  facet_grid(output ~ .) +
+  geom_point() +
+  geom_hline(yintercept=0, color="red", size=0.25) +
+  theme_bw() +
+  geom_errorbar(data = data, aes(ymin = CImin, ymax = CImax), width = 0.1)
+
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC.RData", sep=""))
 
 #### Case Study in High Resource Setting ####
 
@@ -464,7 +472,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 50
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
@@ -476,7 +484,7 @@ params.set <- cbind(
   d_inf = data[sample, "d_inf"],
   pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
   dispersion = runif(n=times, min = 1, max = 1),
-  R_0 = runif(n = times, min = 1, max = 10))
+  R_0 = runif(n = times, min = 1, max = 5))
 
 for (i in 1:times){
   cat(".")
@@ -544,7 +552,6 @@ data.hr$R_0 <- params.set[,"R_0"]
 data.hr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.hr$dispersion <- params.set[,"dispersion"]
 
-
 # Plot each of the covariate - outcome scatterplots
 for (covariate in names(data.hr)[11:15]){
   panel_plot_fcn(data = data.hr, covariate = covariate)
@@ -569,7 +576,7 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "NNQ"])
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_HR.RData", sep=""))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_HR.RData", sep=""))
 
 #### Case Study in Low Resource Setting ####
 
@@ -589,7 +596,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 50
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
@@ -601,7 +608,7 @@ params.set <- cbind(
   d_inf = data[sample, "d_inf"],
   pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
   dispersion = runif(n=times, min = 1, max = 1),
-  R_0 = runif(n = times, min = 1, max = 10))
+  R_0 = runif(n = times, min = 1, max = 5))
 
 for (i in 1:times){
   cat(".")
@@ -693,23 +700,13 @@ summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_LR.RData", sep=""))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_LR.RData", sep=""))
 
 #### Plot R_q and R_s ####
 
 # Set range for relevant R_0 values
-R_0_relevant.min <- 2.2
-R_0_relevant.max <- 3.6
-
-layout(c(1))
-plot(data.hr[data.hr$R_0 > R_0_relevant.min & data.hr$R_0 < R_0_relevant.max, "R_s"], data.hr[data.hr$R_0 > R_0_relevant.min & data.hr$R_0 < R_0_relevant.max, "R_q"], col="lightblue", pch = 16, xlim = c(0, 4), ylim = c(0, 4), xlab = "R_s", ylab = "R_q")
-points(data.lr$R_s, data.lr$R_q, xlim = c(0, 4), ylim = c(0, 4), col="blue", pch = 16)
-points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="white", pch = 1)
-points(data.lr$R_0, data.lr$R_0, xlim = c(0, 4), ylim = c(0, 4), col="darkblue", pch = 20)
-
-# color is R0, shape is HR or LR
-# color bar along x and y for R0
-# add lines X and Y
+R_0_relevant.min <- 1
+R_0_relevant.max <- 5
 
 data.hr$Setting <- "HR"
 data.lr$Setting <- "LR"
@@ -735,7 +732,7 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_
   ggtitle(paste("Disease: ", disease))
 
 ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
-  annotate("rect", xmin = 2.2, xmax = 3.6, ymin = 0.5, ymax = 1, alpha = .1, fill = "green") +
+  annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
   geom_hline(y=1, col = "grey") +
   geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
   geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
@@ -749,5 +746,5 @@ ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_
   xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
   ggtitle(paste("Disease: ", disease))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/", root, "_Plots.RData", sep=""))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plots.RData", sep=""))
 
