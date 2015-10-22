@@ -741,3 +741,47 @@ panel_plot_fcn <- function(data, covariate, outputs = c("R_0","R_s","R_q","NNQ",
     }
   }  
 }
+
+#### plot_prcc_fcn ####
+plot_prcc_fcn <- function(input_data, params.set, names, nboot = 100, package = "sensitivity"){
+  
+  if (package == "sensitivity"){
+    
+    require(sensitivity)
+    bonferroni.alpha <- 0.05/length(dimensions)
+    data <- data.frame(matrix(rep(NA, 7*length(names)*(ncol(params.set)-1)), ncol=7)) 
+    names(data) <- c("output","parameter","coef","bias","stderr","CImin","CImax")
+    data$output <- rep(names, each = (ncol(params.set)-1))
+    data$parameter <- rep(names(params.set)[-ncol(params.set)], times = length(names))
+    for (output in names){
+      prcc <- pcc(input_data[,(length(names)+1):length(names(input_data))], input_data[,output], nboot = nboot, rank=TRUE, conf=1-bonferroni.alpha)
+      summary <- print(prcc)
+      data[data$output == output,3:7] <- summary
+    }
+    
+    require(ggplot2)
+    plot <- 
+      ggplot(data, aes(x = parameter, y= coef)) +
+      facet_grid(output ~ .) +
+      geom_point() +
+      geom_hline(yintercept=0, color="red", size=0.25) +
+      theme_bw() +
+      geom_errorbar(data = data, aes(ymin = CImin, ymax = CImax), width = 0.1)
+    
+  } else if (package == "ppcor"){
+    
+    require(ppcor)
+    data <- data.frame(pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,])
+    data[,2] <- pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    data[,3] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+    data[,4] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    data[,5] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+    data[,6] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    names(data) <- c("R_s.estimate", "R_s.p", "Abs_Benefit.estimate", "Abs_Benefit.p", "Abs_Benefit_per_Qday.estimate", "Abs_Benefit_per_Qday.p")
+    
+    plot = NA
+  }
+  
+  return(list(data, plot))
+}
+
