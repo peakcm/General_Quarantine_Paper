@@ -15,7 +15,7 @@ library(reshape)
 library(psych)
 
 #### Load Workspaces ####
-desired_root <- "20151021_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -309,7 +309,7 @@ data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
 
 # Sample from posterior distributions for each parameter independently
-params.set <- cbind(
+params.set.prcc <- cbind(
   T_lat_offset = sample(data$T_lat_offset, size = times, replace = TRUE),
   d_inf = sample(data$d_inf, size = times, replace = TRUE),
   pi_t_triangle_center = sample(data$pi_t_triangle_center, size = times, replace = TRUE) )
@@ -331,29 +331,29 @@ R_0.max <- 3
 dispersion.min <- 1
 dispersion.max <- 5
 
-params.set <- cbind(params.set,
+params.set.prcc <- cbind(params.set.prcc,
                     gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
                     prob_CT = lhs[,2]*(prob_CT.max - prob_CT.min) + prob_CT.min,
                     CT_delay = lhs[,3]*(CT_delay.max - CT_delay.min) + CT_delay.min,
                     epsilon = lhs[,4]*(epsilon.max - epsilon.min) + epsilon.min,
                     dispersion = lhs[,6]*(dispersion.max - dispersion.min) + dispersion.min,
                     R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min)
-params.set <- data.frame(params.set)
+params.set.prcc <- data.frame(params.set.prcc)
 
 i=1
 while (i <= times){
   cat(".")
   if (i%%10 == 0){cat("|")}
   
-  gamma <- as.numeric(params.set[i,"gamma"])
-  prob_CT <- as.numeric(params.set[i,"prob_CT"])
-  parms_CT_delay$parm2 <- as.numeric(params.set[i,"CT_delay"])
-  parms_epsilon$parm2 <- as.numeric(params.set[i,"epsilon"])
-  parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
-  parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
-  parms_d_inf$parm2 <- as.numeric(params.set[i,"d_inf"])
-  parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set[i,"R_0"]), as.numeric(params.set[i,"R_0"]))
-  dispersion <- as.numeric(params.set[i, "dispersion"])
+  gamma <- as.numeric(params.set.prcc[i,"gamma"])
+  prob_CT <- as.numeric(params.set.prcc[i,"prob_CT"])
+  parms_CT_delay$parm2 <- as.numeric(params.set.prcc[i,"CT_delay"])
+  parms_epsilon$parm2 <- as.numeric(params.set.prcc[i,"epsilon"])
+  parms_pi_t$triangle_center <- as.numeric(params.set.prcc[i,"pi_t_triangle_center"])
+  parms_T_lat$anchor_value <- as.numeric(params.set.prcc[i,"T_lat_offset"])
+  parms_d_inf$parm2 <- as.numeric(params.set.prcc[i,"d_inf"])
+  parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set.prcc[i,"R_0"]), as.numeric(params.set.prcc[i,"R_0"]))
+  dispersion <- as.numeric(params.set.prcc[i, "dispersion"])
   
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
     
@@ -361,7 +361,7 @@ while (i <= times){
       n_pop_input <- 200
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
       n_pop_input <- 200
-    } else if (subseq_interventions == "s" | subseq_interventions == "q" & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
       n_pop_input <- 200
     } else {n_pop_input <- n_pop}
     
@@ -418,17 +418,17 @@ data.prcc[data.prcc$NNQ < 1,"NNQ"] <- 1
 data.prcc[data.prcc$NNQ > 9999,"NNQ"] <- 9999
 data.prcc[data.prcc$NNQ == Inf,"NNQ"] <- 9999
 data.prcc[,"Abs_Benefit_per_Qday"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"obs_to_iso_q"]
-data.prcc$gamma <- params.set[,"gamma"]
-data.prcc$prob_CT <- params.set[,"prob_CT"]
-data.prcc$CT_delay <- params.set[,"CT_delay"]
-data.prcc$epsilon <- params.set[,"epsilon"]
-data.prcc$R_0 <- params.set[,"R_0"]
-data.prcc$dispersion <- params.set[,"dispersion"]
-data.prcc$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data.prcc$T_lat_offset <- params.set[,"T_lat_offset"]
-data.prcc$d_inf <- params.set[,"d_inf"]
+data.prcc$gamma <- params.set.prcc[,"gamma"]
+data.prcc$prob_CT <- params.set.prcc[,"prob_CT"]
+data.prcc$CT_delay <- params.set.prcc[,"CT_delay"]
+data.prcc$epsilon <- params.set.prcc[,"epsilon"]
+data.prcc$R_0 <- params.set.prcc[,"R_0"]
+data.prcc$dispersion <- params.set.prcc[,"dispersion"]
+data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
+data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
+data.prcc$d_inf <- params.set.prcc[,"d_inf"]
 
-Plot each of the covariate - outcome scatterplots
+# Plot each of the covariate - outcome scatterplots
 for (covariate in names(data.prcc)[11:18]){
   panel_plot_fcn(data = data.prcc, covariate = covariate)
 #   cat ("Press [enter] to continue")
@@ -436,7 +436,7 @@ for (covariate in names(data.prcc)[11:18]){
 }
 
 # Compare ks value across deciles of covariates
-decile_plot_fcn(data.prcc, params.set)
+decile_plot_fcn(data.prcc, params.set.prcc)
 
 # Calculate PRCC
 dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit", "Rel_Benefit", "NNQ", "obs_to_iso_q", "Abs_Benefit_per_Qday","ks")
@@ -450,7 +450,7 @@ ggplot(output, aes(x = parameter, y= coef)) +
   geom_point() +
   geom_hline(yintercept=0, color="red", size=0.25) +
   theme_bw() +
-  geom_errorbar(data = data, aes(ymin = CImin, ymax = CImax), width = 0.1)
+  geom_errorbar(data = output, aes(ymin = CImin, ymax = CImax), width = 0.1)
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC.RData", sep=""))
 
