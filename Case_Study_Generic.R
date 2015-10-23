@@ -63,7 +63,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 
 
 # Ranges for particle filter
-T_lat_offset.min <- -7
+T_lat_offset.min <- 0
 T_lat_offset.max <- 2
 d_inf.min <- 10
 d_inf.max <- 40
@@ -303,7 +303,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
@@ -428,11 +428,11 @@ data.prcc$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 data.prcc$T_lat_offset <- params.set[,"T_lat_offset"]
 data.prcc$d_inf <- params.set[,"d_inf"]
 
-# Plot each of the covariate - outcome scatterplots
+Plot each of the covariate - outcome scatterplots
 for (covariate in names(data.prcc)[11:18]){
   panel_plot_fcn(data = data.prcc, covariate = covariate)
-  cat ("Press [enter] to continue")
-  line <- readline()
+#   cat ("Press [enter] to continue")
+#   line <- readline()
 }
 
 # Compare ks value across deciles of covariates
@@ -472,7 +472,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
@@ -555,8 +555,8 @@ data.hr$dispersion <- params.set[,"dispersion"]
 # Plot each of the covariate - outcome scatterplots
 for (covariate in names(data.hr)[11:15]){
   panel_plot_fcn(data = data.hr, covariate = covariate)
-  cat ("Press [enter] to continue")
-  line <- readline()
+  # cat ("Press [enter] to continue")
+  # line <- readline()
 }
 
 summary(data.hr$R_0)
@@ -596,7 +596,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
@@ -679,8 +679,8 @@ data.lr$dispersion <- params.set[,"dispersion"]
 # Plot each of the covariate - outcome scatterplots
 for (covariate in names(data.lr)[11:15]){
   panel_plot_fcn(data = data.lr, covariate = covariate)
-  cat ("Press [enter] to continue")
-  line <- readline()
+  # cat ("Press [enter] to continue")
+  # line <- readline()
 }
 
 summary(data.lr$R_0)
