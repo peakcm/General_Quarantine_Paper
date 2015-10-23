@@ -327,12 +327,17 @@ next_generation_fcn <- function(Pop,
   index = 1
   for (i in 1:length(children_list)){     # for each list of children
     if (index <= pop_limit){
-      if (sum(children_list[[i]]==1)>0){    # if there is at least 1 onward infection by person i
-        count <- sum(children_list[[i]]==1)   
+      if (sum(children_list[[i]]>=1)>0){    # if there is at least 1 onward infection by person i
+        count <- sum(children_list[[i]]) 
+        days <- which(children_list[[i]] > 0)
+        day_of_inf <- c()
+        for (ind in days){
+          day_of_inf <- c(day_of_inf, rep(x = ind, times = children_list[[i]][ind]))
+        }
         for (j in seq(from=0, to=count-1)){           # for each child j infected by person i
           Pop_2[index+j, "infector"] <- i
           Pop_2[index+j, "t_obs_infector"] <- Pop[i,"t_obs"]
-          Pop_2[index+j, "t_infection"] <- which(children_list[[i]]==1)[j+1] + Pop[i, "T_lat"]     
+          Pop_2[index+j, "t_infection"] <- day_of_inf[j+1] + Pop[i, "T_lat"]     
         }
         index <- index + count     
       }
