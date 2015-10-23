@@ -502,7 +502,7 @@ for (i in 1:times){
       n_pop_input <- 200
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
       n_pop_input <- 200
-    } else if (subseq_interventions == "s" | subseq_interventions == "q" & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
       n_pop_input <- 200
     } else {n_pop_input <- n_pop}
     In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
@@ -626,7 +626,7 @@ for (i in 1:times){
       n_pop_input <- 200
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
       n_pop_input <- 200
-    } else if (subseq_interventions == "s" | subseq_interventions == "q" & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
       n_pop_input <- 200
     } else {n_pop_input <- n_pop}
     In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
