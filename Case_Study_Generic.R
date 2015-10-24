@@ -319,11 +319,11 @@ dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion")
 lhs <- maximinLHS(times, length(dimensions))
 
 gamma.min <- 0.2
-gamma.max <- 0.9
-prob_CT.min <- 0.25
+gamma.max <- 1
+prob_CT.min <- 0.2
 prob_CT.max <- 1
 CT_delay.min <- 0
-CT_delay.max <- 5
+CT_delay.max <- 7
 epsilon.min <- 0
 epsilon.max <- 7
 R_0.min <- 1
