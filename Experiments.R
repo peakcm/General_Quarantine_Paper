@@ -1140,3 +1140,26 @@ ggplot(data, aes(x=generation, y=count, group=trial, color=intervention)) +
         legend.key=element_rect(size=5, color="white"),
         legend.key.size = unit(2, "lines"))
   
+
+#### Serial interval for Pertussis ####
+# Knight 1954
+day <- seq(0, 40, 2)
+counts <- c(3, 1, 1, 1, 1, 1, 2, 2, 1, 1, 5, 1, 4, 3, 5, 5, 4, 2, 2, 2, 2)
+data_knight <- cbind(day, counts)
+
+sim_dist_1 <- c()
+for (i in 1:length(day)){sim_dist_1 <- c(sim_dist_1, rep(day[i], times=counts[i]))}
+
+hist(sim_dist_1[sim_dist_1 > 2], breaks = seq(0, 42, 2), freq = FALSE)
+
+fitdistr(sim_dist_1, densfun = "gamma")
+
+# serial interval approximation
+parms_serial_interval <- list("gamma", 1.2959, 0.06541) # Approximation from Stocks 1933 table
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=48, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))

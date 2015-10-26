@@ -15,7 +15,7 @@ library(reshape)
 library(psych)
 
 #### Load Workspaces ####
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151026_Pertussis" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -196,6 +196,44 @@ T_lat_offset.min <- -10
 T_lat_offset.max <- 4
 d_inf.min <- 5
 d_inf.max <- 12*7
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
+#### Disease: Hepatitis A ####
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "HepatitisA"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("gamma", 65.478798, 2.438040) # Approximation from Vink cf Brodribb
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("gamma", 143.325515, 4.911873, 999, "independent", "independent") #Using data from Pickles 1930
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# Ranges for particle filter
+T_lat_offset.min <- -20
+T_lat_offset.max <- 4
+d_inf.min <- 2
+d_inf.max <- 15
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
