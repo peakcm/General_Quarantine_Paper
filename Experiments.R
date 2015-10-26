@@ -816,7 +816,7 @@ hist(sim_dist_2[sim_dist_2 > 2 & sim_dist_2 <=48], breaks = seq(0, 48, 1), freq 
 fitdistr(sim_dist_2[sim_dist_2 > 2], densfun = "gamma")
 
 # serial interval approximation
-parms_serial_interval <- list("gamma", 1.2959, 0.06541) # Approximation from Stocks 1933 table
+parms_serial_interval <- list("gamma", 2.8929778, 1.2398473) # Approximation from Stocks 1933 table
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
@@ -1141,25 +1141,49 @@ ggplot(data, aes(x=generation, y=count, group=trial, color=intervention)) +
         legend.key.size = unit(2, "lines"))
   
 
-#### Serial interval for Pertussis ####
+#### Serial interval for Hepatitis A ####
 # Knight 1954
-day <- seq(0, 40, 2)
+day <- seq(1, 41, 2)
 counts <- c(3, 1, 1, 1, 1, 1, 2, 2, 1, 1, 5, 1, 4, 3, 5, 5, 4, 2, 2, 2, 2)
+
 data_knight <- cbind(day, counts)
 
 sim_dist_1 <- c()
 for (i in 1:length(day)){sim_dist_1 <- c(sim_dist_1, rep(day[i], times=counts[i]))}
+sim_dist_1 <- sim_dist_1/sum(sim_dist_1)
 
-hist(sim_dist_1[sim_dist_1 > 2], breaks = seq(0, 42, 2), freq = FALSE)
+hist(sim_dist_1, breaks = seq(0, 60, 2), freq = FALSE)
 
 fitdistr(sim_dist_1, densfun = "gamma")
 
 # serial interval approximation
-parms_serial_interval <- list("gamma", 1.2959, 0.06541) # Approximation from Stocks 1933 table
+parms_serial_interval <- list("gamma", 2.20939329, 0.09213649)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
-      from=0, to=48, col="green", lwd=2,
+      from=0, to=60, col="green", lwd=2,
       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
 hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+
+# Vink 2014 cf Brodribb 1952
+data<-c(20, 21, 21, 23, 24, 24, 25, 25, 25, 26, 26, 26, 27, 27, 27, 27, 28,28, 28, 28, 29, 29, 30, 31, 31, 32, 32, 32, 47, 48, 48, 50, 50, 51,51, 51, 51, 52, 54, 54, 55, 57, 57, 59, 59, 62, 63, 72, 79, 66, 90, 96)
+data_2 <- data[data<40]
+fitdistr(data_2, "gamma")
+
+curve(add=TRUE, dgamma(x, shape=65.478798, rate=2.438040),
+      from=0, to=60, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+
+#### Incubation period for Hepatitis A ####
+
+data <- c(rep(26, 6), rep(27, 6), rep(28, 4), rep(29, 7), rep(30, 5), rep(31, 5), rep(32, 2), rep(33, 1), rep(34, 2), rep(35, 1))
+hist(data, freq=FALSE, xlim = c(0, 40))
+
+fitdistr(data, "gamma")
+curve(add=TRUE, dgamma(x, shape= 143.325515,  rate= 4.911873),
+            from=0, to=70, col="green", lwd=2,
+            main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
