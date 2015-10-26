@@ -483,12 +483,17 @@ output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_
                         nboot = 100, package = "sensitivity", standardize = TRUE)
 
 # Plot PRCC
-ggplot(output, aes(x = parameter, y= coef)) +
+plot_prcc <- ggplot(output, aes(x = parameter, y= coef)) +
   facet_grid(output ~ .) +
   geom_point() +
   geom_hline(yintercept=0, color="red", size=0.25) +
   theme_bw() +
   geom_errorbar(data = output, aes(ymin = CImin, ymax = CImax), width = 0.1)
+plot_prcc
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot_prcc.pdf", sep=""))
+plot(plot_prcc)
+dev.off()
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC.RData", sep=""))
 
