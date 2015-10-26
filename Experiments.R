@@ -768,26 +768,109 @@ ggplot(prcc_data, aes(x = parameter, y= coef)) +
 
 # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_9_20150806_measles1000reps.RData")
 
-#### Experiment 10: Optimize serial interval for Pertussis Case study ####
-# load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_10_20150808_4000reps.RData')
+#### Experiment 10: Optimize serial interval and incubation period for Pertussis Case study ####
 
 # Treat the prodrome as the onset of symptoms. Because, for a contact under SM, they will be suspecting pertussis
 
-set.seed(45464)
+# serial interval approximation
+# Data from te Beest 2014
+n = 239
+mean = 25.2
+q_05 <- 3
+q_25 <- 10
+q_50 <- 20
+q_75 <- 31
+q_95 <- 69.1
 
-background_intervention = "u"
+sim_dist_1 <- c(rep(q_05, 5), rep(q_25, 25), rep(q_50, 25), rep(q_75, 25), rep(q_95, 5))
+
+hist(sim_dist_1, breaks = seq(0, 70, 5), freq = FALSE)
+
+fitdistr(sim_dist_1, densfun = "gamma")
+
+# serial interval approximation
+parms_serial_interval <- list("gamma", 2.45585778, .11071164) # Approximation from te Beest reported quantiles
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=70, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2), breaks = seq(0, 150, 5))
+
+# Data from te Stocks 1933
+# Note that this data is most likely biased towards early periods since simultaneous infection events likely account for many of the short intervals.
+day <- c(0,1,2,3,4,7, 13.5, 19, 24, 31, 38, 66, 135)
+counts <- c(465, 26, 12, 18, 35, 286, 231, 42, 61, 34, 18, 32, 31)
+freq <- c(465, 26, 12, 18, 35, 57.2, 28.9, 14, 8.7, 4.9, 2.6, 1.6, 0.3)
+
+stocks_data <- cbind(day, counts, freq)
+
+# Using counts
+sim_dist_2 <- c()
+for (i in 1:length(day)){sim_dist_2 <- c(sim_dist_2, rep(day[i], times=counts[i]))}
+
+hist(sim_dist_2[sim_dist_2 > 2], breaks = seq(0, 136, 2), freq = FALSE)
+hist(sim_dist_2[sim_dist_2 > 2 & sim_dist_2 <=48], breaks = seq(0, 48, 1), freq = FALSE)
+
+fitdistr(sim_dist_2[sim_dist_2 > 2], densfun = "gamma")
+
+# serial interval approximation
+parms_serial_interval <- list("gamma", 1.2959, 0.06541) # Approximation from Stocks 1933 table
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=48, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+
+# Using "freq"
+sim_dist_3 <- c()
+for (i in 1:length(day)){sim_dist_3 <- c(sim_dist_3, rep(day[i], times=round(freq[i])))}
+
+hist(sim_dist_3[sim_dist_3 > 2], breaks = seq(0, 136, 2), freq = FALSE)
+hist(sim_dist_3[sim_dist_3 > 2 & sim_dist_3 <= 48], breaks = seq(0, 48, 1), freq = FALSE)
+
+fitdistr(sim_dist_3[sim_dist_3 > 2], densfun = "gamma")
+
+# serial interval approximation
+parms_serial_interval <- list("gamma", 1.89698045, 0.17471522) # Approximation from Stocks 1933 table
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=84, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+
+# Using Vink 2014 AJE
+parms_serial_interval <- list("gamma", 2, 0.06) # Approximation from Vink's data and distribution
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+hist(rgamma(1000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2), breaks = seq(0, 150, 5), freq=FALSE)
+curve(add=TRUE, dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+      from=0, to=150, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+sort(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))[1000000*0.95]
+
+
+# Incubation period
+# 7-10 days normally. Range is 4-21 though
+parms_T_inc = list("normal", 7, (10-7)/1.96, 999, "independent", "independent") #Gordon
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+curve(add=FALSE, dnorm(x, mean = parms_T_inc$parm1, sd =parms_T_inc$parm2),
+      from=0, to=21, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+summary(rnorm(1000000, mean=parms_T_inc$parm1, sd=parms_T_inc$parm2))
+sort(rnorm(1000000, mean=parms_T_inc$parm1, sd=parms_T_inc$parm2))[1000000*0.025]
+sort(rnorm(1000000, mean=parms_T_inc$parm1, sd=parms_T_inc$parm2))[1000000*0.975]
 
 # Also consider uniform triangle Try to match serial interval when I know it
 parms_pi_t <- list("uniform", 0.50)
 names(parms_pi_t) <- c("distribution","triangle_center")
-
-# Eyeball fit. Very rough.
-parms_serial_interval <- list("weibull", 2, 22)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-# Dunno
-parms_R_0 = list("uniform", 1.1, 10, 999, "independent", "independent")
-names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # 7-10 days normally. Range is 4-21 though
 parms_T_inc = list("triangle", 4, 21, 8.5, "independent", "independent")
@@ -804,106 +887,6 @@ names(parms_d_inf) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anch
 # usually 4-11 weeks. peak 7 weeks. up to 16 weeks
 parms_d_symp = list("triangle", 4*7, 7*7, 16*7, "independent", "independent")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
-# Dunno
-prob_CT <- 0.5
-
-# Dunno
-parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
-names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
-# Dunno
-parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
-names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
-
-n_pop = 50
-num_generations <- 5
-times <- 4000
-names <- c("R_0","ks")
-data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
-names(data) <- names
-dimensions <- c("T_lat_offset", "d_symp_lower","d_symp_upper","d_inf_offset","pi_t_triangle_center")
-
-require(lhs)
-lhs <- maximinLHS(times, length(dimensions))
-
-T_lat_offset.min <- -4
-T_lat_offset.max <- 4
-d_inf_lower.min <- 5
-d_inf_lower.max <- 20
-d_inf_upper.min <- 21
-d_inf_upper.max <- 30
-pi_t_triangle_center.min <- 0
-pi_t_triangle_center.max <- 1
-
-params.set <- cbind(
-  T_lat_offset = lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min,
-  d_inf_lower = lhs[,2]*(d_inf_lower.max - d_inf_lower.min) + d_inf_lower.min,
-  d_inf_upper = lhs[,3]*(d_inf_upper.max - d_inf_upper.min) + d_inf_upper.min,
-  pi_t_triangle_center = lhs[,4]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min)
-
-for (i in 1:times){
-  cat('\nIteration',i, '\n')
-  
-  parms_T_lat$anchor_value <- as.numeric(params.set[i,"T_lat_offset"])
-  parms_d_inf$parm1 <- as.numeric(params.set[i,"d_inf_lower"])
-  parms_d_inf$parm2 <- as.numeric(params.set[i,"d_inf_upper"])
-  parms_pi_t$triangle_center <- as.numeric(params.set[i,"pi_t_triangle_center"])
-  
-  for (subseq_interventions in c(background_intervention)){      
-    In_Out <- repeat_call_fcn(n_pop=n_pop, 
-                              parms_T_inc, 
-                              parms_T_lat, 
-                              parms_d_inf, 
-                              parms_d_symp, 
-                              parms_R_0, 
-                              parms_epsilon, 
-                              parms_pi_t,
-                              num_generations,
-                              background_intervention,
-                              subseq_interventions,
-                              gamma,
-                              prob_CT,
-                              parms_CT_delay,
-                              parms_serial_interval)
-    if (subseq_interventions == background_intervention){
-      data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-      data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
-    }
-    if (subseq_interventions == "hsb"){
-      data[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-    }
-    if (subseq_interventions == "s"){
-      data[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-    }
-    if (subseq_interventions == "q"){
-      data[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-      data[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
-    }
-  }
-}
-
-data$T_lat_offset <- params.set[,"T_lat_offset"]
-data$d_inf_lower <- params.set[,"d_inf_lower"]
-data$d_inf_upper <- params.set[,"d_inf_upper"]
-data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data_store <- data
-
-# Serial Interval Inspection
-layout(cbind(c(1),c(2),c(3),c(4)))
-plot(data$T_lat_offset, data$ks)
-plot(data$d_inf_lower, data$ks)
-plot(data$d_inf_upper, data$ks)
-plot(data$pi_t_triangle_center, data$ks)
-pcor(data[,c("ks","T_lat_offset","d_inf_lower","d_inf_upper","pi_t_triangle_center")])$estimate[1,]
-pcor(data[,c("ks","T_lat_offset","d_inf_lower","d_inf_upper","pi_t_triangle_center")])$p.value[1,]
-
-data <- data[data$T_lat_offset > -2 & data$T_lat_offset < 1,]
-data <- data[data$T_lat_offset > -1.5 & data$T_lat_offset < -0.5,]
-data <- data[data$d_inf_lower > 6,]
-data <- data[data$d_inf_upper < 28,]
-
-# save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_10_20150808_4000reps.RData")
 
 #### Experiment 11: Optimize serial interval for Measles Case study ####
 # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/Experiments_10_20150808_4000reps.RData')
