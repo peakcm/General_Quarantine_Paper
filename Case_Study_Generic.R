@@ -15,7 +15,7 @@ library(reshape)
 library(psych)
 
 #### Load Workspaces ####
-desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -158,6 +158,44 @@ T_lat_offset.min <- -4
 T_lat_offset.max <- 4
 d_inf.min <- 5
 d_inf.max <- 25
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
+#### Disease: Pertussis ####
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "Pertussis"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("gamma", 2.45585778, .11071164) # Approximation from te Beest reported quantiles
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("normal", 7, (10-7)/1.96, 999, "independent", "independent")
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# Ranges for particle filter
+T_lat_offset.min <- -10
+T_lat_offset.max <- 4
+d_inf.min <- 5
+d_inf.max <- 12*7
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -341,7 +379,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
@@ -515,7 +553,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
@@ -639,7 +677,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
