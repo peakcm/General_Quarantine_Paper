@@ -44,6 +44,11 @@ Draw_Dist_fcn <- function(Vector, distribution, parm1, parm2, parm3){
     if (parm2 > parm1){Draw_Dist[Draw_Dist > parm2] <- parm2} #truncate at the upper bound of the confidence interval
   }
   
+  if (distribution == "normal"){
+    Draw_Dist <- rnorm(Vector, mean = parm1, sd = parm2)
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  
   if (distribution == "triangle"){
     # parm1 is a, the minimum
     # parm2 is b, the maximum
