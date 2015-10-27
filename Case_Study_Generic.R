@@ -250,7 +250,7 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("lognormal", 15.53418, 1.253332) 
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("normal", 11.82245, 1.1853, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
@@ -276,6 +276,45 @@ d_inf.min <- 2
 d_inf.max <- 30
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
+
+#### Disease: InfluenzaA ####
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "InfluenzaA"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("normal", 2.2, 0.8) 
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("lognormal", 1.4, 1.5, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# Ranges for particle filter
+T_lat_offset.min <- -3
+T_lat_offset.max <- 3
+d_inf.min <- 2
+d_inf.max <- 30
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
 
 #### Particle Filter ####
 setwd(dir = "~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/")
