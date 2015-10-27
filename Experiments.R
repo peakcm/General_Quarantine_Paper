@@ -1187,3 +1187,29 @@ curve(add=TRUE, dgamma(x, shape= 143.325515,  rate= 4.911873),
             from=0, to=70, col="green", lwd=2,
             main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 
+#### Serial Interval and incubation period for Influenza A ####
+
+curve(add=FALSE, dnorm(x, mean = 2.2,  sd = 0.8),
+      from=0, to=10, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+fitdistr(sim_dist_1, densfun = "normal")
+
+curve(add=TRUE, dnorm(x, mean = 15.9449541,  sd = 3.8380874),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+fitdistr(sim_dist_1, densfun = "gamma")
+
+curve(add=TRUE, dgamma(x, shape = 19.3224920,  rate = 1.2118250),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+
+# Incubation Period
+curve(add=TRUE, dlnorm(x, meanlog = log(1.4),  sdlog = log(1.5)),
+      from=0, to=10, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+hist(rlnorm(10000, meanlog = log(1.4),  sdlog = log(1.5)))
+summary(rlnorm(10000, meanlog = log(1.4),  sdlog = log(1.5)))
+sort(rlnorm(10000, meanlog = log(1.4),  sdlog = log(1.5)))[10000*0.95]
