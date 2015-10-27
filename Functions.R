@@ -15,10 +15,9 @@
 #### Generic: rpois.od ####
 # Courtesy of https://stat.ethz.ch/pipermail/r-help/2002-June/022425.html
 rpois.od<-function (n, lambda,d=1) {
-  if (d==1)
-    rpois(n, lambda)
-  else
-    rnbinom(n, size=(lambda/(d-1)), mu=lambda)
+  if (lambda == 0){0
+    }else if (d==1) {rpois(n, lambda)
+      } else if (d > 1){rnbinom(n, size=(lambda/(d-1)), mu=lambda)}
 }
 
 #### Draw_Dist_fcn #### 
