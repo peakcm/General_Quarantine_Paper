@@ -495,7 +495,7 @@ repeat_call_fcn <- function(n_pop,
 
 #### serial_interval_fcn ####
 # Generate Serial Interval Distribution
-serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
+serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot="True"){
   output <- rep(NA, length(Pop2$ID))
   for (i in Pop2$ID){
     output[i] <- jitter(Pop2[i,"T_inc"] - Pop1[Pop1$ID == Pop2[i,"infector"], "T_inc"], amount = 1) #jitter to prevent ties
@@ -572,6 +572,14 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
                              from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2))
       ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
     }
+    if (parms_serial_interval$dist == "normal"){
+      fit <- fitdistr(output/24, "normal")
+      suppressWarnings(curve(multiplier*dnorm(x, mean = as.numeric(fit$estimate[1]), sd = as.numeric(fit$estimate[2])), 
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2))
+      suppressWarnings(curve(multiplier*dnorm(x, mean = parms_serial_interval$parm1, sd = parms_serial_interval$parm2),
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2))
+      ks <- ks.test(x=output/24, "pnorm", mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2)
+    }
     
   } else if (plot == "False"){
     #Need a multiplier for the curves to plot on the same axes    
@@ -586,6 +594,9 @@ serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot=TRUE){
     }
     if (parms_serial_interval$dist == "lognormal"){
       ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
+    }
+    if (parms_serial_interval$dist == "normal"){
+      ks <- ks.test(x=output/24, "pnorm", mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2, exact=FALSE)
     }
   }
   return(as.numeric(ks$statistic))

@@ -120,7 +120,7 @@ children_list <- children_list_fcn(Pop_alpha, parms_pi_t$distribution, parms_pi_
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 1 : n=', nrow(Pop_alpha), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
 
-intervention = "u"
+intervention = "hsb"
 Pop_beta <- next_generation_fcn(Pop = Pop_alpha,
                                 children_list = children_list,
                                 parms_T_inc = parms_T_inc,
@@ -135,7 +135,7 @@ Pop_beta <- next_generation_fcn(Pop = Pop_alpha,
                                 gamma=gamma,
                                 n_pop = n_pop)
 Pop_beta <- observe_and_isolate_fcn(Pop_beta, intervention = intervention)
-children_list <- children_list_fcn(Pop_beta, parms_pi_t$distribution, parms_pi_t$triangle_center, gamma, intervention = intervention, background_intervention, dispersion = dispersion)
+children_list <- children_list_fcn(Pop_beta, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma, intervention = intervention, background_intervention, dispersion = dispersion)
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 2 : n=', nrow(Pop_beta), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
 
@@ -243,24 +243,15 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
       from=0, to=40, col="green", lwd=2,
       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-# 
-# # Ebola serial interval approximation from Eichner
-# parms_serial_interval <- list("lognormal", 12.7, 4.31)
-# names(parms_serial_interval) <- c("dist","parm1","parm2")
-# 
-# curve(dlnorm(x, meanlog=log(parms_serial_interval$parm1), sdlog=log(sqrt(parms_serial_interval$parm2))),
-#       from=0, to=40, col="green", lwd=2,
-#       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 
-# # Pertussis serial interval approximation
-# parms_serial_interval <- list("weibull", 2, 22)
-# names(parms_serial_interval) <- c("dist","parm1","parm2")
-# 
-# curve(dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2),
-#       from=0, to=84, col="green", lwd=2,
-#       main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-# hist(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2),breaks = seq(from=0, to=84, by=7))
-# summary(rweibull(10000, parms_serial_interval$parm1, parms_serial_interval$parm2))
+# Influenza A
+parms_serial_interval <- list("normal", 2.2, 0.8) 
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+curve(dnorm(x, mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2)*100,
+      from=0, to=13, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution", add = F)
+
 
 #### Test overdispersion super spreading feature ####
 
