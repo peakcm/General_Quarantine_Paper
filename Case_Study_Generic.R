@@ -163,6 +163,8 @@ pi_t_triangle_center.max <- 1
 
 #### Disease: Pertussis ####
 
+# Note: probably substantially slower because d_inf is so much longer, for each individual the rpois is drawn that many more times.
+
 # Name the trial
 date <- format(Sys.time(), "%Y%m%d")
 disease <- "Pertussis"
@@ -172,7 +174,7 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("gamma", 2.45585778, .11071164) # Approximation from te Beest reported quantiles
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("normal", 7, (10-7)/1.96, 999, "independent", "independent")
+parms_T_inc = list("normal", 7, 1.53, 999, "independent", "independent") # (10-7)/1.96 = 1.53
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
@@ -195,7 +197,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 T_lat_offset.min <- -10
 T_lat_offset.max <- 4
 d_inf.min <- 5
-d_inf.max <- 12*7
+d_inf.max <- 14*7
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -230,10 +232,48 @@ parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 # Ranges for particle filter
-T_lat_offset.min <- -20
+T_lat_offset.min <- -14
 T_lat_offset.max <- 4
 d_inf.min <- 2
-d_inf.max <- 15
+d_inf.max <- 20
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
+#### Disease: Smallpox ####
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "Smallpox"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("lognormal", 15.53418, 1.253332) 
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("normal", 11.82245, 1.1853, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# Ranges for particle filter
+T_lat_offset.min <- -7
+T_lat_offset.max <- 7
+d_inf.min <- 2
+d_inf.max <- 30
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -417,7 +457,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 20
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
@@ -591,7 +631,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
@@ -715,7 +755,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
