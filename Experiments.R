@@ -1187,6 +1187,40 @@ curve(add=TRUE, dgamma(x, shape= 143.325515,  rate= 4.911873),
             from=0, to=70, col="green", lwd=2,
             main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
 
+#### Serial Interval and incubation period for Smallpox ####
+days <- c(1, 2, 3, 4, 5, 6, 7 ,8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37)
+data <- c(0, 0, 0, 0, 0, 1, 0, 1, 0, 6, 4,12,35,22,24,49, 8,13,13,11, 6, 1, 1, 1, 5, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1)
+
+sim_dist_1 <- c()
+for (i in 1:length(days)){sim_dist_1 <- c(sim_dist_1, rep(days[i], times=data[i]))}
+# sim_dist_1_dens <- sim_dist_1/sum(sim_dist_1)
+
+hist(sim_dist_1, breaks = seq(1,40), freq = FALSE)
+fitdistr(sim_dist_1, densfun = "lognormal")
+
+curve(add=TRUE, dlnorm(x, meanlog = 2.74304245,  sdlog = 0.22580560),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+fitdistr(sim_dist_1, densfun = "normal")
+
+curve(add=TRUE, dnorm(x, mean = 15.9449541,  sd = 3.8380874),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+fitdistr(sim_dist_1, densfun = "gamma")
+
+curve(add=TRUE, dgamma(x, shape = 19.3224920,  rate = 1.2118250),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+
+
+# Incubation Period
+curve(add=TRUE, dlnorm(x, meanlog = 2.47,  sdlog = 0.17),
+      from=0, to=40, col="green", lwd=2,
+      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
+hist(rlnorm(10000, meanlog = 2.47,  sdlog = 0.17), breaks = seq(1:40))
+
 #### Serial Interval and incubation period for Influenza A ####
 
 curve(add=FALSE, dnorm(x, mean = 2.2,  sd = 0.8),
