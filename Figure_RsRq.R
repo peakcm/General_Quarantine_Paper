@@ -70,7 +70,7 @@ names(set_5) <- c("name", "lower", "upper", "Setting")
 
 # Pertussis
 desired_root <- "20151026_Pertussis"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
 data.hr.lr.Pertussis <- data.hr.lr
 data.hr.lr.Pertussis$disease <- "Pertussis"
@@ -137,8 +137,17 @@ plot + # accoutrements
 p <- ggvis(data = data_master, x = ~R_s, y = ~R_q) 
 layer_points(p)
 
+diseases <- unique(data_master$disease)
+slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number")
 data_master %>% 
-  ggvis(x = ~R_s, y = ~R_q, fill = ~disease) %>%
-  filter(R_0 == eval(input_slider(0, 5))) %>%
-  layer_points()
+  ggvis(x = ~R_s, y = ~R_q, fill = ~disease, opacity := 0.5) %>%
+  filter(R_0 <= (eval(slider)+0.5)) %>%
+  filter(R_0 >= (eval(slider)-0.5)) %>%
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points() %>%
+  scale_numeric("x", domain = c(0, 5), nice = FALSE, label = "Symptom Monitoring") %>%
+  scale_numeric("y", domain = c(0, 5), nice = FALSE, label = "Quarantine")
+
+  
 
