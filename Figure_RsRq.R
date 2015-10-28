@@ -59,8 +59,8 @@ set_4 <- c("HepatitisA", 2, 2.5, "HR")
 names(set_4) <- c("name", "lower", "upper", "Setting")
 
 # Influenza A
-desired_root <- "20151027_InfluenzaA"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
+desired_root <- "20151028_InfluenzaA"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
 data.hr.lr.InfluenzaA <- data.hr.lr
 data.hr.lr.InfluenzaA$disease <- "InfluenzaA"
@@ -94,8 +94,8 @@ data_master <- rbind(data.hr.lr.Ebola,
                      data.hr.lr.MERS,
                      data.hr.lr.HepatitisA,
                      data.hr.lr.InfluenzaA,
-                     data.hr.lr.Pertussis,
-                     data.hr.lr.Smallpox)
+                     data.hr.lr.Smallpox,
+                     data.hr.lr.Pertussis)
 
 #### ggplot ####
 
@@ -151,6 +151,9 @@ layer_points(p)
 v_line <- data.frame(cbind(c(1.0000, 1.0001), c(0, 5)))
 names(v_line) <- c("R_s", "R_q")
 
+df <- data.frame(x = c(1, 1, 2, 2), y = c(2, 1, 1, 2))
+ggvis(df, props(x = ~x, y = ~y, stroke := "red"), layer_path())
+
 diseases <- unique(data_master$disease)
 slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number")
 data_master %>% 
@@ -159,12 +162,13 @@ data_master %>%
   filter(R_0 >= (eval(slider)-0.5)) %>%
   filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
   filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
-#   layer_rects(x = 0, x2 = 1, y = 1, y2 = 4, opacity := 0.1, fill = "yellow") %>%
+  # layer_rects(x = 0, x2 = 1, y = 1, y2 = 4, opacity := 0.1, fill = "yellow") %>%
 #   layer_rects(x = 1, x2 = 4, y = 0, y2 = 1, opacity := 0.1, fill = "blue") %>%
 #   layer_rects(x = 0, x2 = 1, y = 0, y2 = 1, opacity := 0.1, fill = "green") %>%
   layer_points() %>%
+  layer_points(x = eval(slider), y = eval(slider), fill := "grey", shape := "cross") %>%
+#   layer_text(x = eval(slider), y = eval(slider), text := "..R") %>%
   scale_numeric("x", domain = c(0, 5), nice = FALSE, label = "Symptom Monitoring") %>%
   scale_numeric("y", domain = c(0, 5), nice = FALSE, label = "Quarantine")
-
   
 
