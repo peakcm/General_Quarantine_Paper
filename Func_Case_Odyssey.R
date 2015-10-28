@@ -1,0 +1,1769 @@
+# Functions and Case Studies for Odyssey
+
+#### Functions -------------------------------------------
+# Oct 28
+#### Header #### 
+# Functions for Generalized Study of Quarantine vs Symptom Monitoring
+# Corey Peak
+# Version 1.0
+# August 19, 2015
+# Development Branch
+
+#### Notes to work on #### 
+# Measure elasticity. (% change in R for % change in attribute) (% change in R for % change in attribute variance)
+#
+# Add a duration of quaratine and symptom monitoring. don't isolate people if symptom onset is after T_obs + d_CT
+# start the timer from when they are placed under S or Q. Alternatively, start timer at day of infection (as if they could guess)
+# compare abs_benefit per Q day under conditions where we modify prob_CT, d_CT, and epsilon (how frequently you check ppl)
+
+#### Generic: rpois.od ####
+# Courtesy of https://stat.ethz.ch/pipermail/r-help/2002-June/022425.html
+rpois.od<-function (n, lambda,d=1) {
+  if (lambda == 0){0
+  }else if (d==1) {rpois(n, lambda)
+  } else if (d > 1){rnbinom(n, size=(lambda/(d-1)), mu=lambda)}
+}
+
+#### Draw_Dist_fcn #### 
+# Draw from Distributions of Disease Attributes
+Draw_Dist_fcn <- function(Vector, distribution, parm1, parm2, parm3){
+  # Unit is days
+  if (distribution == "gamma"){
+    Draw_Dist <- rgamma(Vector, shape=parm1, rate=parm2)
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  
+  if (distribution == "uniform"){
+    Draw_Dist <- runif(Vector, min=parm1, max=parm2)
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  
+  if (distribution == "confit"){
+    # Use data from a confidence interval to recreate a normal distribution
+    # parm1 is the point estimate
+    # parm2 is the UPPER bound of the confidence interval
+    Draw_Dist <- rnorm(Vector, mean=parm1, sd=(abs(parm2 - parm1))/1.96)
+    Draw_Dist[Draw_Dist < 0] <- 0
+    if (parm2 > parm1){Draw_Dist[Draw_Dist > parm2] <- parm2} #truncate at the upper bound of the confidence interval
+  }
+  
+  if (distribution == "normal"){
+    Draw_Dist <- rnorm(Vector, mean = parm1, sd = parm2)
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  
+  if (distribution == "triangle"){
+    # parm1 is a, the minimum
+    # parm2 is b, the maximum
+    # parm3 is c, the most likely
+    if (parm3==999){cat('Error Draw_Dist_fcn: Must include parm3 if calling a triangle distribution')}
+    intermediate <- runif(Vector,0,1) # A vector of values that correspond to u in Marc's equation from EPI 260
+    Draw_Dist <- rep(NA, length(Vector))
+    Draw_Dist[intermediate < ((parm3 - parm1)/(parm2-parm1))] <- parm1 + sqrt(intermediate[intermediate < ((parm3 - parm1)/(parm2-parm1))]*(parm2-parm1)*(parm3-parm1))
+    Draw_Dist[intermediate >= ((parm3 - parm1)/(parm2-parm1))] <- parm2 - sqrt((1-intermediate[intermediate >= ((parm3 - parm1)/(parm2-parm1))])*(parm2-parm3)*(parm2-parm1))
+  }
+  
+  if (distribution == "weibull"){
+    Draw_Dist <- rweibull(Vector, shape=parm1, scale=parm2)
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  
+  if (distribution == "lognormal"){
+    Draw_Dist <- rlnorm(Vector, meanlog = log(parm1), sdlog = log(parm2))
+    Draw_Dist[Draw_Dist < 0] <- 0
+  }
+  return(Draw_Dist)
+}
+
+#### Anchor_fcn ####
+# Define some parameter by anchoring to another parameter by X days before or after
+Anchor_fcn <- function(Pop, anchor_value, anchor_target){
+  #input anchor value in days
+  output <- round(Pop[,anchor_target] + anchor_value*24)
+}
+
+#### Create_Pop ####
+# Create population characteristics
+Create_Pop <- function(n_pop,
+                       parms_T_inc,
+                       parms_T_lat,
+                       parms_d_inf,
+                       parms_d_symp,
+                       parms_R_0,
+                       parms_epsilon,
+                       generation,
+                       background_intervention,
+                       parms_CT_delay,
+                       gamma){
+  names <- c("ID", "T_inc", "T_lat", "d_inf", "d_symp", "epsilon", "R_0", "R_0_hsb_adjusted", "generation", "infector", "t_obs_infector", "background_intervention", "CT_delay")
+  Pop <- data.frame(matrix(rep(NA, n_pop*length(names)), ncol=length(names)))
+  names(Pop) <- names
+  Pop$ID      <- 1:nrow(Pop)
+  
+  # For time attributes, input in terms of days, then convert to hours, then round to the nearest hour.
+  # If the parameters are drawn independently of other parameters, do that first
+  if (parms_T_inc$anchor_value == "independent"){ Pop$T_inc   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_T_inc$dist, parms_T_inc$parm1, parms_T_inc$parm2, parms_T_inc$parm3)) }
+  if (parms_T_lat$anchor_value == "independent"){ Pop$T_lat   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_T_lat$dist, parms_T_lat$parm1, parms_T_lat$parm2, parms_T_lat$parm3)) }
+  if (parms_d_inf$anchor_value == "independent"){ Pop$d_inf   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_d_inf$dist, parms_d_inf$parm1, parms_d_inf$parm2, parms_d_inf$parm3)) }
+  if (parms_d_symp$anchor_value == "independent"){ Pop$d_symp  <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_d_symp$dist, parms_d_symp$parm1, parms_d_symp$parm2, parms_d_symp$parm2)) }
+  if (parms_epsilon$anchor_value == "independent"){ Pop$epsilon <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_epsilon$dist, parms_epsilon$parm1, parms_epsilon$parm2, parms_epsilon$parm3)) }
+  if (parms_R_0$anchor_value == "independent"){ Pop$R_0     <- Draw_Dist_fcn(rep(NA, n_pop), parms_R_0$dist, parms_R_0$parm1, parms_R_0$parm2, parms_R_0$parm3) }
+  if (parms_CT_delay$anchor_value == "independent"){ Pop$CT_delay <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_CT_delay$dist, parms_CT_delay$parm1, parms_CT_delay$parm2, parms_CT_delay$parm3)) }
+  
+  # If the parameters are anchored to other parameters, add or subtract anchor_value from the anchor_target
+  if (parms_T_inc$anchor_value != "independent"){Pop$T_inc <- Anchor_fcn(Pop, parms_T_inc$anchor_value, parms_T_inc$anchor_target)}
+  if (parms_T_lat$anchor_value != "independent"){Pop$T_lat <- Anchor_fcn(Pop, parms_T_lat$anchor_value, parms_T_lat$anchor_target)}
+  if (parms_d_inf$anchor_value != "independent"){Pop$d_inf <- Anchor_fcn(Pop, parms_d_inf$anchor_value, parms_d_inf$anchor_target)}
+  if (parms_d_symp$anchor_value != "independent"){Pop$d_symp <- Anchor_fcn(Pop, parms_d_symp$anchor_value, parms_d_symp$anchor_target)}
+  if (parms_epsilon$anchor_value != "independent"){Pop$epsilon <- Anchor_fcn(Pop, parms_epsilon$anchor_value, parms_epsilon$anchor_target)}
+  if (parms_R_0$anchor_value != "independent"){Pop$R_0 <- Anchor_fcn(Pop, parms_R_0$anchor_value, parms_R_0$anchor_target)}
+  if (parms_CT_delay$anchor_value != "independent"){Pop$CT_delay <- Anchor_fcn(Pop, parms_CT_delay$anchor_value, parms_CT_delay$anchor_target)}
+  
+  Pop$generation <- generation
+  Pop$background_intervention <- background_intervention
+  
+  if (generation == 1){
+    Pop$t_infection <- 0
+  } else {Pop$t_infection <- NA}
+  return(Pop)
+}
+
+#### t_obs and t_iso ####
+# Time of Observation and Isolation
+# There are four routes to isolation
+t_obs_u_fcn <- function(T_inc, d_symp, T_lat, d_inf){
+  # "u" denotes unisolated infection
+  # Their offspring are only listed for contact tracing ("observed")
+  # at the end of the infector's duration of disease (symptoms OR infectiousness)
+  t_obs_u <- max( (T_inc + d_symp), (T_lat + d_inf) )
+  return(t_obs_u)
+}
+
+t_obs_hsb_fcn <- function(T_inc, d_symp){
+  # "hsb" denotes health seeking behavior
+  # We assume an individual will seek health care at a random time during symptomatic disease
+  if (is.na(d_symp)==1) {cat("Error 1: t_obs_hsb_fcn ")}
+  if (is.na(T_inc)==1) {cat("Error 2: t_obs_hsb_fcn ")}
+  if (T_inc >= (T_inc + d_symp)) {cat("Error 3: t_obs_hsb_fcn ")}
+  t_obs_hsb <- runif(1, min = T_inc, max = (T_inc + d_symp) )
+  return(t_obs_hsb)
+}
+
+t_obs_fcn <- function(t_infection, t_obs_alpha, CT_delay){
+  # Both symptom monitoring "s" and quarantine "q" follow the same rule to choose when the individual begins observation
+  # An individual "beta" is observed whichever is later: when "alpha" infects "beta" or when "alpha" is observed
+  # Infections by alpha that occur before alpha is observed are themselves observed when alpha is observed
+  # Infections by alpha after alpha is observed are immediately observed because these infections occured in a healthcare setting
+  if (is.na(t_infection)==1) {cat("Error 1: t_obs_fcn ")}
+  if (is.na(t_obs_alpha)==1) {cat("Error 2: t_obs_fcn ")}
+  t_obs <- max(t_infection, t_obs_alpha) + CT_delay
+  return(t_obs)
+}
+
+t_iso_s_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, epsilon, background_intervention){
+  # "s" denotes symptom monitoring
+  # The first generation cannot be subject to symptom monitoring
+  # t_iso_s is the time an individual is isolated due to symptom monitoring
+  # Isolation due to symptom monitoring will occur at at time 1 or 2, whichever is earler:
+  # time 1 is the latter of: epsilon after symptom onset and time of observation
+  # time 2 is either the end of disease ("u") or following "hsb"
+  if (is.na(d_symp)==1) {cat("Error 1: t_iso_s_fcn ")}
+  if (is.na(T_inc)==1) {cat("Error 2: t_iso_s_fcn ")}
+  if (is.na(epsilon)==1) {cat("Error 3: t_iso_s_fcn ")}
+  if (is.na(t_obs)==1) {cat("Error 4: t_iso_s_fcn ")}
+  if (T_inc >= (T_inc + d_symp)) {cat("Error 5: t_iso_s_fcn ")}
+  
+  if (background_intervention == "u"){
+    t_iso_s <- min( max((T_inc + epsilon), t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
+  } else if (background_intervention == "hsb"){
+    t_iso_s <- min( max((T_inc + epsilon), t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+  }
+  return(t_iso_s)
+}
+
+t_iso_q_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, background_intervention){
+  # "q" denotes quarantine
+  # t_iso_1 is the time an individual is isolated due to quarantine
+  # Isolation due to quarantine will occur at at time 1 or 2, whichever is earler.
+  # 1 is the latter of: either symptom or infectiousness onset and time of observation
+  # 2 is the a random point of the symptomatic period due to health seeking behavior
+  if (is.na(d_symp)==1) {cat("Error 1: t_iso_q_fcn")}
+  if (is.na(T_inc)==1) {cat("Error 2: t_iso_q_fcn")}
+  if (is.na(T_lat)==1) {cat("Error 3: t_iso_q_fcn")}
+  if (is.na(t_obs)==1) {cat("Error 4: t_iso_q_fcn")}
+  if (T_inc >= (T_inc + d_symp)) {cat("Error5: t_iso_q_fcn")}
+  
+  if (background_intervention == "u"){
+    t_iso_q <- min( max(T_inc, t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
+  } else if (background_intervention == "hsb"){
+    t_iso_q <- min( max(T_inc, t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+  }
+  
+  return(t_iso_q)
+}
+
+#### observe_and_isolate_fcn ####
+# Create observation and isolation times for Population 
+observe_and_isolate_fcn <- function(Pop, intervention){
+  if (intervention == "u"){
+    Pop$t_obs <- apply(Pop, 1, function(x) t_obs_u_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']), as.numeric(x['T_lat']), as.numeric(x['d_inf'])))
+    Pop$t_iso <- Pop$t_obs
+  }
+  if (intervention == "hsb"){
+    Pop$t_obs <- round(apply(Pop, 1, function(x) t_obs_hsb_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']))))
+    Pop$t_iso <- Pop$t_obs
+  }
+  if (intervention == "s"){
+    # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
+    Pop$t_obs <- apply(Pop, 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    Pop$t_iso <- apply(Pop, 1, function(x) t_iso_s_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), as.numeric(x['epsilon']), x['background_intervention']))
+  }
+  if (intervention == "q"){
+    # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
+    Pop$t_obs <- apply(Pop, 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    Pop$t_iso <- apply(Pop, 1, function(x) t_iso_q_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), x['background_intervention']))
+  }
+  Pop[Pop$t_iso < Pop$t_obs,"t_obs"] <- Pop[Pop$t_iso < Pop$t_obs,"t_iso"]    # For those who were isolated due to health seeking behavior before they were observed through Q or S
+  return(Pop)
+}
+
+#### pi_t_fcn ####
+# Hourly R_0 considering isolation times
+pi_t_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention){   
+  # Distribute the individual's R_0 across their duration of infectiousness (d_inf)
+  # according to the chosen distribution of relative infectiousness (pi_t)
+  # Input should be in hours
+  
+  if (R_0 < 0){cat("Error 1: pi_t_fcn")}
+  if (d_inf <= 0){cat("Error 2: pi_t_fcn")}
+  if (d_inf != round(d_inf)){cat("Error 3: pi_t_fcn")}
+  if (triangle_center < 0){cat("Error 4: pi_t_fcn")}
+  if (triangle_center > 1){cat("Error 5: pi_t_fcn")}
+  
+  # Create the unisolated distribution of pi_t
+  if (distribution == "uniform"){
+    pi_t <- rep(R_0 / (d_inf), d_inf)
+    
+  } else if (distribution == "linear_increase"){
+    pi_t <- seq(1, d_inf)
+    pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
+    
+  } else if (distribution == "triangle"){
+    if (floor(d_inf*triangle_center) == 0){ # linearly decreasing
+      pi_t <- seq(d_inf, 1)
+      pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
+    } else if (ceiling(d_inf*triangle_center) == d_inf){ # linearly increasing
+      pi_t <- seq(1, d_inf)
+      pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
+    } else if (triangle_center > 0 & triangle_center < 1){
+      pi_t.early <- seq(from=1, to=floor(d_inf*triangle_center), by=1)
+      pi_t.late  <- seq(from=d_inf - floor(d_inf*triangle_center), to=1)
+      pi_t.late  <- pi_t.late / ( (d_inf - floor(d_inf*triangle_center)) / floor(d_inf*triangle_center) )
+      pi_t       <- R_0 * ( c(pi_t.early, pi_t.late) / sum(c(pi_t.early, pi_t.late)) )
+    } else if (triangle_center < 0){ # This is a trick so that we can set it to be uniform
+      pi_t <- rep(R_0 / (d_inf), d_inf) # Uniform Distribution
+    }
+    
+  }  else {cat("Error 4: pi_t_fcn you must define an appropriate distribution (eg. uniform, linear_increase, triangle)")}
+  
+  # Now scale pi_t down by (1-gamma) after isolation (or beginning of quarantine)
+  if (intervention == "q"){    # If you're under quarantine
+    if (T_lat < t_obs){  # If you're infectious before you're observed under quarantine 
+      if ( (T_lat + d_inf) > t_obs){ # If you are still infectious by the time you are observed under quarantine
+        pi_t[seq( from = (t_obs - T_lat + 1), to = d_inf )] <- (1-gamma) * pi_t[seq( from = (t_obs - T_lat + 1), to = d_inf )]
+      }
+    } else if (T_lat >= t_obs){ # If you're infectious after observed under quarantine
+      pi_t <- (1-gamma) * pi_t
+    } else {pi_t <- pi_t}
+  } else{   # If you're not under quarantine
+    if (T_lat < t_iso){  # If you're infectious before you're isolated 
+      if ( (T_lat + d_inf) > t_iso){ # If you are still infectious by the time you are isolated
+        pi_t[seq( from = (t_iso - T_lat + 1), to = d_inf )] <- (1-gamma) * pi_t[seq( from = (t_iso - T_lat + 1), to = d_inf )]
+      }
+    } else if (T_lat >= t_iso){ # If you're infectious after you're isolated
+      pi_t <- (1-gamma) * pi_t
+    } else {pi_t <- pi_t}
+  }
+  
+  return(pi_t)
+}
+
+#### infection_times_fcn ####
+# Infection times from one individual
+infection_times_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention, dispersion = 1){
+  if (sum( sum(is.na(T_lat), is.na(d_inf), is.na(R_0))) > 0){cat("Error 1: infection_times_fcn")}
+  pi_t <- pi_t_fcn(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention)
+  children <- rep(NA, length(pi_t))
+  if (sum(is.na(pi_t)) > 0 | sum(pi_t < 0) > 0){cat("Error 2: infection_times_fcn")}
+  if (dispersion == 1){ # It's not necessary to have this if...else clause, but I wonder if rpois is faster than rpois.od when d = 1
+    children <- sapply(pi_t, function(x) rpois(1, lambda = x))
+  } else {
+    children <- sapply(pi_t, function(x) rpois.od(1, lambda = x, d = dispersion))
+  } 
+  return(children)
+}
+
+#### children_list_fcn ####
+# Create a list of the children of the population
+children_list_fcn <- function(Pop, pi_t_distribution, triangle_center, gamma, intervention, background_intervention, dispersion = 1){
+  children_list <- as.list(seq(1:nrow(Pop)))
+  children_list <- apply(Pop, 1, function(x) list(infection_times_fcn(as.numeric(x['T_lat']), as.numeric(x['d_inf']), as.numeric(x['t_iso']), as.numeric(x['t_obs']), as.numeric(x['R_0']),as.numeric(x['R_0_hsb_adjusted']), gamma, pi_t_distribution, triangle_center, intervention, background_intervention, dispersion)))
+  children_list <- lapply(children_list, "[[", 1)  #This removes one layer of [[ ]] from the list
+  return(children_list)
+}
+
+#### next_generation_fcn ####
+# Create the next generation
+next_generation_fcn <- function(Pop,
+                                children_list,
+                                parms_T_inc,
+                                parms_T_lat,
+                                parms_d_inf,
+                                parms_d_symp,
+                                parms_R_0,
+                                parms_epsilon,
+                                generation,
+                                prob_CT,
+                                parms_CT_delay,
+                                gamma,
+                                n_pop,
+                                cap_pop = TRUE){
+  if (cap_pop == TRUE){pop_limit <- n_pop
+  } else {pop_limit <- 9999}
+  n_pop_next <- sum(unlist(lapply(children_list, sum)))
+  Pop_2 <- Create_Pop(n_pop_next , parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation, Pop[1,"background_intervention"], parms_CT_delay, gamma)
+  index = 1
+  for (i in 1:length(children_list)){     # for each list of children
+    if (index <= pop_limit){
+      if (sum(children_list[[i]]>=1)>0){    # if there is at least 1 onward infection by person i
+        count <- sum(children_list[[i]]) 
+        days <- which(children_list[[i]] > 0)
+        day_of_inf <- c()
+        for (ind in days){
+          day_of_inf <- c(day_of_inf, rep(x = ind, times = children_list[[i]][ind]))
+        }
+        for (j in seq(from=0, to=count-1)){           # for each child j infected by person i
+          Pop_2[index+j, "infector"] <- i
+          Pop_2[index+j, "t_obs_infector"] <- Pop[i,"t_obs"]
+          Pop_2[index+j, "t_infection"] <- day_of_inf[j+1] + Pop[i, "T_lat"]     
+        }
+        index <- index + count     
+      }
+    }
+  }
+  Pop_2 <- Pop_2[is.na(Pop_2$T_inc)==0,]
+  Pop_2 <- Pop_2[is.na(Pop_2$d_symp)==0,]
+  Pop_2 <- Pop_2[is.na(Pop_2$infector)==0,]
+  Pop_2 <- Pop_2[is.na(Pop_2$t_infection)==0,]
+  Pop_2[,"T_inc"] <- ( Pop_2[,"T_inc"] + Pop_2[,"t_infection"] )
+  Pop_2[,"T_lat"] <- ( Pop_2[,"T_lat"] + Pop_2[,"t_infection"] )
+  if (prob_CT < 1){
+    identified <- rbinom(length(Pop_2$t_obs_infector), 1, prob = prob_CT)
+    Pop_2[which(identified==0), "t_obs_infector"] <- 999999999
+  }
+  return(Pop_2)
+}
+
+#### repeat_call_fcn ####
+repeat_call_fcn <- function(n_pop, 
+                            parms_T_inc, 
+                            parms_T_lat, 
+                            parms_d_inf, 
+                            parms_d_symp, 
+                            parms_R_0, 
+                            parms_epsilon, 
+                            parms_pi_t,
+                            num_generations,
+                            background_intervention,
+                            subseq_interventions,
+                            gamma,
+                            prob_CT,
+                            parms_CT_delay,
+                            parms_serial_interval,
+                            printing = TRUE,
+                            dispersion = 1,
+                            cap_pop = TRUE,
+                            min_infections = 20)
+{
+  input <- list(n_pop, parms_T_inc, 
+                parms_T_lat, 
+                parms_d_inf, 
+                parms_d_symp, 
+                parms_R_0, 
+                parms_epsilon, 
+                parms_pi_t,
+                num_generations,
+                background_intervention,
+                subseq_interventions,
+                gamma,
+                prob_CT,
+                parms_CT_delay,
+                parms_serial_interval) 
+  names(input) <- c("n_pop", 
+                    "parms_T_inc", 
+                    "parms_T_lat", 
+                    "parms_d_inf", 
+                    "parms_d_symp", 
+                    "parms_R_0", 
+                    "parms_epsilon",
+                    "parms_pi_t",
+                    "num_generations",
+                    "background_intervention",
+                    "subseq_interventions",
+                    "gamma",
+                    "prob_CT",
+                    "parms_CT_delay",
+                    "parms_serial_interval")
+  
+  Pop_1 <- Create_Pop(n_pop = n_pop, 
+                      parms_T_inc = parms_T_inc, 
+                      parms_T_lat = parms_T_lat, 
+                      parms_d_inf = parms_d_inf, 
+                      parms_d_symp = parms_d_symp, 
+                      parms_R_0 = parms_R_0, 
+                      parms_epsilon = parms_epsilon, 
+                      generation = 1,
+                      background_intervention,
+                      parms_CT_delay,
+                      gamma)
+  Pop_1 <- observe_and_isolate_fcn(Pop = Pop_1, intervention = background_intervention)
+  children_list <- children_list_fcn(Pop = Pop_1, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = background_intervention, background_intervention = background_intervention, dispersion)
+  Num_Infected <- unlist(lapply(children_list, sum))
+  if (printing == TRUE){cat('Generation 1 : n=', nrow(Pop_1), 'Effective Reproductive Number:', mean(Num_Infected))}
+  
+  names <- c("n", "R", "obs_to_iso", "prop_lat_before_obs", "ks")
+  output <- data.frame(matrix(rep(NA, num_generations*length(names)), nrow=num_generations))
+  names(output) <- names
+  output[1,"n"] <- nrow(Pop_1)
+  output[1,"R"] <- mean(Num_Infected)
+  output[1,"obs_to_iso"] <- mean(Pop_1$t_iso - Pop_1$t_obs)
+  output[1,"prop_lat_before_obs"] <- mean((Pop_1$T_lat < Pop_1$t_obs) == 1)
+  
+  Pop_prev <- Pop_1
+  
+  if (num_generations > 1){
+    for (g in seq(from=2, to=num_generations)){
+      if (sum(Num_Infected) > min_infections){
+        Pop_next <- NA
+        Pop_next <- next_generation_fcn(Pop = Pop_prev,
+                                        children_list,
+                                        parms_T_inc = parms_T_inc,
+                                        parms_T_lat = parms_T_lat,
+                                        parms_d_inf = parms_d_inf,
+                                        parms_d_symp = parms_d_symp,
+                                        parms_R_0 = parms_R_0,
+                                        parms_epsilon = parms_epsilon,
+                                        generation = g,
+                                        prob_CT = prob_CT,
+                                        parms_CT_delay,
+                                        gamma,
+                                        n_pop,
+                                        cap_pop)
+        
+        if (cap_pop == TRUE){
+          if (nrow(Pop_next) > (n_pop)){   #don't let the populations get bigger than the initial
+            Pop_next <- Pop_next[1:(n_pop),]
+          }
+        }
+        
+        Pop_next <- observe_and_isolate_fcn(Pop = Pop_next, intervention = subseq_interventions)
+        
+        children_list <- NA
+        children_list <- children_list_fcn(Pop = Pop_next, pi_t_distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma = gamma, intervention = subseq_interventions, background_intervention, dispersion)
+        
+        Num_Infected <- NA
+        Num_Infected <- unlist(lapply(children_list, sum))
+        
+        if (printing == TRUE) {cat('\nGeneration',g, ': n=', nrow(Pop_next), 'Effective Reproductive Number:', mean(Num_Infected))}
+        output[g,"n"] <- nrow(Pop_next)
+        output[g,"R"] <- mean(Num_Infected)
+        output[g,"obs_to_iso"] <- mean(Pop_next$t_iso - Pop_next$t_obs)
+        output[g,"prop_lat_before_obs"] <- mean((Pop_next$T_lat < Pop_next$t_obs) == 1)
+        if (parms_serial_interval$dist != "unknown" & subseq_interventions == "u"){
+          output[g,"ks"] <- serial_interval_fcn(Pop_prev, Pop_next, parms_serial_interval, plot="False")
+        }
+        
+        Pop_prev <- NA
+        Pop_prev <- Pop_next
+        
+      } else {if(printing==TRUE){cat('\nPopulation size dropped below min_infections')}}
+    }
+  }
+  if (printing == TRUE){cat('\n\n')}
+  
+  output <- output[is.na(output$n)==0,]
+  In_Out <- list(input, output)
+  names(In_Out) <- c("input","output")
+  return(In_Out)
+}
+
+#### serial_interval_fcn ####
+# Generate Serial Interval Distribution
+serial_interval_fcn <- function(Pop1, Pop2, parms_serial_interval, plot="True"){
+  output <- rep(NA, length(Pop2$ID))
+  for (i in Pop2$ID){
+    output[i] <- jitter(Pop2[i,"T_inc"] - Pop1[Pop1$ID == Pop2[i,"infector"], "T_inc"], amount = 1) #jitter to prevent ties
+    if (output[i] < 24){output[i] <- runif(1, min=1, max=24)} # If the serial interval is less than one day, we're really unsure of what hour it was
+  }
+  if (sum(is.na(output)==1)>0){cat("Error 1: serial_interval_fcn")}
+  
+  if (plot=="True"){
+    #Need a multiplier for the curves to plot on the same axes
+    multipliers <- (hist(output/24, breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$counts / hist(output/24,breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$density)
+    multiplier <- multipliers[is.na(multipliers)==0][1]
+    
+    hist(output/24, breaks=seq(min(output/24), max(output/24)+1), density=10, 
+         xlab = "Serial Interval (days)",
+         main = "")
+    
+    if (parms_serial_interval$dist == "gamma"){
+      fit <- fitdistr(output/24, "gamma", lower=0.00001, start = list(shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+      curve(multiplier*dgamma(x, shape = as.numeric(fit$estimate[1]), rate = as.numeric(fit$estimate[2])), 
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2)
+      curve(multiplier*dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2)
+      ks <- ks.test(x=output/24, "pgamma", shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2)
+    }
+    if (parms_serial_interval$dist == "weibull"){
+      fit <- fitdistr(output/24, "weibull", lower=0.00001, start = list(shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2))
+      curve(multiplier*dweibull(x, shape = as.numeric(fit$estimate[1]), scale = as.numeric(fit$estimate[2])), 
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2)
+      curve(multiplier*dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2),
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2)
+      ks <- ks.test(x=output/24, "pweibull", shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2)
+    }
+    if (parms_serial_interval$dist == "lognormal"){
+      fit <- fitdistr(output/24, "lognormal", lower=0.00001)
+      curve(multiplier*dlnorm(x, meanlog = as.numeric(fit$estimate[1]), sdlog = as.numeric(fit$estimate[2])), 
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2)
+      curve(multiplier*dlnorm(x, meanlog= log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2)
+      ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
+    }
+    if (parms_serial_interval$dist == "normal"){
+      fit <- fitdistr(output/24, "normal")
+      curve(multiplier*dnorm(x, mean = as.numeric(fit$estimate[1]), sd = as.numeric(fit$estimate[2])), 
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2)
+      curve(multiplier*dnorm(x, mean = parms_serial_interval$parm1, sd = parms_serial_interval$parm2),
+            from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2)
+      ks <- ks.test(x=output/24, "pnorm", mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2)
+    }
+    
+  } else if (plot=="Add"){
+    #Need a multiplier for the curves to plot on the same axes
+    multipliers <- (hist(output/24, breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$counts / hist(output/24,breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$density)
+    multiplier <- multipliers[is.na(multipliers)==0][1]
+    
+    if (parms_serial_interval$dist == "gamma"){
+      fit <- fitdistr(output/24, "gamma", lower=0.00001, start = list(shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))
+      suppressWarnings(curve(multiplier*dgamma(x, shape = as.numeric(fit$estimate[1]), rate = as.numeric(fit$estimate[2])), 
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=0.5, 
+                             ylab="Empirical Distribution", xlab="Days", main="Serial Intervals"))
+      ks <- ks.test(x=output/24, "pgamma", shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2)
+    }
+    if (parms_serial_interval$dist == "weibull"){
+      fit <- fitdistr(output/24, "weibull", lower=0.00001, start = list(shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2))
+      suppressWarnings(curve(multiplier*dweibull(x, shape = as.numeric(fit$estimate[1]), scale = as.numeric(fit$estimate[2])), 
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=0.5, 
+                             ylab="Empirical Distribution", xlab="Days", main="Serial Intervals"))
+      ks <- ks.test(x=output/24, "pweibull", shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2)
+    }
+    if (parms_serial_interval$dist == "lognormal"){
+      fit <- fitdistr(output/24, "lognormal", lower=0.00001)
+      suppressWarnings(curve(multiplier*dlnorm(x, meanlog = as.numeric(fit$estimate[1]), sdlog = as.numeric(fit$estimate[2])), 
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2))
+      suppressWarnings(curve(multiplier*dlnorm(x, meanlog= log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2))
+      ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
+    }
+    if (parms_serial_interval$dist == "normal"){
+      fit <- fitdistr(output/24, "normal")
+      suppressWarnings(curve(multiplier*dnorm(x, mean = as.numeric(fit$estimate[1]), sd = as.numeric(fit$estimate[2])), 
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="darkblue", lwd=2))
+      suppressWarnings(curve(multiplier*dnorm(x, mean = parms_serial_interval$parm1, sd = parms_serial_interval$parm2),
+                             from=0, to=max(output/24)+1, add=TRUE, yaxt="n", col="green", lwd=2))
+      ks <- ks.test(x=output/24, "pnorm", mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2)
+    }
+    
+  } else if (plot == "False"){
+    #Need a multiplier for the curves to plot on the same axes    
+    multipliers <- (hist(output/24, breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$counts / hist(output/24,breaks=seq(min(output/24), max(output/24)+1), plot=FALSE)$density)
+    multiplier <- multipliers[is.na(multipliers)==0][1]
+    
+    if (parms_serial_interval$dist == "gamma"){
+      ks <- ks.test(x=output/24, "pgamma", shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2, exact=FALSE)
+    }
+    if (parms_serial_interval$dist == "weibull"){
+      ks <- ks.test(x=output/24, "pweibull", shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2, exact=FALSE)
+    }
+    if (parms_serial_interval$dist == "lognormal"){
+      ks <- ks.test(x=output/24, "plnorm", meanlog=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2))
+    }
+    if (parms_serial_interval$dist == "normal"){
+      ks <- ks.test(x=output/24, "pnorm", mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2, exact=FALSE)
+    }
+  }
+  return(as.numeric(ks$statistic))
+}
+
+#### calculate_R_0_hsb ####
+# Calculate R_O_hsb from a desired R_0 distribution in a setting where isolation occurs
+# calculate_R_0_hsb <- function(Pop, desired_R_0,  
+#                               parms_T_inc, 
+#                               parms_T_lat, 
+#                               parms_d_inf, 
+#                               parms_d_symp,
+#                               parms_epsilon, 
+#                               num_generations,
+#                               pi_t_distribution,
+#                               gamma,
+#                               prob_CT,
+#                               parms_CT_delay,
+#                               times,
+#                               num_generations = 5){
+#   
+#   n_pop = nrow(Pop)
+#   names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday")
+#   data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+#   names(data) <- names
+#   dimensions <- c("R_0")
+#   
+#   lhs <- maximinLHS(times, length(dimensions))
+#   
+#   R_0.min <- desired_R_0
+#   R_0.max <- 40
+#   
+#   params.set <- cbind(
+#     gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
+#     prob_CT = lhs[,2]*(prob_CT.max - prob_CT.min) + prob_CT.min,
+#     CT_delay = lhs[,3]*(CT_delay.max - CT_delay.min) + CT_delay.min,
+#     epsilon = lhs[,4]*(epsilon.max - epsilon.min) + epsilon.min,
+#     R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min,
+#     pi_t_distribution = lhs[,6]*(pi_t_distribution.max - pi_t_distribution.min) + pi_t_distribution.min)
+#   
+#   for (i in 1:times){
+#     cat('\nIteration',i, '\n')
+#     
+#     gamma <- params.set[i,"gamma"]
+#     prob_CT <- params.set[i,"prob_CT"]
+#     parms_CT_delay$parm2 <- params.set[i,"CT_delay"]
+#     parms_epsilon$parm2 <- params.set[i,"epsilon"]
+#     
+#     # Spread of R_0 is always 0.5. The mean is changing
+#     parms_R_0[c("parm1","parm2","parm3")] <- c(params.set[i,"R_0"] - 0.25, params.set[i,"R_0"] + 0.25, params.set[i,"R_0"])
+#     
+#     if (params.set[i,"pi_t_distribution"] == 1){pi_t_distribution <- "linear_increase"}
+#     if (params.set[i,"pi_t_distribution"] == 0){pi_t_distribution <- "triangle"}
+#     
+#     for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+#       In_Out <- repeat_call_fcn(n_pop=n_pop, 
+#                                 parms_T_inc, 
+#                                 parms_T_lat, 
+#                                 parms_d_inf, 
+#                                 parms_d_symp, 
+#                                 parms_R_0, 
+#                                 parms_epsilon, 
+#                                 num_generations,
+#                                 background_intervention,
+#                                 subseq_interventions,
+#                                 pi_t_distribution,
+#                                 gamma,
+#                                 prob_CT,
+#                                 parms_CT_delay)
+#       if (subseq_interventions == background_intervention){
+#         data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+#       }
+#       if (subseq_interventions == "hsb"){
+#         data[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+#       }
+#       if (subseq_interventions == "s"){
+#         data[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+#       }
+#       if (subseq_interventions == "q"){
+#         data[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+#         data[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+#       }
+#     }
+#   }
+# }
+
+#### decile_plot_fcn ####
+decile_plot_fcn <- function(data, params.set){
+  require(Hmisc)
+  params <- names(data.frame(params.set))
+  if (is.element(paste(params[1], "_quantile",sep=""), names(data))){
+    for (col in params){
+      col_name <- paste(col, "_quantile",sep="")
+      data[,col_name] <- as.numeric(cut2(data[,col], g=10, levels.mean=TRUE))
+    }
+  } else {
+    for (col in params){
+      newcol <- as.numeric(cut2(data[,col], g=10, levels.mean=TRUE))
+      data <- cbind(data, newcol)
+      col_name <- paste(col, "_quantile",sep="")
+      names <- c(names(data)[1:ncol(data)-1], col_name)
+      names(data) <- names
+    }
+  }
+  quant_vars <- names(data)[grep("quantile", names(data))]
+  data_melt <- melt.data.frame(data, id.vars = c("ks"), measure.vars = quant_vars)
+  ggplot(data_melt, aes(x=as.factor(value), y=ks)) + geom_boxplot() + facet_grid(.~variable) + theme_bw() + xlab("Decile")
+}
+
+#### Generic: multiplot ####
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+#### Generic: Put histograms on the diagonal using the pairs function ####
+panel.hist <- function(x, ...){
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col = "cyan", ...)
+}
+
+#### panel_plot_fcn ####
+panel_plot_fcn <- function(data, covariate, outputs = c("R_0","R_s","R_q","NNQ","Abs_Benefit","Abs_Benefit_per_Qday"),...){
+  layout(cbind(c(1,2,3),c(4,5,6)))
+  for (output in outputs){
+    if (output == "NNQ"){
+      plot(data[,as.character(covariate)], log10(data[,as.character(output)]),
+           xlab = as.character(covariate),
+           ylab = paste("log(",as.character(output),")"))
+    } else {
+      plot(data[,as.character(covariate)], data[,as.character(output)], 
+           ylim=c(0, max(data[,as.character(output)])),
+           xlab = as.character(covariate),
+           ylab = as.character(output))
+    }
+  }  
+}
+
+#### prcc_fcn ####
+prcc_fcn <- function(input_data, dep_var, indep_var, nboot = 100, package = "sensitivity", standardize = FALSE){
+  
+  if (standardize == TRUE){
+    for (covariate in indep_var){
+      min <- min(input_data[,as.character(covariate)])
+      max <- max(input_data[,as.character(covariate)])
+      range <- max - min
+      input_data[,as.character(covariate)] <- (input_data[,as.character(covariate)] - min) / range 
+    }
+  }
+  
+  if (package == "sensitivity"){
+    
+    require(sensitivity)
+    bonferroni.alpha <- 0.05/(length(indep_var))
+    data <- data.frame(matrix(rep(NA, 7*length(dep_var)*length(indep_var)), ncol=7)) 
+    names(data) <- c("output","parameter","coef","bias","stderr","CImin","CImax")
+    data$output <- rep(dep_var, each = length(indep_var))
+    data$parameter <- rep(indep_var, times = length(dep_var))
+    for (output in dep_var){
+      prcc <- pcc(X = input_data[,(length(dep_var)+1):ncol(input_data)], y = input_data[,output], nboot = nboot, rank=TRUE, conf=1-bonferroni.alpha)
+      summary <- print(prcc)
+      data[data$output == output,3:7] <- summary
+    }
+    
+  } else if (package == "ppcor"){
+    
+    require(ppcor)
+    data <- data.frame(pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,])
+    data[,2] <- pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    data[,3] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+    data[,4] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    data[,5] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+    data[,6] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+    names(data) <- c("R_s.estimate", "R_s.p", "Abs_Benefit.estimate", "Abs_Benefit.p", "Abs_Benefit_per_Qday.estimate", "Abs_Benefit_per_Qday.p")
+    
+  }
+  
+  return(data)
+}
+
+#### Case Study Generic  -------------------------------------------
+# Oct 28
+
+#### Load Libraries ####
+library(ppcor)
+library(MASS)
+library(lhs)
+library(Hmisc)
+library(sensitivity)
+library(ggplot2)
+library(reshape)
+library(psych)
+
+#### Load Workspaces ####
+# desired_root <- "20151027_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
+
+# If workspaces are in main folder
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_PRCC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_HR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_LR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
+
+# If workspaces are in their own folder, named the same as the root
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_HR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_LR.RData", sep=""))
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
+
+# #### Disease: SARS ####
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "SARS"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("weibull", 2, 10)
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 1, 999, "independent", "independent")
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- 0
+# T_lat_offset.max <- 2
+# d_inf.min <- 10
+# d_inf.max <- 40
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+# 
+# # Save and load workspaces
+# 
+# # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData")
+# # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150901_SARS_ParticleFilter_2000.RData')
+# # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/20150829_SARS_ParticleFilter.RData')
+# 
+# # save.image("~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_HRSetting.RData")
+# # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_HRSetting.RData')
+# 
+# # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_LRSetting.RData')
+# # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_SARS_LRSetting.RData')
+# 
+# # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
+# # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
+# 
+# #### Disease: Ebola ####
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "Ebola"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent") # approximation from WHO
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- 0
+# T_lat_offset.max <- 2
+# d_inf.min <- 10
+# d_inf.max <- 25
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+# 
+# #### Disease: MERS ####
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "MERS"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("lognormal", 7.6, 1.77)
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("lognormal", 5.2, 1.7, 999, "independent", "independent")
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- -4
+# T_lat_offset.max <- 4
+# d_inf.min <- 5
+# d_inf.max <- 25
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+# 
+# #### Disease: Pertussis ####
+# 
+# # Note: probably substantially slower because d_inf is so much longer, for each individual the rpois is drawn that many more times.
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "Pertussis"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("gamma", 2.45585778, .11071164) # Approximation from te Beest reported quantiles
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("normal", 7, 1.53, 999, "independent", "independent") # (10-7)/1.96 = 1.53
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- -10
+# T_lat_offset.max <- 4
+# d_inf.min <- 5
+# d_inf.max <- 14*7
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+# 
+# #### Disease: Hepatitis A ####
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "HepatitisA"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("gamma", 65.478798, 2.438040) # Approximation from Vink cf Brodribb
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("gamma", 143.325515, 4.911873, 999, "independent", "independent") #Using data from Pickles 1930
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- -14
+# T_lat_offset.max <- 4
+# d_inf.min <- 2
+# d_inf.max <- 20
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+
+#### Disease: Smallpox ####
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "Smallpox"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("lognormal", 15.53418, 1.253332) 
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# Ranges for particle filter
+T_lat_offset.min <- -5
+T_lat_offset.max <- 5
+d_inf.min <- 2
+d_inf.max <- 30
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
+# #### Disease: InfluenzaA ####
+# 
+# # Name the trial
+# date <- format(Sys.time(), "%Y%m%d")
+# disease <- "InfluenzaA"
+# root <- paste(date, disease, sep = "_")
+# 
+# # Fixed Disease Parameters
+# parms_serial_interval <- list("normal", 2.2, 0.8) 
+# names(parms_serial_interval) <- c("dist","parm1","parm2")
+# 
+# parms_T_inc = list("lognormal", 1.4, 1.5, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+# names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
+# names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Variable Disease Parameters
+# parms_pi_t <- list("triangle", 0.50)
+# names(parms_pi_t) <- c("distribution","triangle_center")
+# 
+# parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+# names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
+# names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
+# names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# # Ranges for particle filter
+# T_lat_offset.min <- -2
+# T_lat_offset.max <- 2
+# d_inf.min <- 2
+# d_inf.max <- 14
+# pi_t_triangle_center.min <- 0
+# pi_t_triangle_center.max <- 1
+
+#### Particle Filter ####
+# setwd(dir = "~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/")
+
+# Interventions
+background_intervention = "u"
+
+prob_CT <- 1
+
+gamma <- 1
+
+parms_epsilon = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Initialize
+n_pop = 200
+num_generations <- 4
+times <- 100
+names <- c("R_0","ks")
+data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data) <- names
+dimensions <- c("T_lat_offset", "d_inf","pi_t_triangle_center")
+adaptive_thresh <- 0.80
+SMC_times <- 15
+perturb <- seq(from = 1/25, to = 1/50, length.out = SMC_times)
+ks_conv_criteria <- 0.10 # convergence if median ks is within [ks_conv_criteria] percent of previous two 
+ks_conv_stat <- rep(NA, SMC_times)
+subseq_interventions <- "u"
+printing = FALSE
+
+# Run particle filter
+SMC_break <- FALSE
+SMC_counter <- 1
+while (SMC_break == FALSE){
+  cat('\nSMC iteration',SMC_counter, '\n')
+  
+  if (SMC_counter == 1){    
+    lhs <- maximinLHS(times, length(dimensions))
+    T_lat_offset.theta <- lhs[,1]*(T_lat_offset.max - T_lat_offset.min) + T_lat_offset.min
+    d_inf.theta <- lhs[,2]*(d_inf.max - d_inf.min) + d_inf.min
+    pi_t_triangle_center.theta <- lhs[,3]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min
+  }
+  
+  for (i in 1:times){
+    cat(".")
+    if (i%%10 == 0){cat("|")}
+    
+    parms_T_lat$anchor_value <- T_lat_offset.theta[i]
+    parms_d_inf$parm2 <- d_inf.theta[i]
+    parms_pi_t$triangle_center <- pi_t_triangle_center.theta[i]
+    
+    In_Out <- repeat_call_fcn(n_pop=n_pop, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              printing = printing)
+    data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+  }
+  
+  data$T_lat_offset <- T_lat_offset.theta
+  data$d_inf <- d_inf.theta
+  data$pi_t_triangle_center <- pi_t_triangle_center.theta
+  data$weight <- (1/data$ks) / sum(1/data$ks)
+  
+  ks_conv_stat[SMC_counter] <- median(data$ks)
+  
+  # Save scatterplots
+  pdf(paste(root, "_SMC_Iteration_",SMC_counter,".pdf", sep = ""))
+  layout(rbind(c(1,2,3),c(4,5,6),c(7,8,9)))
+  hist(data$T_lat_offset, xlim = c(T_lat_offset.min, T_lat_offset.max),
+       main = "T_lat_offset", xlab = "days")
+  plot(x=data$d_inf, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(d_inf.min, d_inf.max),
+       main = paste("KS = ", round(ks_conv_stat[SMC_counter],3)), xlab = "days", ylab = "days")
+  plot(x=data$pi_t_triangle_center, y=data$T_lat_offset, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(T_lat_offset.min, T_lat_offset.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = paste("Iteration ", SMC_counter), xlab = "proportion", ylab = "days")
+  plot(x=data$T_lat_offset, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "days")
+  hist(data$d_inf, xlim = c(d_inf.min, d_inf.max),
+       main = "d_inf", xlab = "days")  
+  plot(x=data$pi_t_triangle_center, y=data$d_inf, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(d_inf.min, d_inf.max),
+       xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max), xlab = "proportion", ylab = "days")
+  plot(x=data$T_lat_offset, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       xlim = c(T_lat_offset.min, T_lat_offset.max), xlab = "days", ylab = "proportion") 
+  plot(x=data$d_inf, y=data$pi_t_triangle_center, col = rainbow(1000)[floor(data$ks*1000)+1], pch=16,
+       ylim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       xlim = c(d_inf.min, d_inf.max), xlab = "days", ylab = "proportion")
+  hist(data$pi_t_triangle_center, xlim = c(pi_t_triangle_center.min, pi_t_triangle_center.max),
+       main = "pi_t_triangle_center", xlab = "proportion")  
+  dev.off()
+  
+  T_lat_offset.perturb <- (max(data[,"T_lat_offset"]) - min(data[,"T_lat_offset"])) * perturb[SMC_counter]
+  d_inf.perturb <- (max(data[,"d_inf"]) - min(data[,"d_inf"])) * perturb[SMC_counter]
+  pi_t_triangle_center.perturb <- (max(data[,"pi_t_triangle_center"]) - min(data[,"pi_t_triangle_center"])) * perturb[SMC_counter]
+  
+  #Adaptive threshold
+  sorted.ks <- sort(data$ks)
+  threshold <- sorted.ks[round(adaptive_thresh*length(sorted.ks))]
+  
+  #sample pre-candidate theta parameter sets from previous generation
+  theta_pre_can <- sample(row.names(data[data$ks <= threshold,]), times, prob= data[data$ks <= threshold,"weight"], replace=TRUE)
+  
+  #perturb and propose
+  T_lat_offset.theta <- sapply(data[theta_pre_can, "T_lat_offset"], function(x) rnorm(n=1, mean=x, sd=(T_lat_offset.max - T_lat_offset.min) * perturb[SMC_counter]))
+  d_inf.theta <- sapply(data[theta_pre_can, "d_inf"], function(x) rnorm(n=1, mean=x, sd=(d_inf.max - d_inf.min) * perturb[SMC_counter]))
+  pi_t_triangle_center.theta <- sapply(data[theta_pre_can, "pi_t_triangle_center"], function(x) rnorm(n=1, mean=x, sd=(pi_t_triangle_center.max - pi_t_triangle_center.min) * perturb[SMC_counter]))
+  
+  # Restrict range of candidates to the original range for the disease
+  T_lat_offset.theta[T_lat_offset.theta < T_lat_offset.min] <- T_lat_offset.min
+  T_lat_offset.theta[T_lat_offset.theta > T_lat_offset.max] <- T_lat_offset.max
+  d_inf.theta[d_inf.theta < d_inf.min] <- d_inf.min
+  d_inf.theta[d_inf.theta > d_inf.max] <- d_inf.max
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta < pi_t_triangle_center.min] <- pi_t_triangle_center.min
+  pi_t_triangle_center.theta[pi_t_triangle_center.theta > pi_t_triangle_center.max] <- pi_t_triangle_center.max
+  
+  cat('\nMedian KS is ', ks_conv_stat[SMC_counter], "\n")
+  
+  # Check for "convergence"
+  if (SMC_counter > 3){
+    if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-1])/ks_conv_stat[SMC_counter-1] <= ks_conv_criteria){
+      if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-2])/ks_conv_stat[SMC_counter-2] <= ks_conv_criteria){
+        SMC_break <- TRUE
+        cat("\nConvergence acheived in", SMC_counter, "iterations")
+        break
+      }
+    }
+  }
+  
+  if (SMC_counter >= SMC_times){
+    SMC_break <- TRUE
+    cat("\nUnable to converge by", SMC_counter, "SMC iterations")
+    break
+  }
+  
+  SMC_counter <- SMC_counter + 1
+  
+}
+
+# Save tables and output files
+write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
+save.image(paste(root, "_SMC.RData", sep=""))
+
+#### PRCC Ranking of Intervention Sensitivities ####
+
+# Interventions
+background_intervention = "u"
+
+prob_CT <- 1
+
+gamma <- 1
+
+parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Initialize
+n_pop = 500
+num_generations <- 5
+times <- 100
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.prcc) <- names
+
+# Sample from posterior distributions for each parameter independently
+params.set.prcc <- cbind(
+  T_lat_offset = sample(data$T_lat_offset, size = times, replace = TRUE),
+  d_inf = sample(data$d_inf, size = times, replace = TRUE),
+  pi_t_triangle_center = sample(data$pi_t_triangle_center, size = times, replace = TRUE) )
+
+# Set range for other parameters to vary
+dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion")
+lhs <- maximinLHS(times, length(dimensions))
+
+gamma.min <- 0.2
+gamma.max <- 1
+prob_CT.min <- 0.2
+prob_CT.max <- 1
+CT_delay.min <- 0
+CT_delay.max <- 7
+epsilon.min <- 0
+epsilon.max <- 7
+R_0.min <- 1
+R_0.max <- 3
+dispersion.min <- 1
+dispersion.max <- 5
+
+params.set.prcc <- cbind(params.set.prcc,
+                         gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
+                         prob_CT = lhs[,2]*(prob_CT.max - prob_CT.min) + prob_CT.min,
+                         CT_delay = lhs[,3]*(CT_delay.max - CT_delay.min) + CT_delay.min,
+                         epsilon = lhs[,4]*(epsilon.max - epsilon.min) + epsilon.min,
+                         dispersion = lhs[,6]*(dispersion.max - dispersion.min) + dispersion.min,
+                         R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min)
+params.set.prcc <- data.frame(params.set.prcc)
+
+i=1
+while (i <= times){
+  cat(".")
+  if (i%%10 == 0){cat("|")}
+  
+  gamma <- as.numeric(params.set.prcc[i,"gamma"])
+  prob_CT <- as.numeric(params.set.prcc[i,"prob_CT"])
+  parms_CT_delay$parm2 <- as.numeric(params.set.prcc[i,"CT_delay"])
+  parms_epsilon$parm2 <- as.numeric(params.set.prcc[i,"epsilon"])
+  parms_pi_t$triangle_center <- as.numeric(params.set.prcc[i,"pi_t_triangle_center"])
+  parms_T_lat$anchor_value <- as.numeric(params.set.prcc[i,"T_lat_offset"])
+  parms_d_inf$parm2 <- as.numeric(params.set.prcc[i,"d_inf"])
+  parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set.prcc[i,"R_0"]), as.numeric(params.set.prcc[i,"R_0"]))
+  dispersion <- as.numeric(params.set.prcc[i, "dispersion"])
+  
+  for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+    
+    if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
+      n_pop_input <- 200
+    } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
+      n_pop_input <- 200
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+      n_pop_input <- 200
+    } else {n_pop_input <- n_pop}
+    
+    In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
+                              parms_T_inc = parms_T_inc, 
+                              parms_T_lat = parms_T_lat, 
+                              parms_d_inf = parms_d_inf, 
+                              parms_d_symp = parms_d_symp, 
+                              parms_R_0 = parms_R_0, 
+                              parms_epsilon = parms_epsilon, 
+                              parms_pi_t = parms_pi_t,
+                              num_generations = num_generations,
+                              background_intervention = background_intervention,
+                              subseq_interventions = subseq_interventions,
+                              gamma = gamma,
+                              prob_CT = prob_CT,
+                              parms_CT_delay = parms_CT_delay,
+                              parms_serial_interval = parms_serial_interval,
+                              dispersion = dispersion,
+                              printing = printing)
+    if (subseq_interventions == background_intervention){
+      data.prcc[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.prcc[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "hsb"){
+      data.prcc[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "s"){
+      data.prcc[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "q"){
+      data.prcc[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.prcc[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+    }
+  }
+  
+  if (is.na(data.prcc[i,"R_0"])==1 |
+      is.na(data.prcc[i,"R_hsb"])==1 |
+      is.na(data.prcc[i,"R_s"])==1 |
+      is.na(data.prcc[i,"R_q"])==1){
+    i=i  #re-run that set
+    cat("x")
+  } else {i = i+1}
+  
+}
+
+# Check for missing data
+if (sum(is.na(data.prcc[,1:4]))>0){cat("Something's missing")}
+
+data.prcc[,"Abs_Benefit"] <- data.prcc[,"R_s"] - data.prcc[,"R_q"]
+data.prcc[,"Rel_Benefit"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"R_s"]
+data.prcc[,"NNQ"] <- 1 / data.prcc[,"Abs_Benefit"]
+data.prcc[data.prcc$NNQ < 1,"NNQ"] <- 1
+data.prcc[data.prcc$NNQ > 9999,"NNQ"] <- 9999
+data.prcc[data.prcc$NNQ == Inf,"NNQ"] <- 9999
+data.prcc[,"Abs_Benefit_per_Qday"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"obs_to_iso_q"]
+data.prcc$gamma <- params.set.prcc[,"gamma"]
+data.prcc$prob_CT <- params.set.prcc[,"prob_CT"]
+data.prcc$CT_delay <- params.set.prcc[,"CT_delay"]
+data.prcc$epsilon <- params.set.prcc[,"epsilon"]
+data.prcc$R_0 <- params.set.prcc[,"R_0"]
+data.prcc$dispersion <- params.set.prcc[,"dispersion"]
+data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
+data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
+data.prcc$d_inf <- params.set.prcc[,"d_inf"]
+
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.prcc)[11:18]){
+  panel_plot_fcn(data = data.prcc, covariate = covariate)
+  #   cat ("Press [enter] to continue")
+  #   line <- readline()
+}
+
+# Compare ks value across deciles of covariates
+decile_plot_fcn(data.prcc, params.set.prcc)
+
+# Calculate PRCC
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit", "Rel_Benefit", "NNQ", "obs_to_iso_q", "Abs_Benefit_per_Qday","ks")
+indep_var <- c( "gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf")
+output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
+                   nboot = 100, package = "sensitivity", standardize = TRUE)
+
+# Plot PRCC
+plot_prcc <- ggplot(output, aes(x = parameter, y= coef)) +
+  facet_grid(output ~ .) +
+  geom_point() +
+  geom_hline(yintercept=0, color="red", size=0.25) +
+  theme_bw() +
+  geom_errorbar(data = output, aes(ymin = CImin, ymax = CImax), width = 0.1)
+plot_prcc
+
+pdf(file=paste(root, "_Plot_prcc.pdf", sep=""))
+plot(plot_prcc)
+dev.off()
+
+save.image(paste(root, "_PRCC.RData", sep=""))
+
+#### Case Study in High Resource Setting ####
+
+# Interventions
+background_intervention = "u"
+
+prob_CT <- 0.9
+
+gamma <- 0.9
+
+parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Settings
+n_pop = 500
+num_generations <- 5
+times <- 100
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.hr) <- names
+
+# sample from joint posterior distribution
+sample <- sample(x = row.names(data), size = times, replace = FALSE)
+params.set <- cbind(
+  T_lat_offset = data[sample, "T_lat_offset"],
+  d_inf = data[sample, "d_inf"],
+  pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
+  dispersion = runif(n=times, min = 1, max = 1),
+  R_0 = runif(n = times, min = 1, max = 5))
+
+for (i in 1:times){
+  cat(".")
+  if (i%%10 == 0){cat("|")}
+  
+  parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+  parms_d_inf$parm2 <- params.set[i,"d_inf"]
+  parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+  parms_R_0$parm1 <- params.set[i,"R_0"]
+  parms_R_0$parm2 <- params.set[i,"R_0"]
+  dispersion <- params.set[i, "dispersion"]
+  
+  for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+    if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
+      n_pop_input <- 200
+    } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
+      n_pop_input <- 200
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+      n_pop_input <- 200
+    } else {n_pop_input <- n_pop}
+    In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              dispersion = dispersion,
+                              printing = printing)
+    if (subseq_interventions == background_intervention){
+      data.hr[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.hr[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "hsb"){
+      data.hr[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "s"){
+      data.hr[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "q"){
+      data.hr[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.hr[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+    }
+  }
+}
+
+data.hr[,"Abs_Benefit"] <- data.hr[,"R_s"] - data.hr[,"R_q"]
+data.hr[,"Rel_Benefit"] <- data.hr[,"Abs_Benefit"] / data.hr[,"R_s"]
+data.hr[,"NNQ"] <- 1 / data.hr[,"Abs_Benefit"]
+data.hr[data.hr$NNQ < 1,"NNQ"] <- 1
+data.hr[data.hr$NNQ > 9999,"NNQ"] <- 9999
+data.hr[data.hr$NNQ == Inf,"NNQ"] <- 9999
+data.hr[,"Abs_Benefit_per_Qday"] <- data.hr[,"Abs_Benefit"] / data.hr[,"obs_to_iso_q"]
+data.hr$d_inf <- params.set[,"d_inf"]
+data.hr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+data.hr$R_0 <- params.set[,"R_0"]
+data.hr$T_lat_offset <- params.set[,"T_lat_offset"]
+data.hr$dispersion <- params.set[,"dispersion"]
+
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.hr)[11:15]){
+  panel_plot_fcn(data = data.hr, covariate = covariate)
+  # cat ("Press [enter] to continue")
+  # line <- readline()
+}
+
+summary(data.hr$R_0)
+summary(data.hr$R_hsb)
+summary(data.hr$R_s)
+summary(data.hr$R_q)
+summary(data.hr$Abs_Benefit)
+summary(data.hr$NNQ)
+
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6 , "R_0"])
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_hsb"])
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"])
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"])
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "Abs_Benefit"])
+summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "NNQ"])
+
+quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
+quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
+
+save.image(paste(root, "_HR.RData", sep=""))
+
+#### Case Study in Low Resource Setting ####
+
+# Interventions
+background_intervention <- "u"
+
+prob_CT <- 0.5
+
+gamma <- 0.5
+
+parms_epsilon = list("uniform", 2, 2, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Settings
+n_pop = 500
+num_generations <- 5
+times <- 100
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.lr) <- names
+
+# sample from joint posterior distribution
+sample <- sample(x = row.names(data), size = times, replace = FALSE)
+params.set <- cbind(
+  T_lat_offset = data[sample, "T_lat_offset"],
+  d_inf = data[sample, "d_inf"],
+  pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
+  dispersion = runif(n=times, min = 1, max = 1),
+  R_0 = runif(n = times, min = 1, max = 5))
+
+for (i in 1:times){
+  cat(".")
+  if (i%%10 == 0){cat("|")}
+  
+  parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+  parms_d_inf$parm2 <- params.set[i,"d_inf"]
+  parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+  parms_R_0$parm1 <- params.set[i,"R_0"]
+  parms_R_0$parm2 <- params.set[i,"R_0"]
+  dispersion <- params.set[i, "dispersion"]
+  
+  for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+    if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
+      n_pop_input <- 200
+    } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
+      n_pop_input <- 200
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+      n_pop_input <- 200
+    } else {n_pop_input <- n_pop}
+    In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              dispersion = dispersion,
+                              printing = printing)
+    if (subseq_interventions == background_intervention){
+      data.lr[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "hsb"){
+      data.lr[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "s"){
+      data.lr[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "q"){
+      data.lr[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.lr[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+    }
+  }
+}
+
+data.lr[,"Abs_Benefit"] <- data.lr[,"R_s"] - data.lr[,"R_q"]
+data.lr[,"Rel_Benefit"] <- data.lr[,"Abs_Benefit"] / data.lr[,"R_s"]
+data.lr[,"NNQ"] <- 1 / data.lr[,"Abs_Benefit"]
+data.lr[data.lr$NNQ < 1,"NNQ"] <- 1
+data.lr[data.lr$NNQ > 9999,"NNQ"] <- 9999
+data.lr[data.lr$NNQ == Inf,"NNQ"] <- 9999
+data.lr[,"Abs_Benefit_per_Qday"] <- data.lr[,"Abs_Benefit"] / data.lr[,"obs_to_iso_q"]
+data.lr$d_inf <- params.set[,"d_inf"]
+data.lr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+data.lr$R_0 <- params.set[,"R_0"]
+data.lr$T_lat_offset <- params.set[,"T_lat_offset"]
+data.lr$dispersion <- params.set[,"dispersion"]
+
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.lr)[11:15]){
+  panel_plot_fcn(data = data.lr, covariate = covariate)
+  # cat ("Press [enter] to continue")
+  # line <- readline()
+}
+
+summary(data.lr$R_0)
+summary(data.lr$R_hsb)
+summary(data.lr$R_s)
+summary(data.lr$R_q)
+summary(data.lr$Abs_Benefit)
+summary(data.lr$NNQ)
+
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6 , "R_0"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_hsb"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "Abs_Benefit"])
+summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
+
+quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
+quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
+
+save.image(paste(root, "_LR.RData", sep=""))
+
+# #### Plot R_q and R_s ####
+# 
+# # Set range for relevant R_0 values
+# R_0_relevant.min <- 1
+# R_0_relevant.max <- 5
+# 
+# data.hr$Setting <- "HR"
+# data.lr$Setting <- "LR"
+# data.hr.lr <- rbind(data.hr, data.lr)
+# 
+# plot1 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
+#   geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
+#   annotate("rect", xmin = 0, xmax = 1, ymin = 1, ymax = 4, alpha = .1, fill = "yellow") + 
+#   annotate("rect", xmin = 1, xmax = 4, ymin = 0, ymax = 1, alpha = .1, fill = "blue") +
+#   annotate("rect", xmin = 0, xmax = 1, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
+#   annotate("text", x = 2.5, y = 0.9, label = "Control with Quarantine", col = "blue") +
+#   annotate("text", x = 0.5, y = 3.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+#   geom_point(aes(x=R_s, y=R_q, col = R_0, shape=Setting) ) +
+#   xlim(0,4) + ylim(0,4) +
+#   scale_colour_gradient(low="yellow", high="darkred") +
+#   scale_shape_manual(name = "Setting",
+#                      values = c(17, 1),
+#                      labels = c("High Resource", "Low Resource")) +
+#   guides(shape = guide_legend(reverse=TRUE)) +
+#   xlab("Effective Reproductive Number under Symptom Monitoring") +
+#   ylab("Effective Reproductive Number under Quarantine") +
+#   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#   ggtitle(paste("Disease: ", disease))
+# plot1
+# 
+# plot2 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
+#   annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
+#   geom_hline(y=1, col = "grey") +
+#   geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
+#   geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
+#   stat_smooth(aes(x=R_0, y=R_s, shape = Setting), method = "loess", color="darkgreen", size = 1.2) +
+#   stat_smooth(aes(x=R_0, y=R_q, shape = Setting), method = "loess", color="blue", size = 1.2) +
+#   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+#   scale_shape_manual(name = "Setting",
+#                      values = c(17, 1),
+#                      labels = c("High Resource", "Low Resource")) +
+#   guides(shape = guide_legend(reverse=TRUE)) +
+#   xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
+#   ggtitle(paste("Disease: ", disease))
+# plot2
+# 
+# pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot2.pdf", sep=""))
+# plot(plot2)
+# dev.off()
+# 
+# save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plots.RData", sep=""))
+
+

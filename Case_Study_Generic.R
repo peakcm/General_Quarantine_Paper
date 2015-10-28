@@ -15,7 +15,7 @@ library(reshape)
 library(psych)
 
 #### Load Workspaces ####
-desired_root <- "20151026_Pertussis" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151028_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -270,8 +270,8 @@ parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 # Ranges for particle filter
-T_lat_offset.min <- -7
-T_lat_offset.max <- 7
+T_lat_offset.min <- -5
+T_lat_offset.max <- 5
 d_inf.min <- 2
 d_inf.max <- 30
 pi_t_triangle_center.min <- 0
@@ -308,13 +308,12 @@ parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 # Ranges for particle filter
-T_lat_offset.min <- -3
-T_lat_offset.max <- 3
+T_lat_offset.min <- -2
+T_lat_offset.max <- 2
 d_inf.min <- 2
-d_inf.max <- 30
+d_inf.max <- 14
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
-
 
 #### Particle Filter ####
 setwd(dir = "~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/")
@@ -335,7 +334,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 200
 num_generations <- 4
-times <- 200
+times <- 1000
 names <- c("R_0","ks")
 data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data) <- names
@@ -458,7 +457,7 @@ while (SMC_break == FALSE){
     if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-1])/ks_conv_stat[SMC_counter-1] <= ks_conv_criteria){
       if (abs(ks_conv_stat[SMC_counter] - ks_conv_stat[SMC_counter-2])/ks_conv_stat[SMC_counter-2] <= ks_conv_criteria){
         SMC_break <- TRUE
-        cat("\nConvergence acheived in", SMC_counter, "iterations")
+        cat("\nConvergence achieved in", SMC_counter, "iterations")
         break
       }
     }
@@ -496,7 +495,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 20
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
