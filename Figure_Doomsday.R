@@ -40,7 +40,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 1000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
@@ -133,11 +133,16 @@ data.doomsday$T_lat_offset <- params.set.doomsday[,"T_lat_offset"]
 data.doomsday$d_inf <- params.set.doomsday[,"d_inf"]
 
 #### Plot ####
-ggplot(data.doomsday) +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(R_0, -T_lat_offset), color = "yellow", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(R_0, -T_lat_offset), color = "orange", size = 3) +  
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(R_0, -T_lat_offset), color = "red", size = 3) +
+plot_doomsday <- ggplot(data.doomsday) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(R_0, -T_lat_offset), color = "cornflowerblue", size = 3) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(R_0, -T_lat_offset), color = "darkgoldenrod", size = 3) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(R_0, -T_lat_offset), color = "mediumturquoise", size = 3) +
   theme_bw() + xlim(0, 5) 
+plot_doomsday
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday.pdf", sep=""))
+plot(plot_doomsday)
+dev.off()
 
 #### Save ####
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_doomsday.RData", sep=""))
