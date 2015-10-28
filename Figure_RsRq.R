@@ -78,13 +78,24 @@ data.hr.lr.Pertussis$disease <- "Pertussis"
 set_6 <- c("Pertussis", 2, 2.5, "HR")
 names(set_6) <- c("name", "lower", "upper", "Setting")
 
+# Smallpox
+desired_root <- "20151027_Smallpox"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
+
+data.hr.lr.Smallpox <- data.hr.lr
+data.hr.lr.Smallpox$disease <- "Smallpox"
+
+set_6 <- c("Smallpox", 2, 2.5, "HR")
+names(set_6) <- c("name", "lower", "upper", "Setting")
+
 #### combine datasets ####
 data_master <- rbind(data.hr.lr.Ebola,
                      data.hr.lr.SARS,
                      data.hr.lr.MERS,
                      data.hr.lr.HepatitisA,
                      data.hr.lr.InfluenzaA,
-                     data.hr.lr.Pertussis)
+                     data.hr.lr.Pertussis,
+                     data.hr.lr.Smallpox)
 
 #### ggplot ####
 
@@ -137,6 +148,9 @@ plot + # accoutrements
 p <- ggvis(data = data_master, x = ~R_s, y = ~R_q) 
 layer_points(p)
 
+v_line <- data.frame(cbind(c(1.0000, 1.0001), c(0, 5)))
+names(v_line) <- c("R_s", "R_q")
+
 diseases <- unique(data_master$disease)
 slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number")
 data_master %>% 
@@ -145,6 +159,9 @@ data_master %>%
   filter(R_0 >= (eval(slider)-0.5)) %>%
   filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
   filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+#   layer_rects(x = 0, x2 = 1, y = 1, y2 = 4, opacity := 0.1, fill = "yellow") %>%
+#   layer_rects(x = 1, x2 = 4, y = 0, y2 = 1, opacity := 0.1, fill = "blue") %>%
+#   layer_rects(x = 0, x2 = 1, y = 0, y2 = 1, opacity := 0.1, fill = "green") %>%
   layer_points() %>%
   scale_numeric("x", domain = c(0, 5), nice = FALSE, label = "Symptom Monitoring") %>%
   scale_numeric("y", domain = c(0, 5), nice = FALSE, label = "Quarantine")
