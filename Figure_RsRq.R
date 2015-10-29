@@ -8,16 +8,6 @@ library(magrittr)
 library(dplyr)
 
 #### Load data from case_study_generic outputs ####
-
-# Generic
-desired_root <- "20151026_Pertussis" # Paste the desired root here "YYYYMMDD_DISEASE"
-
-# If workspaces are in main folder
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
-
-# If workspaces are in their own folder, named the same as the root
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
-
 # Ebola
 desired_root <- "20151024_Ebola"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
@@ -39,7 +29,7 @@ set_2 <- c("SARS", 2, 2.5, "HR")
 names(set_2) <- c("name", "lower", "upper", "Setting")
 
 # MERS
-desired_root <- "20151025_MERS"
+desired_root <- "20151027_MERS"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
 data.hr.lr.MERS <- data.hr.lr
@@ -79,8 +69,8 @@ set_6 <- c("Pertussis", 2, 2.5, "HR")
 names(set_6) <- c("name", "lower", "upper", "Setting")
 
 # Smallpox
-desired_root <- "20151027_Smallpox"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_Plots.RData", sep=""))
+desired_root <- "20151028_Smallpox"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
 data.hr.lr.Smallpox <- data.hr.lr
 data.hr.lr.Smallpox$disease <- "Smallpox"
@@ -98,7 +88,6 @@ data_master <- rbind(data.hr.lr.Ebola,
                      data.hr.lr.Pertussis)
 
 #### ggplot ####
-
 plot <- # data
   ggplot(data_master, aes(color=disease)) +
   geom_point(data = data_master[data_master$disease == set_1["name"] &
@@ -144,18 +133,10 @@ plot + # accoutrements
   annotate("text", x = 3, y = 0.1, label = "Control with Quarantine", col = "blue") +
   annotate("text", x = 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange")
   
+
 #### ggvis ####
-p <- ggvis(data = data_master, x = ~R_s, y = ~R_q) 
-layer_points(p)
-
-v_line <- data.frame(cbind(c(1.0000, 1.0001), c(0, 5)))
-names(v_line) <- c("R_s", "R_q")
-
-df <- data.frame(x = c(1, 1, 2, 2), y = c(2, 1, 1, 2))
-ggvis(df, props(x = ~x, y = ~y, stroke := "red"), layer_path())
-
 diseases <- unique(data_master$disease)
-slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number")
+slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number (+/- 0.5")
 data_master %>% 
   ggvis(x = ~R_s, y = ~R_q, fill = ~disease, opacity := 0.5) %>%
   filter(R_0 <= (eval(slider)+0.5)) %>%
