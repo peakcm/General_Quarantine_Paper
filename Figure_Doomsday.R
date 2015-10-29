@@ -13,11 +13,11 @@ load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",
 #### Set Parms ####
 # Set a range of T_lat_offset we're interested in
 T_lat_offset.min <- -7
-T_lat_offset.max <- 7
+T_lat_offset.max <- 10
 
 # Set a range of R_0
 R_0.min <- 1
-R_0.max <- 7
+R_0.max <- 10
 
 dispersion = 1
 
@@ -40,7 +40,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 500
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
@@ -57,15 +57,13 @@ params.set.doomsday <- data.frame(params.set.doomsday)
 i=1
 x=1
 while (i <= times){
-  cat(".")
-  if (i%%10 == 0){cat("|")}
   
   parms_pi_t$triangle_center <- as.numeric(params.set.doomsday[i,"pi_t_triangle_center"])
   parms_T_lat$anchor_value <- as.numeric(params.set.doomsday[i,"T_lat_offset"])
   parms_d_inf$parm2 <- as.numeric(params.set.doomsday[i,"d_inf"])
   parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set.doomsday[i,"R_0"]), as.numeric(params.set.doomsday[i,"R_0"]))
 
-  for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+  for (subseq_interventions in c("hsb", "s","q")){      
     
     if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
       n_pop_input <- 200
@@ -123,6 +121,8 @@ while (i <= times){
   } else {
     i = i+1
     x = 1
+    cat(".")
+    if (i%%10 == 0){cat("|")}
   }
   
 }
@@ -147,7 +147,7 @@ plot_doomsday <- ggplot(data.doomsday) +
   geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(R_0, -T_lat_offset), color = "cornflowerblue", size = 3) +
   geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(R_0, -T_lat_offset), color = "darkgoldenrod", size = 3) +  
   geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(R_0, -T_lat_offset), color = "mediumturquoise", size = 3) +
-  theme_bw() + xlim(0, 5) 
+  theme_bw() + xlim(0, R_0.max) 
 plot_doomsday
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday.pdf", sep=""))
