@@ -87,7 +87,11 @@ data_master <- rbind(data.hr.lr.Ebola,
                      data.hr.lr.Smallpox,
                      data.hr.lr.Pertussis)
 
+date <- format(Sys.time(), "%Y%m%d")
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_FigureRsRq.RData", sep=""))
+
 #### ggplot ####
+
 plot <- # data
   ggplot(data_master, aes(color=disease)) +
   geom_point(data = data_master[data_master$disease == set_1["name"] &
@@ -152,4 +156,64 @@ data_master %>%
   scale_numeric("x", domain = c(0, 5), nice = FALSE, label = "Symptom Monitoring") %>%
   scale_numeric("y", domain = c(0, 5), nice = FALSE, label = "Quarantine")
   
+#### Explore data_master file ####
+# look at Rel_Benefit for one disease across a range of R_0
+R_0_input <- 3
+sd <- 0.5
+for (R_0_input in c(1,2,3,4)){
+  summary <- summary(data_master[data_master$disease == "Smallpox" &
+                        data_master$R_0 <= R_0_input + sd & 
+                        data_master$R_0 >= R_0_input - sd, "Rel_Benefit"])
+  cat("\nR_0_input is", R_0_input, "\n")
+  print(summary)
+}
 
+ggplot(data_master[data_master$Setting == "HR",], aes(x=R_0, y=Rel_Benefit, group=disease, col=disease)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(size = 1.5, method = "loess") +
+  theme_bw()
+
+data_master %>%
+  ggvis(x = ~R_0, y = ~Rel_Benefit, fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", domain = c(-1, 1), nice = FALSE, label = "Rel_Benefit")
+
+# Abs_Benefit
+data_master %>%
+  ggvis(x = ~R_0, y = ~Abs_Benefit, fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", domain = c(-1, 5), nice = FALSE, label = "Abs_Benefit")
+
+# NNQ
+data_master %>%
+  ggvis(x = ~R_0, y = ~NNQ, fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  filter(NNQ <= eval(input_slider(value=100, min = 50, max = 1000, step = 10, label = "Outlier Threshold"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", nice = FALSE, label = "NNQ")
+
+# Not working yet
+data_master %>%
+  ggvis(x = ~R_0, y = input_select(c("Abs_Benefit","Rel_Benefit"), map=as.name, label = "Outcome"), fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", domain = c(-1, 5), nice = FALSE, label = "Abs_Benefit")
+  
