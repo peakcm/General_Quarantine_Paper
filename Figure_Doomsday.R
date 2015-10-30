@@ -40,7 +40,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 500
+times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
@@ -90,10 +90,7 @@ while (i <= times){
                               parms_serial_interval = parms_serial_interval,
                               dispersion = dispersion,
                               printing = printing)
-    if (subseq_interventions == background_intervention){
-      data.doomsday[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
-      data.doomsday[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
-    }
+    data.doomsday[i,"R_0"] <- parms_R_0[c("parm1")]
     if (subseq_interventions == "hsb"){
       data.doomsday[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
     }
