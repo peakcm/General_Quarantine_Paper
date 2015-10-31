@@ -154,6 +154,15 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_doomsday)
 dev.off()
 
+#### Plot reverse axes ####
+plot_doomsday <- ggplot(data.doomsday) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(-T_lat_offset, R_0), color = "cornflowerblue", size = 3) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(-T_lat_offset, R_0), color = "darkgoldenrod", size = 3) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(-T_lat_offset, R_0), color = "mediumturquoise", size = 3) +
+  theme_bw() + xlim(c(min(data.doomsday$T_lat_offset), max(data.doomsday$T_lat_offset))) +
+  ylim(c(0, max(data.doomsday$R_0)))
+plot_doomsday
+
 #### Save ####
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_doomsday.RData", sep=""))
 
