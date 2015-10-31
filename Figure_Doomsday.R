@@ -10,9 +10,12 @@ desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE
 root <- desired_root
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
+#### Load Rdata ####
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola_doomsday_2.RData", sep=""))
+
 #### Set Parms ####
 # Set a range of T_lat_offset we're interested in
-T_lat_offset.min <- -7
+T_lat_offset.min <- -10
 T_lat_offset.max <- 10
 
 # Set a range of R_0
