@@ -140,7 +140,7 @@ plot + # accoutrements
 
 #### ggvis ####
 diseases <- unique(data_master$disease)
-slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number (+/- 0.5")
+slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number (+/- 0.5)")
 data_master %>% 
   ggvis(x = ~R_s, y = ~R_q, fill = ~disease, opacity := 0.5) %>%
   filter(R_0 <= (eval(slider)+0.5)) %>%
@@ -173,15 +173,16 @@ ggplot(data_master[data_master$Setting == "HR",], aes(x=R_0, y=Rel_Benefit, grou
   stat_smooth(size = 1.5, method = "loess") +
   theme_bw()
 
+# Rel_Benefit
 data_master %>%
-  ggvis(x = ~R_0, y = ~Rel_Benefit, fill = ~disease, stroke = ~disease) %>%
+  ggvis(x = ~R_0, y = ~Rel_Benefit*100, fill = ~disease, stroke = ~disease) %>%
   group_by(disease) %>% 
   filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
   filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
   layer_points(opacity := 0.1) %>%
   layer_smooths() %>%
   scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
-  scale_numeric("y", domain = c(-1, 1), nice = FALSE, label = "Rel_Benefit")
+  scale_numeric("y", domain = c(-50, 100), nice = FALSE, label = "% reduction in R by Q over SM")
 
 # Abs_Benefit
 data_master %>%
@@ -196,7 +197,7 @@ data_master %>%
 
 # NNQ
 data_master %>%
-  ggvis(x = ~R_0, y = ~NNQ, fill = ~disease, stroke = ~disease) %>%
+  ggvis(x = ~R_0, y = ~log10(NNQ), fill = ~disease, stroke = ~disease) %>%
   group_by(disease) %>% 
   filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
   filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
@@ -204,7 +205,30 @@ data_master %>%
   layer_points(opacity := 0.1) %>%
   layer_smooths() %>%
   scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
-  scale_numeric("y", nice = FALSE, label = "NNQ")
+  scale_numeric("y", nice = FALSE, label = "Log 10 NNQ")
+
+# Abs_Benefit_per_Qday
+data_master %>%
+  ggvis(x = ~R_0, y = ~Abs_Benefit_per_Qday, fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", nice = FALSE, label = "Reduction in R by Q over SM per day of quarantine")
+
+# Rel_Benefit_per_Qday
+data_master$Rel_Benefit_per_Qday <- data_master$Rel_Benefit / data_master$obs_to_iso_q
+data_master %>%
+  ggvis(x = ~R_0, y = ~Rel_Benefit_per_Qday*100, fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  layer_smooths() %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", nice = FALSE, label = "% reduction in R by Q over SM per day of quarantine")
 
 # Not working yet
 data_master %>%
