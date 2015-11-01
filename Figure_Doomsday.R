@@ -11,7 +11,7 @@ root <- desired_root
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 #### Load Rdata ####
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola_doomsday_2.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola_PlotDoomsday/20151024_Ebola_doomsday_2000.RData", sep=""))
 
 #### Set Parms ####
 # Set a range of T_lat_offset we're interested in
@@ -32,6 +32,19 @@ prob_CT <- 0.9
 gamma <- 0.9
 
 parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# (Nearly) Ideal Interventions
+background_intervention = "u"
+
+prob_CT <- 1
+
+gamma <- 1
+
+parms_epsilon = list("uniform", 0.5, 0.5, 999, "independent", "independent")
 names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
@@ -162,6 +175,10 @@ plot_doomsday <- ggplot(data.doomsday) +
   theme_bw() + xlim(c(min(data.doomsday$T_lat_offset), max(data.doomsday$T_lat_offset))) +
   ylim(c(0, max(data.doomsday$R_0)))
 plot_doomsday
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_2000.pdf", sep=""))
+plot(plot_doomsday)
+dev.off()
 
 #### Save ####
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_doomsday.RData", sep=""))
