@@ -3,13 +3,21 @@
 # Odyssey
 
 #### Load libraries ####
-library(ggplot2)
+# library(ggplot2)
 
 #### Load data ####
-# Use the SMC parameter space defined by Ebola
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+# # Use the SMC parameter space defined by Ebola
+# desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+# root <- desired_root
+# load(paste(desired_root, "_SMC.RData", sep=""))
+
+# Use the SMC parameter space defined by SARS
+desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
 root <- desired_root
 load(paste(desired_root, "_SMC.RData", sep=""))
+
+#### Load Functions ####
+source("Functions.R")
 
 #### Set Parms ####
 # Set a range of T_lat_offset we're interested in
@@ -22,26 +30,39 @@ R_0.max <- 10
 
 dispersion = 1
 
-# High Resource Interventions
+# # High Resource Interventions
+# background_intervention = "u"
+# 
+# prob_CT <- 0.9
+# 
+# gamma <- 0.9
+# 
+# parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+# names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+# 
+# parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
+# names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Nearly perfect Interventions
 background_intervention = "u"
 
-prob_CT <- 0.9
+prob_CT <- 1
 
-gamma <- 0.9
+gamma <- 1
 
-parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+parms_epsilon = list("uniform", 0.25, 0.25, 999, "independent", "independent")
 names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 #### Resample ####
-# Resample from Ebola_SMC except without respecting joint distribution and new T_lat_offset
+# Resample from SMC params except without respecting joint distribution and new T_lat_offset
 
 # Initialize
-n_pop = 500
+n_pop = 800
 num_generations <- 5
-times <- 5000
+times <- 100
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
@@ -67,11 +88,11 @@ while (i <= times){
   for (subseq_interventions in c("hsb", "s","q")){      
     
     if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
-      n_pop_input <- 200
+      n_pop_input <- 500
     } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
-      n_pop_input <- 200
+      n_pop_input <- 500
     } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
-      n_pop_input <- 200
+      n_pop_input <- 500
     } else {n_pop_input <- n_pop}
     
     In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
