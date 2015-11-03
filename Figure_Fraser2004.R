@@ -3,14 +3,19 @@
 #### Load libraries ####
 library(ggplot2)
 
-#### Load Rdata ####
-# Load the data workspace from the Figure_Doomsday.R file
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola_PlotDoomsday/20151024_Ebola_doomsday_2.RData", sep=""))
+#### Define root ####
+desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+root <- desired_root
+
+#### Load _Figure_Doomsday.RData Workspace ####
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal.RData", sep=""))
+
+#### Load Fraser.R Workspace #### 
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Fraser.RData", sep=""))
 
 #### Calculate Fraser 2004 Theta value ####
 # Theta is the proprtion of infections that occur prior to symptom onset
-data.dooms
-day$theta <- NA
+data.doomsday$theta <- NA
 
 for (i in 1:nrow(data.doomsday)){
   a <- 0
@@ -75,8 +80,12 @@ layout(cbind(c(1,2)))
 no_control <- hist(data.doomsday[data.doomsday$theta == 0 & data.doomsday$R_s >= 1, "R_0"], breaks = seq(1, 10, 0.2))
 control <- hist(data.doomsday[data.doomsday$theta == 0 & data.doomsday$R_s < 1, "R_0"], breaks = seq(1, 10, 0.2))
 
-control$density / (control$density + no_control$density)
-S_max <- control$breaks[max(which(control$density / (control$density + no_control$density) > 0.90))]
+if (sum(no_control$counts)==0){
+  S_max <- max(control$breaks)
+} else {
+  control$density / (control$density + no_control$density)
+  S_max <- control$breaks[max(which(control$density / (control$density + no_control$density) > 0.90))]
+}
 
 # Find max R_0 that Q maintains 90% control
 plot(data.doomsday[data.doomsday$theta == 0 & data.doomsday$R_q > 1, "R_0"], col="red")
@@ -86,8 +95,12 @@ layout(cbind(c(1,2)))
 no_control <- hist(data.doomsday[data.doomsday$theta == 0 & data.doomsday$R_q >= 1, "R_0"], breaks = seq(1, 10, 0.2))
 control <- hist(data.doomsday[data.doomsday$theta == 0 & data.doomsday$R_q < 1, "R_0"], breaks = seq(1, 10, 0.2))
 
-control$density / (control$density + no_control$density)
-Q_max <- control$breaks[max(which(control$density / (control$density + no_control$density) > 0.90))]
+if (sum(no_control$counts)==0){
+  Q_max <- max(control$breaks)
+} else {
+  control$density / (control$density + no_control$density)
+  Q_max <- control$breaks[max(which(control$density / (control$density + no_control$density) > 0.90))]
+}
 
 # Plot
 plot_fraser <- ggplot() +
@@ -105,6 +118,6 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_fraser)
 dev.off()
 
-#### Save ####
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_fraser.RData", sep=""))
+#### Save _Fraser.RData Workspace ####
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Fraser.RData", sep=""))
 
