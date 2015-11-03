@@ -6,14 +6,14 @@ library(ggplot2)
 
 #### Load data ####
 # Use the SMC parameter space defined by Ebola
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151028_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
 root <- desired_root
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
-#### Load Rdata ####
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola_PlotDoomsday/20151024_Ebola_doomsday_2000.RData", sep=""))
+#### Load Workspace ####
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal.RData", sep=""))
 
-#### Set Parms ####
+#### Define Parms ####
 # Set a range of T_lat_offset we're interested in
 T_lat_offset.min <- -10
 T_lat_offset.max <- 10
@@ -24,6 +24,7 @@ R_0.max <- 10
 
 dispersion = 1
 
+#### Define Interventions ####
 # High Resource Interventions
 background_intervention = "u"
 
@@ -54,7 +55,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Resample from Ebola_SMC except without respecting joint distribution and new T_lat_offset
 
 # Initialize
-n_pop = 500
+n_pop = 800
 num_generations <- 5
 times <- 200
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
@@ -155,7 +156,7 @@ data.doomsday$pi_t_triangle_center <- params.set.doomsday[,"pi_t_triangle_center
 data.doomsday$T_lat_offset <- params.set.doomsday[,"T_lat_offset"]
 data.doomsday$d_inf <- params.set.doomsday[,"d_inf"]
 
-#### Plot ####
+#### Plot Orientation 1 ####
 plot_doomsday <- ggplot(data.doomsday) +
   geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(R_0, -T_lat_offset), color = "cornflowerblue", size = 3) +
   geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(R_0, -T_lat_offset), color = "darkgoldenrod", size = 3) +  
@@ -163,24 +164,22 @@ plot_doomsday <- ggplot(data.doomsday) +
   theme_bw() + xlim(0, R_0.max) 
 plot_doomsday
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday.pdf", sep=""))
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal_1.pdf", sep=""))
 plot(plot_doomsday)
 dev.off()
 
-#### Plot reverse axes ####
+#### Plot Orientation 2 ####
 plot_doomsday <- ggplot(data.doomsday) +
   geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(-T_lat_offset, R_0), color = "cornflowerblue", size = 3) +
   geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(-T_lat_offset, R_0), color = "darkgoldenrod", size = 3) +  
   geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(-T_lat_offset, R_0), color = "mediumturquoise", size = 3) +
-  theme_bw() + xlim(c(min(data.doomsday$T_lat_offset), max(data.doomsday$T_lat_offset))) +
-  ylim(c(0, max(data.doomsday$R_0)))
+  theme_bw() + xlim(c(min(-data.doomsday$T_lat_offset), max(-data.doomsday$T_lat_offset))) +
+  ylim(c(0, max(data.doomsday$R_0))) + xlab("T_lat_offset (T_inc - T_lat)")
 plot_doomsday
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_2000.pdf", sep=""))
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal_2.pdf", sep=""))
 plot(plot_doomsday)
 dev.off()
 
-#### Save ####
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_doomsday.RData", sep=""))
-
-#### 
+#### Save Workspace ####
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal.RData", sep=""))
