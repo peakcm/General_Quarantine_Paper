@@ -5,13 +5,14 @@
 library(ggplot2)
 
 #### Load data ####
-# Use the SMC parameter space defined by Ebola
-desired_root <- "20151028_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
+# Use the SMC parameter space
+desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 root <- desired_root
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 #### Load Workspace ####
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "/", root, "_Doomsday.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "/", root, "_PlotDoomsday_Ideal.RData", sep=""))
 
 #### Define Parms ####
 # Set a range of T_lat_offset we're interested in
@@ -52,7 +53,7 @@ parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 #### Resample ####
-# Resample from Ebola_SMC except without respecting joint distribution and new T_lat_offset
+# Resample from _SMC except without respecting joint distribution and new T_lat_offset
 
 # Initialize
 n_pop = 800
@@ -174,7 +175,7 @@ plot_doomsday <- ggplot(data.doomsday) +
   geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(-T_lat_offset, R_0), color = "darkgoldenrod", size = 3) +  
   geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(-T_lat_offset, R_0), color = "mediumturquoise", size = 3) +
   theme_bw() + xlim(c(min(-data.doomsday$T_lat_offset), max(-data.doomsday$T_lat_offset))) +
-  ylim(c(0, max(data.doomsday$R_0))) + xlab("T_lat_offset (T_inc - T_lat)")
+  ylim(c(0, 10)) + xlab("T_lat_offset (T_inc - T_lat)")
 plot_doomsday
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal_2.pdf", sep=""))
