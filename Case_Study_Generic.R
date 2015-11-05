@@ -15,7 +15,7 @@ library(reshape)
 library(psych)
 
 #### Load Workspaces ####
-desired_root <- "20151028_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151104_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -745,7 +745,7 @@ data.hr[data.hr$NNQ == Inf,"NNQ"] <- 9999
 data.hr[,"Abs_Benefit_per_Qday"] <- data.hr[,"Abs_Benefit"] / data.hr[,"obs_to_iso_q"]
 data.hr$d_inf <- params.set[,"d_inf"]
 data.hr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data.hr$R_0 <- params.set[,"R_0"]
+data.hr$R_0_input <- params.set[,"R_0"]
 data.hr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.hr$dispersion <- params.set[,"dispersion"]
 
@@ -869,7 +869,7 @@ data.lr[data.lr$NNQ == Inf,"NNQ"] <- 9999
 data.lr[,"Abs_Benefit_per_Qday"] <- data.lr[,"Abs_Benefit"] / data.lr[,"obs_to_iso_q"]
 data.lr$d_inf <- params.set[,"d_inf"]
 data.lr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-data.lr$R_0 <- params.set[,"R_0"]
+data.lr$R_0_input <- params.set[,"R_0"]
 data.lr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.lr$dispersion <- params.set[,"dispersion"]
 
@@ -899,55 +899,6 @@ quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_LR.RData", sep=""))
 
-#### Plot R_q and R_s ####
-
-# Set range for relevant R_0 values
-R_0_relevant.min <- 1
-R_0_relevant.max <- 5
-
-data.hr$Setting <- "HR"
-data.lr$Setting <- "LR"
-data.hr.lr <- rbind(data.hr, data.lr)
-
-plot1 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
-  geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
-  annotate("rect", xmin = 0, xmax = 1, ymin = 1, ymax = 4, alpha = .1, fill = "yellow") + 
-  annotate("rect", xmin = 1, xmax = 4, ymin = 0, ymax = 1, alpha = .1, fill = "blue") +
-  annotate("rect", xmin = 0, xmax = 1, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
-  annotate("text", x = 2.5, y = 0.9, label = "Control with Quarantine", col = "blue") +
-  annotate("text", x = 0.5, y = 3.5, label = "Control with\nSymptom Monitoring", col = "orange") +
-  geom_point(aes(x=R_s, y=R_q, col = R_0, shape=Setting) ) +
-  xlim(0,4) + ylim(0,4) +
-  scale_colour_gradient(low="yellow", high="darkred") +
-  scale_shape_manual(name = "Setting",
-                     values = c(17, 1),
-                     labels = c("High Resource", "Low Resource")) +
-  guides(shape = guide_legend(reverse=TRUE)) +
-  xlab("Effective Reproductive Number under Symptom Monitoring") +
-  ylab("Effective Reproductive Number under Quarantine") +
-  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggtitle(paste("Disease: ", disease))
-plot1
-
-plot2 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
-  annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
-  geom_hline(y=1, col = "grey") +
-  geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
-  geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
-  stat_smooth(aes(x=R_0, y=R_s, shape = Setting), method = "loess", color="darkgreen", size = 1.2) +
-  stat_smooth(aes(x=R_0, y=R_q, shape = Setting), method = "loess", color="blue", size = 1.2) +
-  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  scale_shape_manual(name = "Setting",
-                     values = c(17, 1),
-                     labels = c("High Resource", "Low Resource")) +
-  guides(shape = guide_legend(reverse=TRUE)) +
-  xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
-  ggtitle(paste("Disease: ", disease))
-plot2
-
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot2.pdf", sep=""))
-plot(plot2)
-dev.off()
-
+#### Save Workspace Image ####
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plots.RData", sep=""))
 
