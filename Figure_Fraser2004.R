@@ -4,14 +4,14 @@
 library(ggplot2)
 
 #### Define root ####
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
 root <- desired_root
 
 #### Load _Figure_Doomsday.RData Workspace ####
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "/", root, "_PlotDoomsday_Ideal.RData", sep=""))
 
 #### Load Fraser.R Workspace #### 
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Fraser.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "/", root, "_Fraser.RData", sep=""))
 
 #### Calculate Fraser 2004 Theta value ####
 # Theta is the proprtion of infections that occur prior to symptom onset
@@ -111,7 +111,7 @@ plot_fraser <- ggplot() +
   geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$R_0 < HSB_max & data.doomsday$theta == 0,],  aes(theta, R_0), color = "mediumturquoise", size = 3) +
   geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "mediumturquoise", size = 3) +
   theme_bw() + xlim(c(-0.02,1)) + xlab ("Theta = Proportion of infections that occur prior to\nsymptoms or by asymptomatic infection") +
-  ylim(c(1, Q_max+0.5))
+  ylim(c(0, 10))
 plot_fraser
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser.pdf", sep=""))
