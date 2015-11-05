@@ -4,7 +4,8 @@
 source("Functions.R")
 
 #### Case Study Generic  -------------------------------------------
-# Oct 28
+# Nov 4
+# Note that HR and LR have new settings from the October runs.
 
 #### Load Libraries ####
 # library(ppcor) #may need to install it first
@@ -70,6 +71,7 @@ library(psych)
 # # save.image('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
 # # load('~/Dropbox/Ebola/General_Quarantine_Paper/R_Code/SARS/20150904_plot.RData')
 # 
+
 # #### Disease: Ebola ####
 # 
 # # Name the trial
@@ -107,7 +109,7 @@ library(psych)
 # d_inf.max <- 25
 # pi_t_triangle_center.min <- 0
 # pi_t_triangle_center.max <- 1
-# 
+
 # #### Disease: MERS ####
 # 
 # # Name the trial
@@ -186,6 +188,7 @@ library(psych)
 # pi_t_triangle_center.min <- 0
 # pi_t_triangle_center.max <- 1
 # 
+
 # #### Disease: Hepatitis A ####
 # 
 # # Name the trial
@@ -302,7 +305,7 @@ pi_t_triangle_center.max <- 1
 
 #### Dynamically Load Workspaces ####
 # Because of serial requeue, it's best to run each part as an independent segment in case I get booted from a core and then the whole function is recalled. This way will skip the previous steps if they were completed before. Note this won't work if the day changes.
-# desired_root <- "20151028_InflunezaA" # Paste the desired root here "YYYYMMDD_DISEASE"
+# desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 desired_root <- root
 
 # If workspaces are in main folder
@@ -672,7 +675,7 @@ if (HR == TRUE){
   
   gamma <- 0.9
   
-  parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+  parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
   names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
   
   parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
@@ -758,7 +761,7 @@ if (HR == TRUE){
   data.hr[,"Abs_Benefit_per_Qday"] <- data.hr[,"Abs_Benefit"] / data.hr[,"obs_to_iso_q"]
   data.hr$d_inf <- params.set[,"d_inf"]
   data.hr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-  data.hr$R_0 <- params.set[,"R_0"]
+  data.hr$R_0_input <- params.set[,"R_0"]
   data.hr$T_lat_offset <- params.set[,"T_lat_offset"]
   data.hr$dispersion <- params.set[,"dispersion"]
   
@@ -800,10 +803,10 @@ if (LR == TRUE){
   
   gamma <- 0.5
   
-  parms_epsilon = list("uniform", 2, 2, 999, "independent", "independent")
+  parms_epsilon = list("uniform", 0, 2, 999, "independent", "independent")
   names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
   
-  parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+  parms_CT_delay = list("uniform", 0, 2, 999, "independent", "independent")
   names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
   
   # Settings
@@ -886,7 +889,7 @@ if (LR == TRUE){
   data.lr[,"Abs_Benefit_per_Qday"] <- data.lr[,"Abs_Benefit"] / data.lr[,"obs_to_iso_q"]
   data.lr$d_inf <- params.set[,"d_inf"]
   data.lr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-  data.lr$R_0 <- params.set[,"R_0"]
+  data.lr$R_0_input <- params.set[,"R_0"]
   data.lr$T_lat_offset <- params.set[,"T_lat_offset"]
   data.lr$dispersion <- params.set[,"dispersion"]
   
