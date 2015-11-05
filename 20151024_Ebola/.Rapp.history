@@ -1,0 +1,6 @@
+load("/Users/peakcm/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151024_Ebola/20151024_Ebola_doomsday_Nov.RData")
+View(data.doomsday)
+nrow(data.doomsday)
+head(data.doomsday)
+head(params.set.doomsday)
+gamma
