@@ -60,9 +60,9 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Resample from SMC params except without respecting joint distribution and new T_lat_offset
 
 # Initialize
-n_pop = 800
+n_pop = 1000
 num_generations <- 5
-times <- 100
+times <- 2000
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
