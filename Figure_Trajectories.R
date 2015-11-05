@@ -1,9 +1,14 @@
 #### Header ####
 # Make a spaghetti plot with many trials starting with one individual and tracing how many are in her infection tree as a function of generations. Then apply an intervention in generation 4 or so. Color code by u, hsb, s, q
 
-#### Load SMC Workspaces ####
-# desired_root <- "20151024_Ebola"
+#### Load PlotTrajectories Workspace ####
 desired_root <- "20151028_InfluenzaA"
+# desired_root <- "20151028_InfluenzaA"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTrajectories.RData", sep=""))
+
+#### Load SMC Workspaces ####
+desired_root <- "20151028_InfluenzaA"
+# desired_root <- "20151028_InfluenzaA"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 #### Disease: Ebola ####
@@ -79,14 +84,14 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 
 #### Model settings ###
 n_pop = 100
-num_generations_u <- 3
+num_generations_u <- 2
 num_generations_intervention <- 4
 times = 25
 names <- c("generation", "count", "trial", "intervention")
 data_traj <- data.frame(matrix(rep(NA, length(names)*times*(num_generations_u + num_generations_intervention - 1)*4), nrow=times*(num_generations_u + num_generations_intervention - 1)*4))
 names(data_traj) <- names
 data_traj$generation <- rep(seq(1, (num_generations_u + num_generations_intervention - 1)), times = times*4)
-data_traj$trial <- rep(seq(1:(times*4)), each = 6)
+data_traj$trial <- rep(seq(1:(times*4)), each = (num_generations_u + num_generations_intervention - 1))
 data_traj$intervention <- rep(c("u", "hsb", "s", "q"), each = times * (num_generations_u + num_generations_intervention - 1))
 data_traj$intervention <- factor(data_traj$intervention, levels = c("u", "hsb", "s", "q"))
 
@@ -156,19 +161,20 @@ for (i in 1:times){
 #### Plot Results ####
 plot_traj <- ggplot(data_traj, aes(x=generation, y=count, group=trial, color=intervention)) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  geom_vline(x=4, col = "grey") +
+  geom_vline(x=(num_generations_u+1), col = "grey") +
   geom_line(alpha = 0.3) +
   stat_smooth(aes(group = intervention), size = 2, method = "loess", se = FALSE) +
   scale_x_continuous(breaks = seq(1:length(count))) +
   xlab("Generation") + ylab("Incident Cases") +
-  scale_color_discrete(name="Intervention",
+  scale_color_manual(name="Intervention",
+                     values = c("coral3", "mediumturquoise", "darkgoldenrod", "cornflowerblue"),
                        breaks=c("u", "hsb", "s", "q"),
                        labels=c("None", "Health-\nSeeking\nBehavior", "Symptom\nMonitoring", "Quarantine")) +
   theme(legend.direction = "vertical", 
         legend.position = "right",
         legend.key=element_rect(size=5, color="white"))+
   ggtitle(paste(disease)) +
-  ylim(c(0, 2500))
+  scale_y_continuous(breaks = seq(0, 1400, by=100))
 plot_traj
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj.pdf", sep=""))
