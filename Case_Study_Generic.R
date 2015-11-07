@@ -660,10 +660,10 @@ prob_CT <- 0.9
 
 gamma <- 0.9
 
-parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
+parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
 names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
+parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Settings
@@ -775,6 +775,130 @@ quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0
 
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_HR.RData", sep=""))
 
+#### Case Study in Middle Resource Setting ####
+
+# Interventions
+background_intervention <- "u"
+
+prob_CT <- 0.75
+
+gamma <- 0.75
+
+parms_epsilon = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Settings
+n_pop = 500
+num_generations <- 5
+times <- 1000
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+data.mr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.mr) <- names
+
+# sample from joint posterior distribution
+sample <- sample(x = row.names(data), size = times, replace = FALSE)
+params.set <- cbind(
+  T_lat_offset = data[sample, "T_lat_offset"],
+  d_inf = data[sample, "d_inf"],
+  pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
+  dispersion = runif(n=times, min = 1, max = 1),
+  R_0 = runif(n = times, min = 1, max = 5))
+
+for (i in 1:times){
+  cat(".")
+  if (i%%10 == 0){cat("|")}
+  
+  parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+  parms_d_inf$parm2 <- params.set[i,"d_inf"]
+  parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+  parms_R_0$parm1 <- params.set[i,"R_0"]
+  parms_R_0$parm2 <- params.set[i,"R_0"]
+  dispersion <- params.set[i, "dispersion"]
+  
+  for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+    if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
+      n_pop_input <- 200
+    } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
+      n_pop_input <- 200
+    } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+      n_pop_input <- 200
+    } else {n_pop_input <- n_pop}
+    In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
+                              parms_T_inc, 
+                              parms_T_lat, 
+                              parms_d_inf, 
+                              parms_d_symp, 
+                              parms_R_0, 
+                              parms_epsilon, 
+                              parms_pi_t,
+                              num_generations,
+                              background_intervention,
+                              subseq_interventions,
+                              gamma,
+                              prob_CT,
+                              parms_CT_delay,
+                              parms_serial_interval,
+                              dispersion = dispersion,
+                              printing = printing)
+    if (subseq_interventions == background_intervention){
+      data.mr[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.mr[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "hsb"){
+      data.mr[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "s"){
+      data.mr[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+    }
+    if (subseq_interventions == "q"){
+      data.mr[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      data.mr[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+    }
+  }
+}
+
+data.mr[,"Abs_Benefit"] <- data.mr[,"R_s"] - data.mr[,"R_q"]
+data.mr[,"Rel_Benefit"] <- data.mr[,"Abs_Benefit"] / data.mr[,"R_s"]
+data.mr[,"NNQ"] <- 1 / data.mr[,"Abs_Benefit"]
+data.mr[data.mr$NNQ < 1,"NNQ"] <- 1
+data.mr[data.mr$NNQ > 9999,"NNQ"] <- 9999
+data.mr[data.mr$NNQ == Inf,"NNQ"] <- 9999
+data.mr[,"Abs_Benefit_per_Qday"] <- data.mr[,"Abs_Benefit"] / data.mr[,"obs_to_iso_q"]
+data.mr$d_inf <- params.set[,"d_inf"]
+data.mr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+data.mr$R_0_input <- params.set[,"R_0"]
+data.mr$T_lat_offset <- params.set[,"T_lat_offset"]
+data.mr$dispersion <- params.set[,"dispersion"]
+
+# Plot each of the covariate - outcome scatterplots
+for (covariate in names(data.mr)[11:15]){
+  panel_plot_fcn(data = data.mr, covariate = covariate)
+  # cat ("Press [enter] to continue")
+  # line <- readline()
+}
+
+summary(data.mr$R_0)
+summary(data.mr$R_hsb)
+summary(data.mr$R_s)
+summary(data.mr$R_q)
+summary(data.mr$Abs_Benefit)
+summary(data.mr$NNQ)
+
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6 , "R_0"])
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_hsb"])
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_s"])
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_q"])
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "Abs_Benefit"])
+summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "NNQ"])
+
+quantile(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
+quantile(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
+
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_MR.RData", sep=""))
+
 #### Case Study in Low Resource Setting ####
 
 # Interventions
@@ -784,10 +908,10 @@ prob_CT <- 0.5
 
 gamma <- 0.5
 
-parms_epsilon = list("uniform", 2, 2, 999, "independent", "independent")
+parms_epsilon = list("uniform", 0, 4, 999, "independent", "independent")
 names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_CT_delay = list("uniform", 1, 1, 999, "independent", "independent")
+parms_CT_delay = list("uniform", 0, 4, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 # Settings
