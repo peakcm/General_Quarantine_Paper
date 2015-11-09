@@ -791,21 +791,22 @@ prcc_fcn <- function(input_data, dep_var, indep_var, nboot = 100, package = "sen
     data$output <- rep(dep_var, each = length(indep_var))
     data$parameter <- rep(indep_var, times = length(dep_var))
     for (output in dep_var){
-      prcc <- pcc(X = input_data[,(length(dep_var)+1):ncol(input_data)], y = input_data[,output], nboot = nboot, rank=TRUE, conf=1-bonferroni.alpha)
+      prcc <- pcc(X = input_data[,indep_var], y = input_data[,output], nboot = nboot, rank=TRUE, conf=1-bonferroni.alpha)
       summary <- print(prcc)
       data[data$output == output,3:7] <- summary
     }
     
   } else if (package == "ppcor"){
     
-    require(ppcor)
-    data <- data.frame(pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,])
-    data[,2] <- pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
-    data[,3] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
-    data[,4] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
-    data[,5] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
-    data[,6] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
-    names(data) <- c("R_s.estimate", "R_s.p", "Abs_Benefit.estimate", "Abs_Benefit.p", "Abs_Benefit_per_Qday.estimate", "Abs_Benefit_per_Qday.p")
+    cat("Not confirmed")
+#     require(ppcor)
+#     data <- data.frame(pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,])
+#     data[,2] <- pcor(input_data[,c("R_s",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+#     data[,3] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+#     data[,4] <- pcor(input_data[,c("Abs_Benefit",names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+#     data[,5] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$estimate[1,]
+#     data[,6] <- pcor(input_data[,c("Abs_Benefit_per_Qday", names(input_data)[11:length(names(input_data))])], method=c("spearman"))$p.value[1,]
+#     names(data) <- c("R_s.estimate", "R_s.p", "Abs_Benefit.estimate", "Abs_Benefit.p", "Abs_Benefit_per_Qday.estimate", "Abs_Benefit_per_Qday.p")
     
   }
   
