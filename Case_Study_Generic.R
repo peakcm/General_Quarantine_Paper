@@ -14,8 +14,11 @@ library(ggplot2)
 library(reshape)
 library(psych)
 
+#### Source Functions ####
+source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
+
 #### Load Workspaces ####
-desired_root <- "20151104_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -363,6 +366,7 @@ while (SMC_break == FALSE){
   for (i in 1:times){
     cat(".")
     if (i%%10 == 0){cat("|")}
+    if (i%%100 == 0){cat("\n")}
     
     parms_T_lat$anchor_value <- T_lat_offset.theta[i]
     parms_d_inf$parm2 <- d_inf.theta[i]
@@ -496,7 +500,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 n_pop = 500
 num_generations <- 5
 times <- 1000
-names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+names <- c("R_0_input", "R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday", "NQD")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
 
@@ -510,18 +514,18 @@ params.set.prcc <- cbind(
 dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion")
 lhs <- maximinLHS(times, length(dimensions))
 
-gamma.min <- 0.2
+gamma.min <- 0
 gamma.max <- 1
-prob_CT.min <- 0.2
+prob_CT.min <- 0
 prob_CT.max <- 1
 CT_delay.min <- 0
 CT_delay.max <- 7
 epsilon.min <- 0
 epsilon.max <- 7
-R_0.min <- 1
-R_0.max <- 3
+R_0.min <- 5
+R_0.max <- 5
 dispersion.min <- 1
-dispersion.max <- 5
+dispersion.max <- 4
 
 params.set.prcc <- cbind(params.set.prcc,
                     gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
@@ -536,6 +540,7 @@ i=1
 while (i <= times){
   cat(".")
   if (i%%10 == 0){cat("|")}
+  if (i%%100 == 0){cat("\n")}
   
   gamma <- as.numeric(params.set.prcc[i,"gamma"])
   prob_CT <- as.numeric(params.set.prcc[i,"prob_CT"])
@@ -603,25 +608,29 @@ while (i <= times){
 # Check for missing data
 if (sum(is.na(data.prcc[,1:4]))>0){cat("Something's missing")}
 
+data.prcc$R_0_input <- params.set.prcc[,"R_0"]
 data.prcc[,"Abs_Benefit"] <- data.prcc[,"R_s"] - data.prcc[,"R_q"]
-data.prcc[,"Rel_Benefit"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"R_s"]
 data.prcc[,"NNQ"] <- 1 / data.prcc[,"Abs_Benefit"]
+data.prcc[,"Abs_Benefit_per_Qday"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"obs_to_iso_q"]
+data.prcc[,"NQD"] <- 1 / data.prcc[,"Abs_Benefit_per_Qday"]
 data.prcc[data.prcc$NNQ < 1,"NNQ"] <- 1
 data.prcc[data.prcc$NNQ > 9999,"NNQ"] <- 9999
 data.prcc[data.prcc$NNQ == Inf,"NNQ"] <- 9999
-data.prcc[,"Abs_Benefit_per_Qday"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"obs_to_iso_q"]
+
+data.prcc[,"Rel_Benefit"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"R_s"]
+data.prcc[,"Rel_Benefit_per_Qday"] <- data.prcc[,"Rel_Benefit"] / data.prcc[,"obs_to_iso_q"]
+
 data.prcc$gamma <- params.set.prcc[,"gamma"]
 data.prcc$prob_CT <- params.set.prcc[,"prob_CT"]
 data.prcc$CT_delay <- params.set.prcc[,"CT_delay"]
 data.prcc$epsilon <- params.set.prcc[,"epsilon"]
-data.prcc$R_0 <- params.set.prcc[,"R_0"]
 data.prcc$dispersion <- params.set.prcc[,"dispersion"]
 data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
 data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
 data.prcc$d_inf <- params.set.prcc[,"d_inf"]
 
 # Plot each of the covariate - outcome scatterplots
-for (covariate in names(data.prcc)[11:18]){
+for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0_input", "dispersion")){
   panel_plot_fcn(data = data.prcc, covariate = covariate)
 #   cat ("Press [enter] to continue")
 #   line <- readline()
@@ -631,8 +640,8 @@ for (covariate in names(data.prcc)[11:18]){
 decile_plot_fcn(data.prcc, params.set.prcc)
 
 # Calculate PRCC
-dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit", "Rel_Benefit", "NNQ", "obs_to_iso_q", "Abs_Benefit_per_Qday","ks")
-indep_var <- c( "gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf")
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "NQD", "Rel_Benefit", "Rel_Benefit_per_Qday","obs_to_iso_q","ks")
+indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "R_0_input")
 output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
                         nboot = 100, package = "sensitivity", standardize = TRUE)
 
@@ -669,7 +678,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 500
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.hr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.hr) <- names
@@ -681,11 +690,12 @@ params.set <- cbind(
   d_inf = data[sample, "d_inf"],
   pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
   dispersion = runif(n=times, min = 1, max = 1),
-  R_0 = runif(n = times, min = 1, max = 5))
+  R_0 = runif(n = times, min = 1.72, max = 1.94)) # note this is changed
 
 for (i in 1:times){
   cat(".")
   if (i%%10 == 0){cat("|")}
+  if (i%%100 == 0){cat("\n")}
   
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_inf$parm2 <- params.set[i,"d_inf"]
@@ -773,7 +783,7 @@ summary(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "NNQ"])
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.hr[data.hr$R_0 > 2.2 & data.hr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_HR.RData", sep=""))
+# save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_HR.RData", sep=""))
 
 #### Case Study in Middle Resource Setting ####
 
@@ -793,7 +803,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 500
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.mr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.mr) <- names
@@ -805,11 +815,12 @@ params.set <- cbind(
   d_inf = data[sample, "d_inf"],
   pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
   dispersion = runif(n=times, min = 1, max = 1),
-  R_0 = runif(n = times, min = 1, max = 5))
+  R_0 = runif(n = times, min = 1.72, max = 1.94)) # note this is changed
 
 for (i in 1:times){
   cat(".")
   if (i%%10 == 0){cat("|")}
+  if (i%%100 == 0){cat("\n")}
   
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_inf$parm2 <- params.set[i,"d_inf"]
@@ -897,7 +908,7 @@ summary(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "NNQ"])
 quantile(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.mr[data.mr$R_0 > 2.2 & data.mr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_MR.RData", sep=""))
+# save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_MR.RData", sep=""))
 
 #### Case Study in Low Resource Setting ####
 
@@ -917,7 +928,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Settings
 n_pop = 500
 num_generations <- 5
-times <- 1000
+times <- 500
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.lr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.lr) <- names
@@ -929,11 +940,12 @@ params.set <- cbind(
   d_inf = data[sample, "d_inf"],
   pi_t_triangle_center = data[sample, "pi_t_triangle_center"],
   dispersion = runif(n=times, min = 1, max = 1),
-  R_0 = runif(n = times, min = 1, max = 5))
+  R_0 = runif(n = times, min = 1.72, max = 1.94)) # note this is changed
 
 for (i in 1:times){
   cat(".")
   if (i%%10 == 0){cat("|")}
+  if (i%%100 == 0){cat("\n")}
   
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_inf$parm2 <- params.set[i,"d_inf"]
@@ -1021,7 +1033,7 @@ summary(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "NNQ"])
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_s"], c(0.025, 0.50, 0.975))
 quantile(data.lr[data.lr$R_0 > 2.2 & data.lr$R_0 < 3.6, "R_q"], c(0.025, 0.50, 0.975))
 
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_LR.RData", sep=""))
+# save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_LR.RData", sep=""))
 
 #### Save Workspace Image ####
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plots.RData", sep=""))
