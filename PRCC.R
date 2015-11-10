@@ -267,9 +267,9 @@ plot_prcc_3 <- ggplot(output.all, aes(x = parameter, y = coef)) +
 plot_prcc_3
 
 #### Plot each disease, horizontal bar chart ####
-df.prcc.output.subset <- df.prcc.output[is.element(df.prcc.output$output, c("R_s", "R_q", "Abs_Benefit_per_Qday", "Rel_Benefit")),]
+df.prcc.output.subset <- df.prcc.output[is.element(df.prcc.output$output, c("R_s", "R_q", "Abs_Benefit", "Rel_Benefit")),]
 df.prcc.output.subset$parameter <- factor(df.prcc.output.subset$parameter, levels = rev(c("gamma", "prob_CT", "epsilon", "CT_delay", "T_lat_offset", "pi_t_triangle_center", "d_inf", "dispersion")), ordered = TRUE)
-df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Abs_Benefit_per_Qday", "Rel_Benefit"), ordered = TRUE)
+df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Abs_Benefit", "Rel_Benefit"), ordered = TRUE)
 df.prcc.output.subset$disease <- factor(df.prcc.output.subset$disease, levels = rev(c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox")), ordered = TRUE)
 
 scale_colour_brewer(type="qual", palette=6)
@@ -278,19 +278,25 @@ my.cols <- my.cols[c(3, 7, 4, 5, 1, 6, 2)]
 
 plot_prcc_4 <- ggplot(df.prcc.output.subset, aes(x = parameter, y = coef, fill = parameter, color = disease)) +
   facet_grid(.~output) +
-  geom_bar(position = "dodge", stat="identity") +
-  geom_hline(yintercept=0, color="red", size=0.25) +
+  geom_bar(position = "dodge", stat="identity", width = .9) +
   ggtitle("Partial Rank Correlation Coefficient") +
   coord_flip() +
-  scale_fill_manual(values = rep(c("grey", "black"), 4)) +
+  # scale_fill_manual(values = rep(c("grey", "black"), 4)) +
+  scale_fill_brewer(type = "div", palette = 6) +
   scale_color_manual(values = rev(my.cols), breaks = c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox")) +
   theme_bw() +
   theme(axis.title.y=element_blank()) +
-  xlab("Partial Rank Correlation Coefficient") +
+  ylab("Partial Rank Correlation Coefficient") +
+  geom_hline(yintercept=0, color="darkgrey", size=1) +
+  guides(color=FALSE) +
   guides(fill=FALSE)
 plot_prcc_4
 
-#### Save Workspace ####
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_4.pdf", sep=""), width=9, height=6)
+plot(plot_prcc_4)
+dev.off()
+
+ #### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
 
