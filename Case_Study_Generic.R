@@ -96,7 +96,7 @@ disease <- "Ebola"
 root <- paste(date, disease, sep = "_")
 
 # Fixed Disease Parameters
-parms_serial_interval <- list("gamma", 2.5, 0.2) # approximation from WHO
+parms_serial_interval <- list("gamma", 2.5931, 0.1697) # Althaus 2015 Lancet ID
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent") # approximation from WHO
@@ -253,7 +253,7 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("lognormal", 15.53418, 1.253332) 
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
+parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent") 
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
