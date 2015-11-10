@@ -813,3 +813,29 @@ prcc_fcn <- function(input_data, dep_var, indep_var, nboot = 100, package = "sen
   return(data)
 }
 
+#### summarize_dist_fcn ####
+summarize_dist_fcn <- function(parms){
+  if (parms$dist == "weibull"){
+    percentile_025 <- sort(rweibull(1000000, shape=parms$parm1, scale=parms$parm2))[1000000*0.025]
+    percentile_50 <- sort(rweibull(1000000, shape=parms$parm1, scale=parms$parm2))[1000000*0.50]
+    percentile_975 <- sort(rweibull(1000000, shape=parms$parm1, scale=parms$parm2))[1000000*0.975]
+    curve(dweibull(x, shape=parms$parm1, scale=parms$parm2), col="green", lwd=2, xlab = "Days", ylab = "Desired Distribution", to = percentile_975)
+  } else if (parms$dist == "lognormal"){
+    percentile_025 <- sort(rlnorm(1000000, mean=log(parms$parm1), sdlog=log(parms$parm2)))[1000000*0.025]
+    percentile_50 <- sort(rlnorm(1000000, mean=log(parms$parm1), sdlog=log(parms$parm2)))[1000000*0.50]
+    percentile_975 <- sort(rlnorm(1000000, mean=log(parms$parm1), sdlog=log(parms$parm2)))[1000000*0.975]
+    curve(dlnorm(x, mean= log(parms$parm1), sdlog=log(parms$parm2)), col="green", lwd=2, xlab = "Days", ylab = "Desired Distribution", to = percentile_975)
+  } else if (parms$dist == "gamma"){
+    percentile_025 <- sort(rgamma(1000000, shape=parms$parm1, rate=parms$parm2))[1000000*0.025]
+    percentile_50 <- sort(rgamma(1000000, shape=parms$parm1, rate=parms$parm2))[1000000*0.50]
+    percentile_975 <- sort(rgamma(1000000, shape=parms$parm1, rate=parms$parm2))[1000000*0.975]
+    curve(dgamma(x, shape=parms$parm1, rate=parms$parm2),col="green", lwd=2, xlab = "Days", ylab = "Desired Distribution", to = percentile_975)
+  } else if (parms$dist == "normal"){
+    percentile_025 <- sort(rnorm(1000000, mean=parms$parm1, sd=parms$parm2))[1000000*0.025]
+    percentile_50 <- sort(rgamma(1000000, mean=parms$parm1, sd=parms$parm2))[1000000*0.50]
+    percentile_975 <- sort(rgamma(1000000, mean=parms$parm1, sd=parms$parm2))[1000000*0.975]
+    curve(dnorm(x, mean=parms$parm1, sd=parms$parm2)*100, col="green", lwd=2, xlab = "Serial Interval (Days)", ylab = "Desired Distribution", to = percentile_975)
+  }
+  cat("Median = ", percentile_50, " [", percentile_025, ", ", percentile_975, "]")
+}
+
