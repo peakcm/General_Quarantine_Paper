@@ -18,7 +18,7 @@ library(psych)
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Load Workspaces ####
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151026_HepatitisA" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -68,7 +68,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 # Ranges for particle filter
 T_lat_offset.min <- 0
 T_lat_offset.max <- 2
-d_inf.min <- 10
+d_inf.min <- 1
 d_inf.max <- 40
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
@@ -121,7 +121,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 # Ranges for particle filter
 T_lat_offset.min <- 0
 T_lat_offset.max <- 2
-d_inf.min <- 10
+d_inf.min <- 1
 d_inf.max <- 25
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
@@ -157,10 +157,10 @@ parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")
 names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 # Ranges for particle filter
-T_lat_offset.min <- -4
+T_lat_offset.min <- -5
 T_lat_offset.max <- 4
-d_inf.min <- 5
-d_inf.max <- 25
+d_inf.min <- 1
+d_inf.max <- 35
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -200,7 +200,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 T_lat_offset.min <- -10
 T_lat_offset.max <- 4
 d_inf.min <- 5
-d_inf.max <- 14*7
+d_inf.max <- 120
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -237,8 +237,8 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 # Ranges for particle filter
 T_lat_offset.min <- -14
 T_lat_offset.max <- 4
-d_inf.min <- 2
-d_inf.max <- 20
+d_inf.min <- 1
+d_inf.max <- 30
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
 
@@ -275,7 +275,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 # Ranges for particle filter
 T_lat_offset.min <- -5
 T_lat_offset.max <- 5
-d_inf.min <- 2
+d_inf.min <- 1
 d_inf.max <- 30
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
@@ -313,7 +313,7 @@ names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "ancho
 # Ranges for particle filter
 T_lat_offset.min <- -2
 T_lat_offset.max <- 2
-d_inf.min <- 2
+d_inf.min <- 1
 d_inf.max <- 14
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
@@ -480,6 +480,22 @@ while (SMC_break == FALSE){
 # Save tables and output files
 write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_SMC.RData", sep=""))
+
+#### Summarize SMC-fit distributions ####
+# desired_root <- "20151027_MERS" # Paste the desired root here "YYYYMMDD_DISEASE"
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
+
+sort(data$T_lat_offset)[floor(nrow(data)*0.025)]
+sort(data$T_lat_offset)[floor(nrow(data)*0.50)]
+sort(data$T_lat_offset)[floor(nrow(data)*0.975)]
+
+sort(data$d_inf)[floor(nrow(data)*0.025)]
+sort(data$d_inf)[floor(nrow(data)*0.50)]
+sort(data$d_inf)[floor(nrow(data)*0.975)]
+
+sort(data$pi_t_triangle_center)[floor(nrow(data)*0.025)]
+sort(data$pi_t_triangle_center)[floor(nrow(data)*0.50)]
+sort(data$pi_t_triangle_center)[floor(nrow(data)*0.975)]
 
 #### Case Study in High Resource Setting ####
 
