@@ -200,58 +200,10 @@ layout(c(1))
 # First, run the code block "Test three generations of infection" to create Pop_alpha and Pop_beta
 serial_interval_fcn(Pop_alpha, Pop_beta, parms_serial_interval, plot="True")
 
-# SARS serial interval approximation
-parms_serial_interval <- list("weibull", 2, 10)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dweibull(x, shape=parms_serial_interval$parm1, scale=parms_serial_interval$parm2),
-      from=0, to=30, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-
-# Lessler Incubation Period
-parms_serial_interval <- list("lognormal", 4, 1.81)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dlnorm(x, mean= log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
-      from=0, to=30, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-
-# MERS
-parms_serial_interval <- list("lognormal", 7.6, 1.77)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dlnorm(x, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)),
-      from=0, to=30, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.05]
-sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.50]
-sort(rlnorm(1000000, mean=log(parms_serial_interval$parm1), sdlog=log(parms_serial_interval$parm2)))[1000000*0.95]
-
-parms_serial_interval <- list("gamma", 16, 1.3)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
-      from=0, to=20, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-sort(rgamma(1000000, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2))[1000000*0.50]
-
-
-# Ebola serial interval approximation from WHO
-parms_serial_interval <- list("gamma", 2.5, 0.2)
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dgamma(x, shape=parms_serial_interval$parm1, rate=parms_serial_interval$parm2),
-      from=0, to=40, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution")
-
-# Influenza A
-parms_serial_interval <- list("normal", 2.2, 0.8) 
-names(parms_serial_interval) <- c("dist","parm1","parm2")
-
-curve(dnorm(x, mean=parms_serial_interval$parm1, sd=parms_serial_interval$parm2)*100,
-      from=0, to=13, col="green", lwd=2,
-      main = "Testing Desired Distribution", xlab = "Serial Interval (Days)", ylab = "Desired Distribution", add = F)
-
+#### Summarize distribution ####
+layout(c(1))
+summarize_dist_fcn(parms_serial_interval)
+summarize_dist_fcn(parms_T_inc)
 
 #### Test overdispersion super spreading feature ####
 
