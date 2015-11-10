@@ -482,20 +482,46 @@ write.table(ks_conv_stat, paste(root,"ks_conv_stat.csv", sep="_"))
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_SMC.RData", sep=""))
 
 #### Summarize SMC-fit distributions ####
-# desired_root <- "20151027_MERS" # Paste the desired root here "YYYYMMDD_DISEASE"
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
+desired_root <- "20151028_Smallpox" # Paste the desired root here "YYYYMMDD_DISEASE"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
-sort(data$T_lat_offset)[floor(nrow(data)*0.025)]
-sort(data$T_lat_offset)[floor(nrow(data)*0.50)]
-sort(data$T_lat_offset)[floor(nrow(data)*0.975)]
+cat("Median T_lat_offset is", 
+    round(sort(data$T_lat_offset)[floor(nrow(data)*0.50)], 2),
+    "95% CI: [",
+    round(sort(data$T_lat_offset)[floor(nrow(data)*0.025)], 2),
+    ",",
+    round(sort(data$T_lat_offset)[floor(nrow(data)*0.975)], 2),
+    "]")
 
-sort(data$d_inf)[floor(nrow(data)*0.025)]
-sort(data$d_inf)[floor(nrow(data)*0.50)]
-sort(data$d_inf)[floor(nrow(data)*0.975)]
+cat("Median d_inf UPPER BOUND OF THE ~UNIF[1,X] X=", 
+    round(sort(data$d_inf)[floor(nrow(data)*0.50)], 2),
+    "95% CI: [",
+    round(sort(data$d_inf)[floor(nrow(data)*0.025)], 2),
+    ",",
+    round(sort(data$d_inf)[floor(nrow(data)*0.975)], 2),
+    "]")
 
-sort(data$pi_t_triangle_center)[floor(nrow(data)*0.025)]
-sort(data$pi_t_triangle_center)[floor(nrow(data)*0.50)]
-sort(data$pi_t_triangle_center)[floor(nrow(data)*0.975)]
+# calculate the real Median d_inf after considering the ~unif[1, X]
+simulated_d_inf <- c()
+for (d in data$d_inf){
+  simulated_d_inf <- c(simulated_d_inf, runif(n = 1000, min = 1, max = d))
+}
+
+cat("Median d_inf is", 
+    round(sort(simulated_d_inf)[floor(length(simulated_d_inf)*0.5)], 2),
+    "95% CI: [",
+    round(sort(simulated_d_inf)[floor(length(simulated_d_inf)*0.025)], 2),
+    ",",
+    round(sort(simulated_d_inf)[floor(length(simulated_d_inf)*0.975)], 2),
+    "]")
+
+cat("Median pi_t_triangle_center is", 
+    round(sort(data$pi_t_triangle_center)[floor(nrow(data)*0.50)], 2),
+    "95% CI: [",
+    round(sort(data$pi_t_triangle_center)[floor(nrow(data)*0.025)], 2),
+    ",",
+    round(sort(data$pi_t_triangle_center)[floor(nrow(data)*0.975)], 2),
+    "]")
 
 #### Case Study in High Resource Setting ####
 
