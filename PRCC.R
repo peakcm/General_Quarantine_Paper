@@ -4,6 +4,7 @@
 #### Load Libraries ####
 library(ggplot2)
 library(RColorBrewer)
+library(sensitivity)
 
 #### Source Functions ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
@@ -18,6 +19,9 @@ desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE
 # If workspaces are in their own folder, named the same as the root
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
+
+desired_date <- "20151109"
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
 
@@ -187,6 +191,19 @@ indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triang
 output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
+#### See if PRCC depends on parameter ranges ####
+nrow(data.prcc[data.prcc$gamma > 0.6,]) #sensitive
+output.1 <- prcc_fcn(input_data = data.prcc[data.prcc$gamma > 0.6,], dep_var = dep_var, indep_var = indep_var, 
+                   nboot = 100, package = "sensitivity", standardize = TRUE)
+
+nrow(data.prcc[data.prcc$gamma < 0.6,]) #sensitive
+output.2 <- prcc_fcn(input_data = data.prcc[data.prcc$gamma < 0.6,], dep_var = dep_var, indep_var = indep_var, 
+                     nboot = 100, package = "sensitivity", standardize = TRUE)
+
+nrow(data.prcc[data.prcc$epsilon < 3,]) #not sensitive
+output.3 <- prcc_fcn(input_data = data.prcc[data.prcc$epsilon < 3,], dep_var = dep_var, indep_var = indep_var, 
+                     nboot = 100, package = "sensitivity", standardize = TRUE)
+
 #### Plot each disease ####
 plot_prcc_1 <- ggplot(output, aes(x = parameter, y= coef)) +
   facet_grid(output ~ .) +
@@ -231,6 +248,7 @@ for (ind in desired_roots){
   df.prcc.output <- rbind(df.prcc.output, output)
   names(df.prcc.output)
 }
+
 df.prcc <- df.prcc[is.na(df.prcc$R_0)==0,]
 df.prcc.output <- df.prcc.output[is.na(df.prcc.output$coef)==0,]
 
@@ -241,6 +259,10 @@ indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triang
 # indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "R_0_input")
 output.all <- prcc_fcn(input_data = df.prcc, dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
+
+# Add output.all to the df.prcc.output file so an all-diseases bar can be added to the horizontal grouped bar chart
+output.all$disease <- "all"
+df.prcc.output <- rbind(df.prcc.output, output.all)
 
 #### Plot all diseases ####
 plot_prcc_2 <- ggplot(output.all, aes(x = parameter, y= coef)) +
@@ -267,14 +289,14 @@ plot_prcc_3 <- ggplot(output.all, aes(x = parameter, y = coef)) +
 plot_prcc_3
 
 #### Plot each disease, horizontal bar chart ####
-df.prcc.output.subset <- df.prcc.output[is.element(df.prcc.output$output, c("R_s", "R_q", "Abs_Benefit", "Rel_Benefit")),]
+df.prcc.output.subset <- df.prcc.output[is.element(df.prcc.output$output, c("R_s", "R_q", "Abs_Benefit", "Abs_Benefit_per_Qday")),]
 df.prcc.output.subset$parameter <- factor(df.prcc.output.subset$parameter, levels = rev(c("gamma", "prob_CT", "epsilon", "CT_delay", "T_lat_offset", "pi_t_triangle_center", "d_inf", "dispersion")), ordered = TRUE)
-df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Abs_Benefit", "Rel_Benefit"), ordered = TRUE)
-df.prcc.output.subset$disease <- factor(df.prcc.output.subset$disease, levels = rev(c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox")), ordered = TRUE)
+df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Abs_Benefit", "Abs_Benefit_per_Qday"), ordered = TRUE)
+df.prcc.output.subset$disease <- factor(df.prcc.output.subset$disease, levels = rev(c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox", "all")), ordered = TRUE)
 
 scale_colour_brewer(type="qual", palette=6)
 my.cols <- brewer.pal(n = 7, name = "Set1")
-my.cols <- my.cols[c(3, 7, 4, 5, 1, 6, 2)]
+my.cols <- c(my.cols[c(3, 7, 4, 5, 1, 6, 2)], "black")
 
 plot_prcc_4 <- ggplot(df.prcc.output.subset, aes(x = parameter, y = coef, fill = parameter, color = disease)) +
   facet_grid(.~output) +
@@ -283,7 +305,7 @@ plot_prcc_4 <- ggplot(df.prcc.output.subset, aes(x = parameter, y = coef, fill =
   coord_flip() +
   # scale_fill_manual(values = rep(c("grey", "black"), 4)) +
   scale_fill_brewer(type = "div", palette = 6) +
-  scale_color_manual(values = rev(my.cols), breaks = c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox")) +
+  scale_color_manual(values = rev(my.cols), breaks = c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox", "all")) +
   theme_bw() +
   theme(axis.title.y=element_blank()) +
   ylab("Partial Rank Correlation Coefficient") +
@@ -296,7 +318,7 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_prcc_4)
 dev.off()
 
- #### Save Workspace ####
+#### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
 
