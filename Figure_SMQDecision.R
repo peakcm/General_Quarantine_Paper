@@ -20,6 +20,8 @@ desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_LR.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMQDecision.RData", sep=""))
+
 #### Create dataframe ####
 R_0_relevant.min <- 1.7
 R_0_relevant.max <- 2
@@ -62,21 +64,24 @@ data.SMQ.melt[data.SMQ.melt$variable == "R_q", "variance"] <- data.SMQ.melt[data
 data.SMQ.melt[data.SMQ.melt$variable == "R_s", "variance"] <- data.SMQ.melt[data.SMQ.melt$variable == "R_s", "R_s.var"]
 data.SMQ.melt <- data.SMQ.melt[,c("Setting", "variable", "value", "variance")]
 
+data.SMQ.melt$variable <- factor(data.SMQ.melt$variable, levels = c("R_q", "R_s"), ordered = TRUE)
+
 #### Plot 1 ####
 plot1 <- ggplot(data.SMQ.melt, aes(Setting, y = value, fill = variable)) +
+  theme_bw() +
+  theme(legend.justification=c(0,0), legend.position=c(0.1,0.85)) +
   geom_hline(y=1, color = "lightgreen", size=2) +
   geom_bar(stat = "identity", position="dodge", width = 0.8, size = 1) +
-  geom_errorbar(aes(ymin = value - 1.96*sqrt(variance), ymax = value + 1.96*sqrt(variance)),
-                width=.2,                    # Width of the error bars
-                position=position_dodge(.9)) +
-  scale_fill_manual(values = c("cornflowerblue", "darkgoldenrod")) +
-  scale_x_discrete(limits = c("LR", "MR", "HR"), labels = c("Low Resource", "Mid Resource", "High Resource")) +
+  geom_errorbar(aes(ymin = value - 1.96*sqrt(variance), ymax = value + 1.96*sqrt(variance)), width=.2, position=position_dodge(.9)) +
+  scale_fill_manual(values = c("cornflowerblue", "darkgoldenrod"), labels = c("Quarantine", "Symptom Monitoring")) +
+  scale_x_discrete(limits = rev(c("LR", "MR", "HR")), labels = rev(c("Low Resource", "Mid Resource", "High Resource")), name = "") +
   ylab(expression(paste(R[e]))) +
-  xlab("Setting") +
-  guides(fill = guide_legend(title = element_blank())) +
-  theme(legend.justification=c(0,0), legend.position=c(.8,0.8)) +
-  theme_bw()
+  guides(fill = guide_legend(title = element_blank()))
 plot1
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotSMQ1.pdf", sep=""), height = 7, width = 4)
+plot(plot1)
+dev.off()
 
 #### Calculate RBQD and NQD ####
 data.hr.mr.lr$NQD <- 1/data.hr.mr.lr$Abs_Benefit_per_Qday
@@ -165,23 +170,37 @@ for (i in 1:nrow(df)){
   df[i, "RBQD"] <- RBQD
 }
 
-ggplot(df, aes(x = x.vals, y = RBQD*100, color = Setting)) +
+plot2 <- ggplot(df, aes(x = x.vals, y = RBQD*100, color = Setting)) +
+  theme_bw() +
   geom_line(size = 1.5) +
-  scale_y_log10() +
-  scale_x_log10() +
+  theme(legend.justification=c(0,0), legend.position=c(0.7,0.1)) +
+  scale_y_log10(breaks = c(0.005, 0.01, 0.05, 0.1, 0.5, 1), labels = c("0.005%", "0.01%", "0.05%", "0.1%", "0.5%", "1%")) +
+  scale_x_log10(breaks = c(0.01, 0.05, 0.1, 0.5, 1)) +
   ggtitle("Relative Benefit of Quarantine Over\nSymptom Monitoring per Quarantine Day") +
   xlab("Proportion of contacts who are truly infected") + ylab("Percent Reduction per Quarantine Day") +
-  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red")) +
-  theme(panel.grid.minor = element_blank()) + theme_bw()
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  theme(panel.grid.minor = element_blank())
+plot2
 
-ggplot(df, aes(x = x.vals, y = NQD, color = Setting)) +
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotSMQ2.pdf", sep=""), height = 7, width = 7)
+plot(plot2)
+dev.off()
+
+plot3 <- ggplot(df, aes(x = x.vals, y = NQD, color = Setting)) +
+  theme_bw() +
   geom_line(size = 1.5) +
-  scale_y_log10() +
-  scale_x_log10() +
+  theme(legend.justification=c(0,0), legend.position=c(0.7,0.7)) +
+  scale_y_log10(breaks = c(50, 100, 500, 1000, 5000, 10000), labels = c("50", "100", "500", "1,000", "5,000", "10,000")) +
+  scale_x_log10(breaks = c(0.01, 0.05, 0.1, 0.5, 1)) +
   ggtitle("Number of Quarantine Days to Avert\nOne Case over Symptom Monitoring") +
   xlab("Proportion of contacts who are truly infected") + ylab("Days") +
-  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red")) +
-  theme(panel.grid.minor = element_blank()) + theme_bw()
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  theme(panel.grid.minor = element_blank())
+plot3
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotSMQ3.pdf", sep=""), height = 7, width = 7)
+plot(plot3)
+dev.off()
 
 #### Effect and efficiency of Q over R_0 is highest for HR then MR then LR ####
 data.SMQ$Qday <- c(median(D1_HR), median(D1_MR), median(D1_LR))
