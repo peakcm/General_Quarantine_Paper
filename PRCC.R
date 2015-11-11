@@ -10,7 +10,7 @@ library(sensitivity)
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Load Workspaces ####
-desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151028_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -20,7 +20,7 @@ desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
 
-desired_date <- "20151109"
+desired_date <- "20151111"
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
@@ -192,15 +192,19 @@ output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
 #### See if PRCC depends on parameter ranges ####
-nrow(data.prcc[data.prcc$gamma > 0.6,]) #sensitive
+nrow(data.prcc[data.prcc$gamma > 0.6,]) 
 output.1 <- prcc_fcn(input_data = data.prcc[data.prcc$gamma > 0.6,], dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
-nrow(data.prcc[data.prcc$gamma < 0.6,]) #sensitive
+nrow(data.prcc[data.prcc$gamma < 0.6,])
 output.2 <- prcc_fcn(input_data = data.prcc[data.prcc$gamma < 0.6,], dep_var = dep_var, indep_var = indep_var, 
                      nboot = 100, package = "sensitivity", standardize = TRUE)
 
-nrow(data.prcc[data.prcc$epsilon < 3,]) #not sensitive
+nrow(data.prcc[data.prcc$epsilon < 3,])
+output.3 <- prcc_fcn(input_data = data.prcc[data.prcc$epsilon < 3,], dep_var = dep_var, indep_var = indep_var, 
+                     nboot = 100, package = "sensitivity", standardize = TRUE)
+
+nrow(data.prcc[data.prcc$T_lat_offset < 3,])
 output.3 <- prcc_fcn(input_data = data.prcc[data.prcc$epsilon < 3,], dep_var = dep_var, indep_var = indep_var, 
                      nboot = 100, package = "sensitivity", standardize = TRUE)
 
