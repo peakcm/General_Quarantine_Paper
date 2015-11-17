@@ -16,8 +16,8 @@ load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",
 
 #### Define Parms ####
 # Set a range of T_lat_offset we're interested in
-T_lat_offset.min <- -10
-T_lat_offset.max <- 10
+T_lat_offset.min <- -12
+T_lat_offset.max <- 12
 
 # Set a range of R_0
 R_0.min <- 1
@@ -26,20 +26,7 @@ R_0.max <- 10
 dispersion = 1
 
 #### Define Interventions ####
-# High Resource Interventions
-background_intervention = "u"
-
-prob_CT <- 0.9
-
-gamma <- 0.9
-
-parms_epsilon = list("uniform", 0.9, 0.9, 999, "independent", "independent")
-names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
-
-parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
-names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
-
-# (Nearly) Ideal Interventions
+# Optimal Resource Interventions
 background_intervention = "u"
 
 prob_CT <- 1
@@ -52,13 +39,52 @@ names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anch
 parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
+# High Resource Interventions
+background_intervention = "u"
+
+prob_CT <- 0.9
+
+gamma <- 0.9
+
+parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Mid Resource Interventions
+background_intervention <- "u"
+
+prob_CT <- 0.75
+
+gamma <- 0.75
+
+parms_epsilon = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Low Resource Interventions
+background_intervention <- "u"
+
+prob_CT <- 0.5
+
+gamma <- 0.5
+
+parms_epsilon = list("uniform", 0, 4, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 4, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
 #### Resample ####
 # Resample from _SMC except without respecting joint distribution and new T_lat_offset
 
 # Initialize
-n_pop = 800
+n_pop = 500
 num_generations <- 5
-times <- 200
+times <- 500
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
 data.doomsday <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.doomsday) <- names
@@ -138,6 +164,7 @@ while (i <= times){
     x = 1
     cat(".")
     if (i%%10 == 0){cat("|")}
+    if (i%%100 == 0){cat("\n")}
   }
   
 }
