@@ -10,7 +10,7 @@ library(RColorBrewer)
 
 #### Load Workspace ####
 date_desired <- "20151104"
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date_desired, "_FigureRsRq.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date_desired, "_FigureRsRq.RData", sep=""))
 
 #### Load data from case_study_generic outputs ####
 # Ebola
@@ -221,7 +221,7 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot2_pretty)
 dev.off()
 
-#### ggvis ####
+#### ggvis: Interactive Supplement for this figure ####
 diseases <- unique(data_master$disease)
 slider <- input_slider(min=1, max=5, step=0.01, label = "Reproductive Number (+/- 0.5)")
 data_master %>% 
@@ -241,23 +241,19 @@ data_master %>%
   scale_numeric("y", domain = c(0, 5), nice = FALSE, label = "Quarantine")
   
 
-#### Explore data_master file ####
-# look at Rel_Benefit for one disease across a range of R_0
-R_0_input <- 3
-sd <- 0.5
-for (R_0_input in c(1,2,3,4)){
-  summary <- summary(data_master[data_master$disease == "Smallpox" &
-                        data_master$R_0 <= R_0_input + sd & 
-                        data_master$R_0 >= R_0_input - sd, "Rel_Benefit"])
-  cat("\nR_0_input is", R_0_input, "\n")
-  print(summary)
-}
+#### ggvis: model outputs across levels of R_0 for all diseases ####
+# Several outcomes to select
+slider2 <- input_slider(min=0, max=5, c(0,5),step = 0.1, label = "Y axis upper limit")
+data_master %>%
+  ggvis(~R_0,  input_select(c("R_s", "R_q", "Abs_Benefit","Rel_Benefit", "Abs_Benefit_per_Qday", "Rel_Benefit_per_Qday"), map=as.name, label = "Outcome"), fill = ~disease, stroke = ~disease) %>%
+  group_by(disease) %>% 
+  filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
+  filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
+  layer_points(opacity := 0.1) %>%
+  scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
+  scale_numeric("y", domain = slider2, clamp=TRUE, label = "Outcome")
 
-ggplot(data_master[data_master$Setting == "HR",], aes(x=R_0, y=Rel_Benefit, group=disease, col=disease)) +
-  geom_point(alpha = 0.4) +
-  stat_smooth(size = 1.5, method = "loess") +
-  theme_bw()
-
+#### ggvis: model outputs across levels of R_0, including lowess curves ####
 # Rel_Benefit
 data_master %>%
   ggvis(x = ~R_0, y = ~Rel_Benefit*100, fill = ~disease, stroke = ~disease) %>%
@@ -315,16 +311,36 @@ data_master %>%
   scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
   scale_numeric("y", nice = FALSE, label = "% reduction in R by Q over SM per day of quarantine")
 
-# Not working yet
+# obs_to_iso_q
 data_master %>%
-  ggvis(x = ~R_0, y = input_select(c("Abs_Benefit","Rel_Benefit"), map=as.name, label = "Outcome"), fill = ~disease, stroke = ~disease) %>%
+  ggvis(x = ~R_0, y = ~obs_to_iso_q, fill = ~disease, stroke = ~disease) %>%
   group_by(disease) %>% 
   filter(Setting == eval(input_radiobuttons(selected = "HR",label = "Setting", choices = c("HR","LR")))) %>%
   filter(disease %in% eval(input_checkboxgroup(diseases, select = "Ebola"))) %>%
   layer_points(opacity := 0.1) %>%
   layer_smooths() %>%
   scale_numeric("x", domain = c(1, 5), nice = FALSE, label = "R_0") %>%
-  scale_numeric("y", domain = c(-1, 5), nice = FALSE, label = "Abs_Benefit")
+  scale_numeric("y", domain = c(0, 30), nice = FALSE, label = "Number of days in quarantine")
+
+# ggplot version instead of ggvis
+
+# look at Rel_Benefit for one disease across a range of R_0
+R_0_input <- 3
+sd <- 0.5
+for (R_0_input in c(1,2,3,4)){
+  summary <- summary(data_master[data_master$disease == "Smallpox" &
+                                   data_master$R_0 <= R_0_input + sd & 
+                                   data_master$R_0 >= R_0_input - sd, "Rel_Benefit"])
+  cat("\nR_0_input is", R_0_input, "\n")
+  print(summary)
+}
+
+ggplot(data_master[data_master$Setting == "HR",], aes(x=R_0, y=Rel_Benefit, group=disease, col=disease)) +
+  geom_point(alpha = 0.4) +
+  stat_smooth(size = 1.5, method = "loess") +
+  theme_bw()
+
+#### ggvis: plots for effect of R_s and R_q as compared to R_0 ####
 
 # Compare R_s to R_0
 data_master$R0_Rs <- data_master$R_0 - data_master$R_s
@@ -352,3 +368,4 @@ data_master %>%
 #### Save Workspace Image ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_FigureRsRq.RData", sep=""))
+write.csv(data_master, paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_FigureRsRq.csv", sep=""))
