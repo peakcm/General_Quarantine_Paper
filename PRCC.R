@@ -6,16 +6,13 @@ library(ggplot2)
 library(RColorBrewer)
 library(sensitivity)
 library(reshape)
+library(lhs)
 
 #### Source Functions ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Load Workspaces ####
-desired_root <- "20151027_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
-
-# If workspaces are in main folder
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_PRCC.RData", sep=""))
+desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in their own folder, named the same as the root
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
@@ -42,8 +39,8 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 # Initialize
 n_pop = 500
 num_generations <- 5
-times <- 1000
-names <- c("R_0_input", "R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday","ReL_Benefit_per_Qday_rp", "NQD")
+times <- 100
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday","ReL_Benefit_per_Qday_rp", "NQD")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
 
@@ -54,7 +51,7 @@ params.set.prcc <- cbind(
   pi_t_triangle_center = sample(data$pi_t_triangle_center, size = times, replace = TRUE) )
 
 # Set range for other parameters to vary
-dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion", "riskprofile")
+dimensions <- c("gamma","prob_CT","CT_delay","epsilon","riskprofile", "R_0_mean","R_0_spread","dispersion","T_inc_stretch")
 lhs <- maximinLHS(times, length(dimensions))
 
 gamma.min <- 0
@@ -65,21 +62,27 @@ CT_delay.min <- 0
 CT_delay.max <- 7
 epsilon.min <- 0
 epsilon.max <- 7
-R_0.min <- 5
-R_0.max <- 5
-dispersion.min <- 1
-dispersion.max <- 4
 riskprofile.min <- 0.01
 riskprofile.max <- 1
+R_0_mean.min <- 1
+R_0_mean.max <- 5
+R_0_spread.min <- 0
+R_0_spread.max <- 0.9
+dispersion.min <- 1
+dispersion.max <- 4
+T_inc_stretch.min <- 0.5
+T_inc_stretch.max <- 1.5
 
 params.set.prcc <- cbind(params.set.prcc,
                          gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
                          prob_CT = lhs[,2]*(prob_CT.max - prob_CT.min) + prob_CT.min,
                          CT_delay = lhs[,3]*(CT_delay.max - CT_delay.min) + CT_delay.min,
                          epsilon = lhs[,4]*(epsilon.max - epsilon.min) + epsilon.min,
-                         dispersion = lhs[,6]*(dispersion.max - dispersion.min) + dispersion.min,
-                         R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min,
-                         riskprofile = lhs[,6]*(riskprofile.max - riskprofile.min) + riskprofile.min)
+                         riskprofile = lhs[,5]*(riskprofile.max - riskprofile.min) + riskprofile.min,
+                         R_0_mean = lhs[,6]*(R_0_mean.max - R_0_mean.min) + R_0_mean.min,
+                         R_0_spread = lhs[,7]*(R_0_spread.max - R_0_spread.min) + R_0_spread.min,
+                         dispersion = lhs[,8]*(dispersion.max - dispersion.min) + dispersion.min,
+                         T_inc_stretch = lhs[,9]*(T_inc_stretch.max - T_inc_stretch.min) + T_inc_stretch.min)
 params.set.prcc <- data.frame(params.set.prcc)
 
 i=1
@@ -92,12 +95,15 @@ while (i <= times){
   prob_CT <- as.numeric(params.set.prcc[i,"prob_CT"])
   parms_CT_delay$parm2 <- as.numeric(params.set.prcc[i,"CT_delay"])
   parms_epsilon$parm2 <- as.numeric(params.set.prcc[i,"epsilon"])
+  riskprofile <- as.numeric(params.set.prcc[i, "riskprofile"])
+    R_0_input.min <- as.numeric(params.set.prcc[i,"R_0_mean"]) - as.numeric(params.set.prcc[i,"R_0_mean"])*as.numeric(params.set.prcc[i,"R_0_spread"])
+    R_0_input.max <- as.numeric(params.set.prcc[i,"R_0_mean"]) + as.numeric(params.set.prcc[i,"R_0_mean"])*as.numeric(params.set.prcc[i,"R_0_spread"])
+  parms_R_0[c("parm1","parm2")] <- c( R_0_input.min, R_0_input.max)
   parms_pi_t$triangle_center <- as.numeric(params.set.prcc[i,"pi_t_triangle_center"])
   parms_T_lat$anchor_value <- as.numeric(params.set.prcc[i,"T_lat_offset"])
   parms_d_inf$parm2 <- as.numeric(params.set.prcc[i,"d_inf"])
-  parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set.prcc[i,"R_0"]), as.numeric(params.set.prcc[i,"R_0"]))
   dispersion <- as.numeric(params.set.prcc[i, "dispersion"])
-  riskprofile <- as.numeric(params.set.prcc[i, "riskprofile"])
+  parms_T_inc$T_inc_stretch <- as.numeric(params.set.prcc[i,"T_inc_stretch"])
   
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
     
@@ -155,7 +161,6 @@ while (i <= times){
 # Check for missing data
 if (sum(is.na(data.prcc[,1:4]))>0){cat("Something's missing")}
 
-data.prcc$R_0_input <- params.set.prcc[,"R_0"]
 data.prcc[,"Abs_Benefit"] <- data.prcc[,"R_s"] - data.prcc[,"R_q"]
 data.prcc[,"NNQ"] <- 1 / data.prcc[,"Abs_Benefit"]
 data.prcc[,"Abs_Benefit_per_Qday"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"obs_to_iso_q"]
@@ -166,23 +171,23 @@ data.prcc[data.prcc$NNQ == Inf,"NNQ"] <- 9999
 
 data.prcc[,"Rel_Benefit"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"R_s"]
 data.prcc[,"Rel_Benefit_per_Qday"] <- data.prcc[,"Rel_Benefit"] / data.prcc[,"obs_to_iso_q"]
-data.prcc$riskprofile <- data.prcc[,"riskprofile"]
 
+data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
+data.prcc$d_inf <- params.set.prcc[,"d_inf"]
+data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
 data.prcc$gamma <- params.set.prcc[,"gamma"]
 data.prcc$prob_CT <- params.set.prcc[,"prob_CT"]
 data.prcc$CT_delay <- params.set.prcc[,"CT_delay"]
 data.prcc$epsilon <- params.set.prcc[,"epsilon"]
+data.prcc$riskprofile <- params.set.prcc[,"riskprofile"]
+data.prcc[,"R_0_mean"] <- params.set.prcc[,"R_0_mean"]
+data.prcc[,"R_0_spread"] <- params.set.prcc[,"R_0_spread"]
 data.prcc$dispersion <- params.set.prcc[,"dispersion"]
-data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
-data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
-data.prcc$d_inf <- params.set.prcc[,"d_inf"]
-data.prcc$riskprofile <- data.prcc[,"riskprofile"]
+data.prcc$T_inc_stretch <- params.set.prcc[,"T_inc_stretch"]
 
-#### Add a variable for Risk Profiling ####
-data.prcc$Rel_Benefit_per_Qday <- data.prcc$Rel_Benefit / data.prcc$obs_to_iso_q
-
-# upper 95 percerntile for incubation period
-disease <- substr(root, 10, nchar(root))
+#### Add a Rel_Benefit_per_Qday_rp that considers Risk Profiling ####
+disease <- substr(root, 10, nchar(root)) # Find upper 95 percerntile for incubation period for each disease
+cat(disease)
 if (disease == "Ebola"){
   T_inc_95 <- 23.80
 } else if (disease == "HepatitisA"){
@@ -198,14 +203,11 @@ if (disease == "Ebola"){
 } else if (disease == "Smallpox"){
   T_inc_95 <- 15.64
 } 
-data.prcc$riskprofile <- runif(n = nrow(data.prcc), min = 0.01, max = 1)
 data.prcc$Rel_Benefit_per_Qday_rp <- data.prcc$Rel_Benefit_per_Qday / ( data.prcc$obs_to_iso_q + (1/data.prcc$riskprofile - 1)*(T_inc_95))
-# data.prcc$Rel_Benefit_per_Qday_rp <- 1
 
 #### Confirm Monotonicity ####
 # Plot each of the covariate - outcome scatterplots
-for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion", "riskprofile", "T_lat_offset")){
-# for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0_input", "dispersion", "riskprofile)){
+for (covariate in c("gamma","prob_CT","CT_delay","epsilon", "riskprofile", "R_0_mean", "R_0_spread", "dispersion","T_inc_stretch", "T_lat_offset")){
     panel_plot_fcn(data = data.prcc, covariate = covariate, outputs = c("R_0", "R_s", "R_q", "Rel_Benefit", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp"))
     cat ("Press [enter] to continue")
     line <- readline()
@@ -217,8 +219,7 @@ decile_plot_fcn(data.prcc, params.set.prcc)
 #### Calculate PRCC for one disease ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "Rel_Benefit","obs_to_iso_q","ks", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp")
-indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "riskprofile")
-# indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "riskprofile", "R_0_input")
+indep_var <- c("gamma","prob_CT","CT_delay", "epsilon", "riskprofile", "R_0_mean", "R_0_spread","dispersion","T_inc_stretch","pi_t_triangle_center","T_lat_offset","d_inf")
 output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
@@ -254,6 +255,7 @@ plot_prcc_1
 # dev.off()
 
 #### Save Workspace ####
+cat(desired_root)
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_PRCC.RData", sep=""))
 
 #### Load PRCC data for multiple diseases ####
@@ -262,7 +264,7 @@ desired_roots <- c("20151022_SARS", "20151024_Ebola", "20151026_HepatitisA", "20
 # load the first one to get a list of the headers
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_roots[1], "/", desired_roots[1], "_PRCC.RData", sep=""))
 
-names <- c(unique(c(names(data.prcc), "disease", "Rel_Benefit_per_Qday", "riskprofile", "Rel_Benefit_per_Qday_rp")))
+names <- c(names(data.prcc), "disease")
 df.prcc <- data.frame(matrix(rep(NA, length(names)), nrow=1))
 names(df.prcc) <- names
 

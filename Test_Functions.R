@@ -21,8 +21,8 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 parms_R_0 = list("uniform", 1.72, 1.94, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent")
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent", 1)
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
@@ -56,6 +56,8 @@ hist(Pop$T_inc)
 hist(Pop$T_lat)
 hist(Pop$R_0)
 cat(length(which(Pop[,"R_0"]<0)), "individuals have an R_0 < 0")
+
+parms_T_inc$T_inc_stretch <- 1
 
 #### Test observe_and_isolate_fcn ####
 Pop <- observe_and_isolate_fcn(Pop, intervention = "u")
@@ -182,7 +184,7 @@ In_Out <- repeat_call_fcn(n_pop = n_pop,
                           parms_pi_t = parms_pi_t,
                           num_generations = 5,
                           background_intervention="u",
-                          subseq_interventions="hsb",
+                          subseq_interventions="s",
                           gamma=gamma,
                           prob_CT = prob_CT,
                           parms_CT_delay = parms_CT_delay,

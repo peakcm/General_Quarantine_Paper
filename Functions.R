@@ -98,7 +98,7 @@ Create_Pop <- function(n_pop,
   
   # For time attributes, input in terms of days, then convert to hours, then round to the nearest hour.
   # If the parameters are drawn independently of other parameters, do that first
-  if (parms_T_inc$anchor_value == "independent"){ Pop$T_inc   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_T_inc$dist, parms_T_inc$parm1, parms_T_inc$parm2, parms_T_inc$parm3)) }
+  if (parms_T_inc$anchor_value == "independent"){ Pop$T_inc   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_T_inc$dist, parms_T_inc$parm1, parms_T_inc$parm2, parms_T_inc$parm3) * parms_T_inc$T_inc_stretch) }
   if (parms_T_lat$anchor_value == "independent"){ Pop$T_lat   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_T_lat$dist, parms_T_lat$parm1, parms_T_lat$parm2, parms_T_lat$parm3)) }
   if (parms_d_inf$anchor_value == "independent"){ Pop$d_inf   <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_d_inf$dist, parms_d_inf$parm1, parms_d_inf$parm2, parms_d_inf$parm3)) }
   if (parms_d_symp$anchor_value == "independent"){ Pop$d_symp  <- round(24*Draw_Dist_fcn(rep(NA, n_pop), parms_d_symp$dist, parms_d_symp$parm1, parms_d_symp$parm2, parms_d_symp$parm2)) }
@@ -381,7 +381,8 @@ repeat_call_fcn <- function(n_pop,
                             cap_pop = TRUE,
                             min_infections = 20)
 {
-  input <- list(n_pop, parms_T_inc, 
+  input <- list(n_pop, 
+                parms_T_inc, 
                 parms_T_lat, 
                 parms_d_inf, 
                 parms_d_symp, 

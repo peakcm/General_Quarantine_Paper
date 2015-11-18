@@ -45,8 +45,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("weibull", 2, 10)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent")
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("lognormal", 4, 1.81, 999, "independent", "independent", 1)
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 1, 999, "independent", "independent")
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -99,8 +99,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("gamma", 2.5931, 0.1697) # Althaus 2015 Lancet ID
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent") # approximation from WHO
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent", 1) # approximation from WHO
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -137,8 +137,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("lognormal", 7.6, 1.77)
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("lognormal", 5.2, 1.7, 999, "independent", "independent")
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("lognormal", 5.2, 1.7, 999, "independent", "independent", 1)
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -177,8 +177,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("gamma", 2.45585778, .11071164) # Approximation from te Beest reported quantiles
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("normal", 7, 1.53, 999, "independent", "independent") # (10-7)/1.96 = 1.53
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("normal", 7, 1.53, 999, "independent", "independent", 1) # (10-7)/1.96 = 1.53
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -215,8 +215,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("gamma", 65.478798, 2.438040) # Approximation from Vink cf Brodribb
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("gamma", 143.325515, 4.911873, 999, "independent", "independent") #Using data from Pickles 1930
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("gamma", 143.325515, 4.911873, 999, "independent", "independent", 1) #Using data from Pickles 1930
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -253,8 +253,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("lognormal", 15.53418, 1.253332) 
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent") 
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("lognormal", 11.82245, 1.1853, 999, "independent", "independent", 1) 
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
@@ -291,8 +291,8 @@ root <- paste(date, disease, sep = "_")
 parms_serial_interval <- list("normal", 2.2, 0.8) 
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("lognormal", 1.4, 1.5, 999, "independent", "independent") # Using Vink 2014, cf Fine 2003
-names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+parms_T_inc = list("lognormal", 1.4, 1.5, 999, "independent", "independent", 1) # Using Vink 2014, cf Fine 2003
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1, 3, 999, "independent", "independent") 
 names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
