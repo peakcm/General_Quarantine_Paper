@@ -5,12 +5,13 @@
 library(ggplot2)
 library(RColorBrewer)
 library(sensitivity)
+library(reshape)
 
 #### Source Functions ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Load Workspaces ####
-desired_root <- "20151028_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151027_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
 
 # If workspaces are in main folder
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
@@ -42,7 +43,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 n_pop = 500
 num_generations <- 5
 times <- 1000
-names <- c("R_0_input", "R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday", "NQD")
+names <- c("R_0_input", "R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday","ReL_Benefit_per_Qday_rp", "NQD")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
 
@@ -53,7 +54,7 @@ params.set.prcc <- cbind(
   pi_t_triangle_center = sample(data$pi_t_triangle_center, size = times, replace = TRUE) )
 
 # Set range for other parameters to vary
-dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion")
+dimensions <- c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion", "riskprofile")
 lhs <- maximinLHS(times, length(dimensions))
 
 gamma.min <- 0
@@ -68,6 +69,8 @@ R_0.min <- 5
 R_0.max <- 5
 dispersion.min <- 1
 dispersion.max <- 4
+riskprofile.min <- 0.01
+riskprofile.max <- 1
 
 params.set.prcc <- cbind(params.set.prcc,
                          gamma = lhs[,1]*(gamma.max - gamma.min) + gamma.min,
@@ -75,7 +78,8 @@ params.set.prcc <- cbind(params.set.prcc,
                          CT_delay = lhs[,3]*(CT_delay.max - CT_delay.min) + CT_delay.min,
                          epsilon = lhs[,4]*(epsilon.max - epsilon.min) + epsilon.min,
                          dispersion = lhs[,6]*(dispersion.max - dispersion.min) + dispersion.min,
-                         R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min)
+                         R_0 = lhs[,5]*(R_0.max - R_0.min) + R_0.min,
+                         riskprofile = lhs[,6]*(riskprofile.max - riskprofile.min) + riskprofile.min)
 params.set.prcc <- data.frame(params.set.prcc)
 
 i=1
@@ -93,6 +97,7 @@ while (i <= times){
   parms_d_inf$parm2 <- as.numeric(params.set.prcc[i,"d_inf"])
   parms_R_0[c("parm1","parm2")] <- c(as.numeric(params.set.prcc[i,"R_0"]), as.numeric(params.set.prcc[i,"R_0"]))
   dispersion <- as.numeric(params.set.prcc[i, "dispersion"])
+  riskprofile <- as.numeric(params.set.prcc[i, "riskprofile"])
   
   for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
     
@@ -161,6 +166,7 @@ data.prcc[data.prcc$NNQ == Inf,"NNQ"] <- 9999
 
 data.prcc[,"Rel_Benefit"] <- data.prcc[,"Abs_Benefit"] / data.prcc[,"R_s"]
 data.prcc[,"Rel_Benefit_per_Qday"] <- data.prcc[,"Rel_Benefit"] / data.prcc[,"obs_to_iso_q"]
+data.prcc$riskprofile <- data.prcc[,"riskprofile"]
 
 data.prcc$gamma <- params.set.prcc[,"gamma"]
 data.prcc$prob_CT <- params.set.prcc[,"prob_CT"]
@@ -170,12 +176,37 @@ data.prcc$dispersion <- params.set.prcc[,"dispersion"]
 data.prcc$pi_t_triangle_center <- params.set.prcc[,"pi_t_triangle_center"]
 data.prcc$T_lat_offset <- params.set.prcc[,"T_lat_offset"]
 data.prcc$d_inf <- params.set.prcc[,"d_inf"]
+data.prcc$riskprofile <- data.prcc[,"riskprofile"]
+
+#### Add a variable for Risk Profiling ####
+data.prcc$Rel_Benefit_per_Qday <- data.prcc$Rel_Benefit / data.prcc$obs_to_iso_q
+
+# upper 95 percerntile for incubation period
+disease <- substr(root, 10, nchar(root))
+if (disease == "Ebola"){
+  T_inc_95 <- 23.80
+} else if (disease == "HepatitisA"){
+  T_inc_95 <- 33.30
+} else if (disease == "InfluenzaA"){
+  T_inc_95 <- 2.73
+} else if (disease == "MERS"){
+  T_inc_95 <- 12.46
+} else if (disease == "Pertussis"){
+  T_inc_95 <- 9.51
+} else if (disease == "SARS"){
+  T_inc_95 <- 10.62
+} else if (disease == "Smallpox"){
+  T_inc_95 <- 15.64
+} 
+data.prcc$riskprofile <- runif(n = nrow(data.prcc), min = 0.01, max = 1)
+data.prcc$Rel_Benefit_per_Qday_rp <- data.prcc$Rel_Benefit_per_Qday / ( data.prcc$obs_to_iso_q + (1/data.prcc$riskprofile - 1)*(T_inc_95))
+# data.prcc$Rel_Benefit_per_Qday_rp <- 1
 
 #### Confirm Monotonicity ####
 # Plot each of the covariate - outcome scatterplots
-for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion")){
-# for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0_input", "dispersion")){
-    panel_plot_fcn(data = data.prcc, covariate = covariate)
+for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion", "riskprofile", "T_lat_offset")){
+# for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0_input", "dispersion", "riskprofile)){
+    panel_plot_fcn(data = data.prcc, covariate = covariate, outputs = c("R_0", "R_s", "R_q", "Rel_Benefit", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp"))
     cat ("Press [enter] to continue")
     line <- readline()
 }
@@ -184,10 +215,10 @@ for (covariate in c("gamma","prob_CT","CT_delay","epsilon","R_0", "dispersion"))
 decile_plot_fcn(data.prcc, params.set.prcc)
 
 #### Calculate PRCC for one disease ####
-dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "Rel_Benefit","obs_to_iso_q","ks")
-indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf")
-# dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "NQD", "Rel_Benefit", "Rel_Benefit_per_Qday","obs_to_iso_q","ks")
-# indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "R_0_input")
+source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "Rel_Benefit","obs_to_iso_q","ks", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp")
+indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "riskprofile")
+# indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "riskprofile", "R_0_input")
 output <- prcc_fcn(input_data = data.prcc, dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
@@ -218,21 +249,20 @@ plot_prcc_1 <- ggplot(output, aes(x = parameter, y= coef)) +
   geom_errorbar(data = output, aes(ymin = CImin, ymax = CImax), width = 0.1)
 plot_prcc_1
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot_prcc.pdf", sep=""))
-plot(plot_prcc_1)
-dev.off()
+# pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot_prcc.pdf", sep=""))
+# plot(plot_prcc_1)
+# dev.off()
 
 #### Save Workspace ####
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC.RData", sep=""))
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_PRCC.RData", sep=""))
 
 #### Load PRCC data for multiple diseases ####
-
 desired_roots <- c("20151022_SARS", "20151024_Ebola", "20151026_HepatitisA", "20151026_Pertussis", "20151027_MERS", "20151028_InfluenzaA", "20151028_Smallpox")
 
 # load the first one to get a list of the headers
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_roots[1], "/", desired_roots[1], "_PRCC.RData", sep=""))
 
-names <- c(names(data.prcc), "disease")
+names <- c(unique(c(names(data.prcc), "disease", "Rel_Benefit_per_Qday", "riskprofile", "Rel_Benefit_per_Qday_rp")))
 df.prcc <- data.frame(matrix(rep(NA, length(names)), nrow=1))
 names(df.prcc) <- names
 
@@ -244,6 +274,27 @@ for (ind in desired_roots){
   load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", ind, "/", ind, "_PRCC.RData", sep=""))
   data.prcc$disease <- substr(ind, 10, nchar(ind))
   output$disease <- substr(ind, 10, nchar(ind))
+  
+  data.prcc$Rel_Benefit_per_Qday <- data.prcc$Rel_Benefit / data.prcc$obs_to_iso_q
+  
+  # Add an variable and outcome for risk profiling
+  data.prcc$riskprofile <- runif(n = nrow(data.prcc), min = 0.01, max = 1)
+  if (output$disease[1] == "Ebola"){
+    T_inc_95 <- 23.80
+  } else if (output$disease[1] == "HepatitisA"){
+    T_inc_95 <- 33.30
+  } else if (output$disease[1] == "InfluenzaA"){
+    T_inc_95 <- 2.73
+  } else if (output$disease[1] == "MERS"){
+    T_inc_95 <- 12.46
+  } else if (output$disease[1] == "Pertussis"){
+    T_inc_95 <- 9.51
+  } else if (output$disease[1] == "SARS"){
+    T_inc_95 <- 10.62
+  } else if (output$disease[1] == "Smallpox"){
+    T_inc_95 <- 15.64
+  } 
+  data.prcc$Rel_Benefit_per_Qday_rp <- data.prcc$Rel_Benefit_per_Qday / ( data.prcc$obs_to_iso_q + (1/data.prcc$riskprofile - 1)*(T_inc_95))
   
   cat("\n",names(df.prcc))
   cat("\n",names(df.prcc.output))
@@ -257,10 +308,9 @@ df.prcc <- df.prcc[is.na(df.prcc$R_0)==0,]
 df.prcc.output <- df.prcc.output[is.na(df.prcc.output$coef)==0,]
 
 #### Calculate PRCC for many diseases together ####
-dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "Rel_Benefit","obs_to_iso_q","ks")
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "Rel_Benefit","obs_to_iso_q","ks", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp")
 indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf")
-# dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "NQD", "Rel_Benefit", "Rel_Benefit_per_Qday","obs_to_iso_q","ks")
-# indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "R_0_input")
+# indep_var <- c("gamma","prob_CT","CT_delay", "epsilon","dispersion","pi_t_triangle_center","T_lat_offset","d_inf", "riskprofile", "R_0_input")
 output.all <- prcc_fcn(input_data = df.prcc, dep_var = dep_var, indep_var = indep_var, 
                    nboot = 100, package = "sensitivity", standardize = TRUE)
 
@@ -278,9 +328,9 @@ plot_prcc_2 <- ggplot(output.all, aes(x = parameter, y= coef)) +
   ggtitle("All diseases")
 plot_prcc_2
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_2.pdf", sep=""))
-plot(plot_prcc_2)
-dev.off()
+# pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_2.pdf", sep=""))
+# plot(plot_prcc_2)
+# dev.off()
 
 #### Plot all diseases, horizontal bar chart ####
 plot_prcc_3 <- ggplot(output.all, aes(x = parameter, y = coef)) +
