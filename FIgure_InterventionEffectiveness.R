@@ -3,9 +3,56 @@
 
 #### Load Workspaces ####
 desired_root <- "20151024_Ebola"
-save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMQDecision.RData", sep=""))
+
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMQDecision.RData", sep=""))
+
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_IntEffect.RData", sep=""))
 
 #### Vary proportion of contacts who are infected (X) ####
+data.hr.mr.lr$Rel_Benefit_positive <- data.hr.mr.lr$Rel_Benefit
+data.hr.mr.lr[data.hr.mr.lr$Rel_Benefit < 0, "Rel_Benefit_positive"] <- 0
+
+data.hr.mr.lr$riskprofile <- rep(runif(n=nrow(data.hr.mr.lr)/3, min = 0, max = 1), times = 3)
+
+maxInc <- 21
+data.hr.mr.lr$RBQDrp <- data.hr.mr.lr$Rel_Benefit / (data.hr.mr.lr$obs_to_iso_q + (1/data.hr.mr.lr$riskprofile - 1)*maxInc)
+data.hr.mr.lr$RBQDrp_positive <- data.hr.mr.lr$Rel_Benefit_positive / (data.hr.mr.lr$obs_to_iso_q + (1/data.hr.mr.lr$riskprofile - 1)*maxInc)
+
+# Rel_Benefit
+ggplot(data.hr.mr.lr, aes(x=riskprofile, y=Rel_Benefit*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Proportion of contacts truly infected") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring") +
+  scale_y_continuous(breaks = seq(0, 20, by=5), labels = c("0%", "5%", "10%", "15%", "20%")) +
+  geom_smooth(size = 2)
+
+ggplot(data.hr.mr.lr, aes(x=riskprofile, y=Rel_Benefit_positive*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Proportion of contacts truly infected") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring") +
+  scale_y_continuous(breaks = seq(0, 20, by=5), labels = c("0%", "5%", "10%", "15%", "20%")) +
+  geom_smooth(size = 2)
+
+# Rel_Benefit_per_Qday
+ggplot(data.hr.mr.lr, aes(x=riskprofile, y=RBQDrp*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Proportion of contacts truly infected") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring per quarantine day") +
+  scale_y_continuous(limits = c(-1, 10), breaks = seq(0, 10, by=1), labels = c("0%", "1%", "2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%", "10%")) +
+  geom_smooth(size = 2)
+
+ggplot(data.hr.mr.lr, aes(x=riskprofile, y=RBQDrp_positive*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Proportion of contacts truly infected") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring per quarantine day") +
+  scale_y_continuous(limits = c(-1, 10), breaks = seq(0, 10, by=1), labels = c("0%", "1%", "2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%", "10%")) +
+  geom_smooth(size = 2)
+
+#### Vary proportion of contacts who are infected (X): Analytic version ####
 x.vals <- seq(0.01, 1, 0.01)
 test <- data.frame(x <- x.vals)
 test$NQD <- NA
@@ -105,7 +152,7 @@ data.SMQ$S_efficiency <- data.SMQ$S_effect / data.SMQ$Qday
 
 data.SMQ
 
-#### Run model with varying Gamma ####
+#### Run model with varying Gamma in HR, MR, and LR ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
@@ -308,6 +355,7 @@ for (i in 1:times){
   if (i%%10 == 0){cat("|")}
   if (i%%100 == 0){cat("\n")}
   
+  gamma <- params.set[i,"gamma"]
   parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
   parms_d_inf$parm2 <- params.set[i,"d_inf"]
   parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
@@ -362,14 +410,60 @@ data.lr$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
 data.lr$R_0_input <- params.set[,"R_0"]
 data.lr$T_lat_offset <- params.set[,"T_lat_offset"]
 data.lr$dispersion <- params.set[,"dispersion"]
-data.lr$gamma <- params.set[i,"gamma"]
+data.lr$gamma <- params.set[,"gamma"]
 
 #### Combine Datasets ####
 data.hr$Setting <- "HR"
 data.mr$Setting <- "MR"
 data.lr$Setting <- "LR"
-data.hr.mr.lr <- rbind(data.hr, data.mr, data.lr)
+data.hr.mr.lr2 <- rbind(data.hr, data.mr, data.lr)
+data.hr.mr.lr2$Setting <- factor(data.hr.mr.lr2$Setting, levels = c("HR", "MR", "LR"))
 
-#### Plot gamma x Rel_Benefit ####
-ggplot(data.hr, aes(x=gamma, y=Rel_Benefit)) + 
-  geom_point() + geom_smooth()
+data.hr.mr.lr2$Rel_Benefit_per_Qday <- data.hr.mr.lr2$Rel_Benefit / data.hr.mr.lr2$obs_to_iso_q
+
+data.hr.mr.lr2$Rel_Benefit_positive <- data.hr.mr.lr2$Rel_Benefit
+data.hr.mr.lr2[data.hr.mr.lr2$Rel_Benefit_positive < 0, "Rel_Benefit_positive"] <- 0
+
+data.hr.mr.lr2$Rel_Benefit_per_Qday_positive <- data.hr.mr.lr2$Rel_Benefit_per_Qday
+data.hr.mr.lr2[data.hr.mr.lr2$Rel_Benefit_per_Qday_positive < 0, "Rel_Benefit_per_Qday_positive"] <- 0
+
+#### Plot gamma by Rel_Benefit ####
+ggplot(data.hr.mr.lr2, aes(x=gamma, y=Rel_Benefit*100, color = Setting)) + 
+  theme_bw() +  
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Isolation Effectiveness") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring") +
+  scale_y_continuous(breaks = seq(0, 30, by=5), labels = c("0%", "5%", "10%", "15%", "20%", "25%", "30%")) +
+  geom_smooth(size = 2)
+
+ggplot(data.hr.mr.lr2, aes(x=gamma, y=Rel_Benefit_positive*100, color = Setting)) + 
+  theme_bw() +  
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Isolation Effectiveness") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring") +
+  scale_y_continuous(breaks = seq(0, 30, by=5), labels = c("0%", "5%", "10%", "15%", "20%", "25%", "30%")) +
+  geom_smooth(size = 2)
+
+#### Plot gamma by Rel_Benefit_per_Qday ####
+ggplot(data.hr.mr.lr2, aes(x=gamma, y=Rel_Benefit_per_Qday*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Isolation Effectiveness") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring per quarantine day") +
+  scale_y_continuous(breaks = seq(0, 3, by=.5), labels = c("0%", "0.5%", "1%", "1.5%", "2%", "2.5%", "3%")) +
+  geom_smooth(size = 2)
+
+ggplot(data.hr.mr.lr2, aes(x=gamma, y=Rel_Benefit_per_Qday_positive*100, color = Setting)) + 
+  theme_bw() +
+  scale_color_manual(c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), values = c("green", "blue", "red"), name = "Setting") +
+  xlab("Isolation Effectiveness") +
+  ylab("Percent reduction in Re by quarantine over symptom monitoring per quarantine day") +
+  scale_y_continuous(limits = c(-1, 10), breaks = seq(0, 10, by=1), labels = c("0%", "1%", "2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%", "10%")) +
+  geom_smooth(size = 2)
+
+
+#### Save Workspace ####
+root <- "20151024_Ebola"
+save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_IntEffect.RData", sep=""))
+
+
