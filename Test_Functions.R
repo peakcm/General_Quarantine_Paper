@@ -202,8 +202,11 @@ serial_interval_fcn(Pop_alpha, Pop_beta, parms_serial_interval, plot="True")
 
 #### Summarize distribution ####
 layout(c(1))
-summarize_dist_fcn(parms_serial_interval)
-summarize_dist_fcn(parms_T_inc)
+summarize_dist_fcn(parms_serial_interval, lower = 0.025, upper = 0.975)
+summarize_dist_fcn(parms_T_inc, lower = 0.025, upper = 0.975)
+
+summarize_dist_fcn(parms_serial_interval, lower = 0.05, upper = 0.95)
+summarize_dist_fcn(parms_T_inc, lower = 0.05, upper = 0.95)
 
 #### Test overdispersion super spreading feature ####
 
