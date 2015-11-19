@@ -398,6 +398,73 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_prcc_4)
 dev.off()
 
+scale_colour_brewer(type="qual", palette=6)
+my.cols <- brewer.pal(n = 7, name = "Set1")
+my.cols <- c(my.cols[c(3, 7, 4, 5, 1, 6, 2)])
+
+plot_prcc_5 <- ggplot(df.prcc.output.subset[df.prcc.output.subset$disease != "All Diseases",], aes(x = parameter, y = coef, fill = disease)) +
+  geom_bar(data = df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases",], aes(x=parameter, y=coef), stat = "identity", alpha = 1, fill = "grey",  color = "black") +
+  facet_grid(.~output) +
+  geom_bar(position = "dodge", stat="identity", width = .5, alpha = 0.3) +
+  ggtitle("Partial Rank Correlation Coefficient") +
+  coord_flip() +
+  # scale_fill_manual(values = rep(c("grey", "black"), 4)) +
+  # scale_fill_brewer(type = "div", palette = 6) +
+  scale_fill_manual(values = rev(my.cols), breaks = c("Ebola","Hepatitis A", "Influenza A", "MERS", "Pertussis", "SARS", "Smallpox", "All Diseases")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title.x=element_blank()) +
+  theme(axis.title.y=element_blank()) +
+  # ylab("Partial Rank Correlation Coefficient") +
+  scale_y_continuous(limits = c(-1, 1), breaks = c(-1, -0.5, 0, 0.5, 1), labels = c("-1", "", "0", "", "+1")) +
+  geom_hline(yintercept=0, color="darkgrey", size=0.7) +
+  guides(color=FALSE) +
+  guides(fill=FALSE)
+plot_prcc_5
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_5.pdf", sep=""), width=9, height=6)
+plot(plot_prcc_5)
+dev.off()
+
+#### Plot each disease, horizontal bar chart, alll outputs ####
+df.prcc.output.temporary.2 <- df.prcc.output.temporary
+df.prcc.output.temporary.2$parameter <- factor(df.prcc.output.temporary.2$parameter, levels = rev(c("gamma", "prob_CT", "riskprofile", "epsilon", "CT_delay", "R_0_mean", "R_0_spread", "T_inc_stretch", "T_lat_offset", "pi_t_triangle_center", "d_inf", "dispersion")), ordered = TRUE,
+                                          labels = rev(c("Isolation\nEffectiveness","Fraction of\n Contacts Traced", "Fraction of Traced\nContacts who are Infected", "Delay from Symptom Onset\nto Isolation", "Delay in Tracing\na Contact", "R_0 Mean", "R_0 Spread", "Incubation\nPeriod", "Latent\nPeriod", "Time of Peak\nInfectiousness", "Duration of\nInfectiousness", "Super-Spreading\nDispersion Factor")))
+df.prcc.output.temporary.2$output <- factor(df.prcc.output.temporary.2$output, levels = c("R_0", "R_s","R_q","R_hsb", "Abs_Benefit", "Abs_Benfit_per_Qday", "Rel_Benefit", "Rel_Benefit_per_Qday_rp", "obs_to_iso_q"), ordered = TRUE,
+                                       labels = c("R_0", "Symptom Monitoring R", "Quarantine R", "Health Seeking\nBehavior R", "Absolute Difference", "Absolute Difference\nper Quarantine Day", "Relative Difference", "Relative Difference\nper Quarantine Day", "Number of\nQuarantine Days"))
+df.prcc.output.temporary.2$disease <- factor(df.prcc.output.temporary.2$disease, levels = rev(c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox", "all")), ordered = TRUE, labels = rev(c("Ebola","Hepatitis A", "Influenza A", "MERS", "Pertussis", "SARS", "Smallpox", "All Diseases")))
+df.prcc.output.temporary.2 <- df.prcc.output.temporary.2[is.na(df.prcc.output.temporary.2$output)==0,]
+
+scale_colour_brewer(type="qual", palette=6)
+my.cols <- brewer.pal(n = 7, name = "Set1")
+my.cols <- c(my.cols[c(3, 7, 4, 5, 1, 6, 2)])
+
+# Note that obs_to_iso_q is NOT monotonic for the pooled estimate for T_lat_offset, pi_t_triangle_center, d_inf, and gamma.
+plot_prcc_6 <- ggplot(df.prcc.output.temporary.2[df.prcc.output.temporary.2$disease != "All Diseases",], aes(x = parameter, y = coef, fill = disease)) +
+  geom_bar(data = df.prcc.output.temporary.2[df.prcc.output.temporary.2$disease == "All Diseases" & df.prcc.output.temporary.2$output != "Number of\nQuarantine Days",], aes(x=parameter, y=coef), stat = "identity", alpha = 1, fill = "grey",  color = "black") +
+  facet_grid(.~output) +
+  geom_bar(position = "dodge", stat="identity", width = .5, alpha = 0.3) +
+  ggtitle("Partial Rank Correlation Coefficient") +
+  coord_flip() +
+  # scale_fill_manual(values = rep(c("grey", "black"), 4)) +
+  # scale_fill_brewer(type = "div", palette = 6) +
+  scale_fill_manual(values = rev(my.cols), breaks = c("Ebola","Hepatitis A", "Influenza A", "MERS", "Pertussis", "SARS", "Smallpox", "All Diseases")) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.title.x=element_blank()) +
+  theme(axis.title.y=element_blank()) +
+  # ylab("Partial Rank Correlation Coefficient") +
+  scale_y_continuous(limits = c(-1, 1), breaks = c(-1, -0.5, 0, 0.5, 1), labels = c("-1", "", "0", "", "+1")) +
+  geom_hline(yintercept=0, color="darkgrey", size=0.7) +
+  guides(color=FALSE) +
+  guides(fill=FALSE)
+plot_prcc_6
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_6.pdf", sep=""), width=15, height=9)
+plot(plot_prcc_6)
+dev.off()
+
+
 #### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
