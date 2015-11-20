@@ -199,9 +199,9 @@ t_iso_q_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, background_intervent
   
   if (is.na(t_obs) == 0){
     if (background_intervention == "u"){
-      t_iso_q <- min( max(T_inc, t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
+      t_iso_q <- min( max( min(T_lat,T_inc), t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
     } else if (background_intervention == "hsb"){
-      t_iso_q <- min( max(T_inc, t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+      t_iso_q <- min( max( min(T_lat,T_inc), t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
     }
   } else {
     if (background_intervention == "u"){
@@ -210,6 +210,8 @@ t_iso_q_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, background_intervent
       t_iso_q <- runif(1, min = T_inc, max = (T_inc + d_symp) )
     }
   }
+  
+  
   
   return(t_iso_q)
 }
