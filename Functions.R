@@ -231,14 +231,18 @@ observe_and_isolate_fcn <- function(Pop, intervention){
     # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
     Pop$t_obs <- NA
     Pop[is.na(Pop$t_obs_infector) == 1,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 1,], 1, function(x) t_obs_u_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']), as.numeric(x['T_lat']), as.numeric(x['d_inf']))) # Those who were not contact traced #NOTE THIS DOES NOT WORK WITH HSB AS BACKGROUND INTERVENTION
-    Pop[is.na(Pop$t_obs_infector) == 0, "t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay']))) # Those who were contact traced
+    if (nrow(Pop[is.na(Pop$t_obs_infector)==0,]) > 0){
+      Pop[is.na(Pop$t_obs_infector) == 0, "t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay']))) # Those who were contact traced
+    }
     Pop$t_iso <- apply(Pop, 1, function(x) t_iso_s_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), as.numeric(x['epsilon']), x['background_intervention']))
   }
   if (intervention == "q"){
     # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
     Pop$t_obs <- NA
     Pop[is.na(Pop$t_obs_infector) == 1,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 1,], 1, function(x) t_obs_u_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']), as.numeric(x['T_lat']), as.numeric(x['d_inf']))) # Those who were not contact traced #NOTE THIS DOES NOT WORK WITH HSB AS BACKGROUND INTERVENTION
-    Pop[is.na(Pop$t_obs_infector) == 0,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    if (nrow(Pop[is.na(Pop$t_obs_infector)==0,]) > 0){
+      Pop[is.na(Pop$t_obs_infector) == 0,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    }
     Pop$t_iso <- apply(Pop, 1, function(x) t_iso_q_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), x['background_intervention']))
   }
   
