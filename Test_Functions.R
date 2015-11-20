@@ -61,6 +61,8 @@ parms_T_inc$T_inc_stretch <- 1
 
 #### Test observe_and_isolate_fcn ####
 Pop <- observe_and_isolate_fcn(Pop, intervention = "u")
+sapply(Pop, summary)
+Pop[1,]
 
 #### Test pi_t_fcn ####
 pi_t <- pi_t_fcn(Pop[1,"T_lat"], Pop[1,"d_inf"], Pop[1,"t_iso"], Pop[1,"t_obs"], Pop[1, "R_0"], Pop[1, "R_0_hsb_adjusted"], 
@@ -73,12 +75,12 @@ plot(pi_t)
 cat("The AUC for person 1 is", sum(pi_t), "\nThe R_0 for person 1 is", Pop[1, "R_0"])
 
 #### Test infection_times_fcn ####
-dispersion = 4
+dispersion = 2
 children <- infection_times_fcn(Pop[1,"T_lat"], Pop[1,"d_inf"], Pop[1,"t_iso"], Pop[1,"t_obs"], Pop[1, "R_0"], Pop[1, "R_0_hsb_adjusted"], gamma=gamma, distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, intervention = "s", background_intervention = "u", dispersion = dispersion)
 plot(children, main = "Children of person 1", xlab = "days since onset of infectiousness")
 
 #### Test children_list_fcn ####
-dispersion = 5
+dispersion = 2
 children_list <- children_list_fcn(Pop, pi_t_distribution=parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma=0.9, intervention = "u", background_intervention = "u", dispersion = dispersion)
 cat('The hour(s) on which the first person transmitted is(are)',as.integer(which(children_list[[1]]==1)) )
 plot(children_list[[1]], xlab="hour")
@@ -103,6 +105,7 @@ Pop_2 <- next_generation_fcn(Pop = Pop,
                              n_pop = n_pop,
                              cap_pop = FALSE)
 dim(Pop_2)
+head(Pop_2)
 
 #### Test three generations of infection ####
 dispersion = 2
@@ -122,7 +125,7 @@ children_list <- children_list_fcn(Pop_alpha, parms_pi_t$distribution, parms_pi_
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 1 : n=', nrow(Pop_alpha), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
 
-intervention = "hsb"
+intervention = "q"
 Pop_beta <- next_generation_fcn(Pop = Pop_alpha,
                                 children_list = children_list,
                                 parms_T_inc = parms_T_inc,
@@ -163,6 +166,10 @@ cat('Generation 3 : n=', nrow(Pop_gamma), '. Effective Reproductive Number:', me
 plot((Pop_alpha$t_iso - Pop_alpha$T_inc)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), ylab = "Days from Symptoms to Isolation", xlab = "Person")
 plot((Pop_beta$t_iso - Pop_beta$T_inc)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), ylab = "Days from Symptoms to Isolation", xlab = "Person")
 plot((Pop_gamma$t_iso - Pop_gamma$T_inc)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), ylab = "Days from Symptoms to Isolation", xlab = "Person")
+
+plot((Pop_alpha$t_iso - Pop_alpha$t_obs)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$t_obs)/24), ylab = "Days from Observation to Isolation", xlab = "Person")
+plot((Pop_beta$t_iso - Pop_beta$t_obs)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$t_obs)/24), ylab = "Days from Observation to Isolation", xlab = "Person")
+plot((Pop_gamma$t_iso - Pop_gamma$t_obs)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$t_obs)/24), ylab = "Days from Observation to Isolation", xlab = "Person")
 
 hist((Pop_alpha$t_iso - Pop_alpha$T_inc)/24, xlim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), xlab ="Days from Symptoms to Isolation")
 hist((Pop_beta$t_iso - Pop_beta$T_inc)/24, xlim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), xlab ="Days from Symptoms to Isolation")

@@ -151,8 +151,9 @@ t_obs_fcn <- function(t_infection, t_obs_alpha, CT_delay){
   # Infections by alpha that occur before alpha is observed are themselves observed when alpha is observed
   # Infections by alpha after alpha is observed are immediately observed because these infections occured in a healthcare setting
   if (is.na(t_infection)==1) {cat("Error 1: t_obs_fcn ")}
-  if (is.na(t_obs_alpha)==1) {cat("Error 2: t_obs_fcn ")}
-  t_obs <- max(t_infection, t_obs_alpha) + CT_delay
+  if (is.na(t_obs_alpha) == 0){
+    t_obs <- max(t_infection, t_obs_alpha) + CT_delay
+  } else {t_obs <- NA}
   return(t_obs)
 }
 
@@ -166,14 +167,22 @@ t_iso_s_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, epsilon, background_
   if (is.na(d_symp)==1) {cat("Error 1: t_iso_s_fcn ")}
   if (is.na(T_inc)==1) {cat("Error 2: t_iso_s_fcn ")}
   if (is.na(epsilon)==1) {cat("Error 3: t_iso_s_fcn ")}
-  if (is.na(t_obs)==1) {cat("Error 4: t_iso_s_fcn ")}
   if (T_inc >= (T_inc + d_symp)) {cat("Error 5: t_iso_s_fcn ")}
   
-  if (background_intervention == "u"){
-    t_iso_s <- min( max((T_inc + epsilon), t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
-  } else if (background_intervention == "hsb"){
-    t_iso_s <- min( max((T_inc + epsilon), t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+  if (is.na(t_obs) == 0){
+    if (background_intervention == "u"){
+      t_iso_s <- min( max((T_inc + epsilon), t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
+    } else if (background_intervention == "hsb"){
+      t_iso_s <- min( max((T_inc + epsilon), t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+    }
+  } else {
+    if (background_intervention == "u"){
+      t_iso_s <- max((T_inc + d_symp), (T_lat + d_inf))
+    } else if (background_intervention == "hsb"){
+      t_iso_s <- runif(1, min = T_inc, max = (T_inc + d_symp) )
+    }
   }
+  
   return(t_iso_s)
 }
 
@@ -186,13 +195,20 @@ t_iso_q_fcn <- function(T_inc, T_lat, t_obs, d_symp, d_inf, background_intervent
   if (is.na(d_symp)==1) {cat("Error 1: t_iso_q_fcn")}
   if (is.na(T_inc)==1) {cat("Error 2: t_iso_q_fcn")}
   if (is.na(T_lat)==1) {cat("Error 3: t_iso_q_fcn")}
-  if (is.na(t_obs)==1) {cat("Error 4: t_iso_q_fcn")}
   if (T_inc >= (T_inc + d_symp)) {cat("Error5: t_iso_q_fcn")}
   
-  if (background_intervention == "u"){
-    t_iso_q <- min( max(T_inc, t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
-  } else if (background_intervention == "hsb"){
-    t_iso_q <- min( max(T_inc, t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+  if (is.na(t_obs) == 0){
+    if (background_intervention == "u"){
+      t_iso_q <- min( max(T_inc, t_obs), max((T_inc + d_symp), (T_lat + d_inf)) )
+    } else if (background_intervention == "hsb"){
+      t_iso_q <- min( max(T_inc, t_obs), runif(1, min = T_inc, max = (T_inc + d_symp) ) )
+    }
+  } else {
+    if (background_intervention == "u"){
+      t_iso_q <-max((T_inc + d_symp), (T_lat + d_inf))
+    } else if (background_intervention == "hsb"){
+      t_iso_q <- runif(1, min = T_inc, max = (T_inc + d_symp) )
+    }
   }
   
   return(t_iso_q)
@@ -211,14 +227,19 @@ observe_and_isolate_fcn <- function(Pop, intervention){
   }
   if (intervention == "s"){
     # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
-    Pop$t_obs <- apply(Pop, 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    Pop$t_obs <- NA
+    Pop[is.na(Pop$t_obs_infector) == 1,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 1,], 1, function(x) t_obs_u_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']), as.numeric(x['T_lat']), as.numeric(x['d_inf']))) # Those who were not contact traced #NOTE THIS DOES NOT WORK WITH HSB AS BACKGROUND INTERVENTION
+    Pop[is.na(Pop$t_obs_infector) == 0, "t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay']))) # Those who were contact traced
     Pop$t_iso <- apply(Pop, 1, function(x) t_iso_s_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), as.numeric(x['epsilon']), x['background_intervention']))
   }
   if (intervention == "q"){
     # The first generation cannot be subject to quarantine unless we set t_obs = 0 for all
-    Pop$t_obs <- apply(Pop, 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
+    Pop$t_obs <- NA
+    Pop[is.na(Pop$t_obs_infector) == 1,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 1,], 1, function(x) t_obs_u_fcn(as.numeric(x['T_inc']), as.numeric(x['d_symp']), as.numeric(x['T_lat']), as.numeric(x['d_inf']))) # Those who were not contact traced #NOTE THIS DOES NOT WORK WITH HSB AS BACKGROUND INTERVENTION
+    Pop[is.na(Pop$t_obs_infector) == 0,"t_obs"] <- apply(Pop[is.na(Pop$t_obs_infector) == 0,], 1, function(x) t_obs_fcn(as.numeric(x['t_infection']), as.numeric(x['t_obs_infector']), as.numeric(x['CT_delay'])))
     Pop$t_iso <- apply(Pop, 1, function(x) t_iso_q_fcn(as.numeric(x['T_inc']), as.numeric(x['T_lat']), as.numeric(x['t_obs']), as.numeric(x['d_symp']), as.numeric(x['d_inf']), x['background_intervention']))
   }
+  
   Pop[Pop$t_iso < Pop$t_obs,"t_obs"] <- Pop[Pop$t_iso < Pop$t_obs,"t_iso"]    # For those who were isolated due to health seeking behavior before they were observed through Q or S
   return(Pop)
 }
@@ -355,7 +376,7 @@ next_generation_fcn <- function(Pop,
   Pop_2[,"T_lat"] <- ( Pop_2[,"T_lat"] + Pop_2[,"t_infection"] )
   if (prob_CT < 1){
     identified <- rbinom(length(Pop_2$t_obs_infector), 1, prob = prob_CT)
-    Pop_2[which(identified==0), "t_obs_infector"] <- 999999999
+    Pop_2[which(identified==0), "t_obs_infector"] <- NA
   }
   return(Pop_2)
 }
@@ -433,7 +454,7 @@ repeat_call_fcn <- function(n_pop,
   names(output) <- names
   output[1,"n"] <- nrow(Pop_1)
   output[1,"R"] <- mean(Num_Infected)
-  output[1,"obs_to_iso"] <- mean(Pop_1$t_iso - Pop_1$t_obs)
+  output[1, "obs_to_iso"] <- NA # No-one is traced in the first generation
   output[1,"prop_lat_before_obs"] <- mean((Pop_1$T_lat < Pop_1$t_obs) == 1)
   
   Pop_prev <- Pop_1
@@ -474,7 +495,9 @@ repeat_call_fcn <- function(n_pop,
         if (printing == TRUE) {cat('\nGeneration',g, ': n=', nrow(Pop_next), 'Effective Reproductive Number:', mean(Num_Infected))}
         output[g,"n"] <- nrow(Pop_next)
         output[g,"R"] <- mean(Num_Infected)
-        output[g,"obs_to_iso"] <- mean(Pop_next$t_iso - Pop_next$t_obs)
+        if (sum(nrow(Pop_next[is.na(Pop_next$t_obs_infector)==0,])) > 0){
+          output[g,"obs_to_iso"] <- mean(Pop_next[is.na(Pop_next$t_obs_infector)==0,]$t_iso - Pop_next[is.na(Pop_next$t_obs_infector)==0,]$t_obs)
+        } else {output[g,"obs_to_iso"] <- NA}
         output[g,"prop_lat_before_obs"] <- mean((Pop_next$T_lat < Pop_next$t_obs) == 1)
         if (parms_serial_interval$dist != "unknown" & subseq_interventions == "u"){
           output[g,"ks"] <- serial_interval_fcn(Pop_prev, Pop_next, parms_serial_interval, plot="False")
