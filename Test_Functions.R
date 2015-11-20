@@ -24,7 +24,7 @@ names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor
 parms_T_inc = list("gamma", 1.75, 0.182, 999, "independent", "independent", 1)
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
-parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")
+parms_T_lat = list("triangle", 999, 999, 999, -2, "T_inc")
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_inf = list("confit", 7.5, 6.8, 999, "independent", "independent")
@@ -181,7 +181,7 @@ plot(apply(Pop_gamma, 1, function(x) min(as.numeric(x['T_inc']), as.numeric(x['T
 
 #### Test repeat_call_fcn ####
 dispersion = 2
-In_Out <- repeat_call_fcn(n_pop = n_pop, 
+In_Out <- repeat_call_fcn(n_pop = 200, 
                           parms_T_inc = parms_T_inc, 
                           parms_T_lat = parms_T_lat, 
                           parms_d_inf = parms_d_inf, 
@@ -191,7 +191,7 @@ In_Out <- repeat_call_fcn(n_pop = n_pop,
                           parms_pi_t = parms_pi_t,
                           num_generations = 5,
                           background_intervention="u",
-                          subseq_interventions="s",
+                          subseq_interventions="q",
                           gamma=gamma,
                           prob_CT = prob_CT,
                           parms_CT_delay = parms_CT_delay,
