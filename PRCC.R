@@ -20,7 +20,7 @@ load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
 
-desired_date <- "20151111"
+desired_date <- "20151119"
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
@@ -426,7 +426,7 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_prcc_5)
 dev.off()
 
-#### Plot each disease, horizontal bar chart, alll outputs ####
+#### Plot each disease, horizontal bar chart, all outputs ####
 df.prcc.output.temporary.2 <- df.prcc.output.temporary
 df.prcc.output.temporary.2$parameter <- factor(df.prcc.output.temporary.2$parameter, levels = rev(c("gamma", "prob_CT", "riskprofile", "epsilon", "CT_delay", "R_0_mean", "R_0_spread", "T_inc_stretch", "T_lat_offset", "pi_t_triangle_center", "d_inf", "dispersion")), ordered = TRUE,
                                           labels = rev(c("Isolation\nEffectiveness","Fraction of\n Contacts Traced", "Fraction of Traced\nContacts who are Infected", "Delay from Symptom Onset\nto Isolation", "Delay in Tracing\na Contact", "R_0 Mean", "R_0 Spread", "Incubation\nPeriod", "Latent\nPeriod", "Time of Peak\nInfectiousness", "Duration of\nInfectiousness", "Super-Spreading\nDispersion Factor")))
@@ -464,6 +464,82 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_prcc_6)
 dev.off()
 
+#### circleFun for plotting on ggplot ####
+circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
+  r = diameter / 2
+  tt <- seq(0,2*pi,length.out = npoints)
+  xx <- center[1] + r * cos(tt)
+  yy <- center[2] + r * sin(tt)
+  return(data.frame(x = xx, y = yy))
+}
+
+circle_0.25 <- circleFun(diameter = 0.5, npoints = 100)
+circle_0.5 <- circleFun(diameter = 1, npoints = 100)
+
+
+#### Make a "Target" Plot for R_SM and R_Q ####
+df.prcc.output.subset_R <- df.prcc.output.subset[is.element(df.prcc.output.subset$output, c("Symptom Monitoring R", "Quarantine R")), ]
+df.prcc.output.subset_R.melt <- melt(df.prcc.output.subset_R, id.vars = c("parameter", "disease", "output"))
+
+df.prcc.output.subset_R.target <- data.frame(cbind(disease = as.character(rep(unique(df.prcc.output.subset_R.melt$disease), times = length(unique(df.prcc.output.subset_R.melt$parameter)))), parameter = as.character(rep(unique(df.prcc.output.subset_R.melt$parameter), each = length(unique(df.prcc.output.subset_R.melt$disease))))))
+df.prcc.output.subset_R.target$RSM <- NA
+df.prcc.output.subset_R.target$RQ <- NA
+
+for (i in 1:nrow(df.prcc.output.subset_R.target)){
+  df.prcc.output.subset_R.target[i, "RSM"] <- df.prcc.output.subset_R[as.character(df.prcc.output.subset_R$disease) == as.character(df.prcc.output.subset_R.target[i,"disease"]) & as.character(df.prcc.output.subset_R$parameter) == as.character(df.prcc.output.subset_R.target[i,"parameter"]) & as.character(df.prcc.output.subset_R$output) == "Symptom Monitoring R", "coef"]
+  
+  df.prcc.output.subset_R.target[i, "RQ"] <- df.prcc.output.subset_R[as.character(df.prcc.output.subset_R$disease) == as.character(df.prcc.output.subset_R.target[i,"disease"]) & as.character(df.prcc.output.subset_R$parameter) == as.character(df.prcc.output.subset_R.target[i,"parameter"]) & as.character(df.prcc.output.subset_R$output) == "Quarantine R", "coef"]
+}
+
+
+ggplot() +
+  geom_hline(y=0, color = "darkgrey") +
+  geom_vline(x=0, color = "darkgrey") +
+  geom_path(data=circle_0.25, aes(x,y), color = "lightgrey") +
+  geom_path(data=circle_0.5, aes(x,y), color = "lightgrey") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
+  geom_text(data=df.prcc.output.subset_R.target[df.prcc.output.subset_R.target$disease == "All Diseases",], aes(x = RSM, y = RQ, label=parameter, color = parameter, size = ((abs(RSM)^.1)+abs(RQ)^.1)), angle=0) +
+  xlim(-1,1) +
+  ylim(-1,1) +
+  guides(size = FALSE, color = FALSE) +
+  coord_fixed() +
+  scale_size(range=c(2,6)) +
+  xlab(expression(paste(R[S]))) +
+  ylab(expression(paste(R[Q])))
+
+#### Make a "Target" Plot for Rel_Benefit and Rel_Benefit_per_Qday ####
+df.prcc.output.subset_RelBen <- df.prcc.output.subset[is.element(df.prcc.output.subset$output, c("Relative Difference", "Relative Difference\nper Quarantine Day")), ]
+df.prcc.output.subset_RelBen.melt <- melt(df.prcc.output.subset_RelBen, id.vars = c("parameter", "disease", "output"))
+
+df.prcc.output.subset_RelBen.target <- data.frame(cbind(disease = as.character(rep(unique(df.prcc.output.subset_RelBen.melt$disease), times = length(unique(df.prcc.output.subset_RelBen.melt$parameter)))), parameter = as.character(rep(unique(df.prcc.output.subset_RelBen.melt$parameter), each = length(unique(df.prcc.output.subset_RelBen.melt$disease))))))
+df.prcc.output.subset_RelBen.target$Rel_Benefit <- NA
+df.prcc.output.subset_RelBen.target$Rel_Benefit_per_Qday <- NA
+
+for (i in 1:nrow(df.prcc.output.subset_RelBen.target)){
+  df.prcc.output.subset_RelBen.target[i, "Rel_Benefit"] <- df.prcc.output.subset_RelBen[as.character(df.prcc.output.subset_RelBen$disease) == as.character(df.prcc.output.subset_RelBen.target[i,"disease"]) & as.character(df.prcc.output.subset_RelBen$parameter) == as.character(df.prcc.output.subset_RelBen.target[i,"parameter"]) & as.character(df.prcc.output.subset_RelBen$output) == "Relative Difference", "coef"]
+  
+  df.prcc.output.subset_RelBen.target[i, "Rel_Benefit_per_Qday"] <- df.prcc.output.subset_RelBen[as.character(df.prcc.output.subset_RelBen$disease) == as.character(df.prcc.output.subset_RelBen.target[i,"disease"]) & as.character(df.prcc.output.subset_RelBen$parameter) == as.character(df.prcc.output.subset_RelBen.target[i,"parameter"]) & as.character(df.prcc.output.subset_RelBen$output) == "Relative Difference\nper Quarantine Day", "coef"]
+}
+
+ggplot() +
+  geom_hline(y=0, color = "darkgrey") +
+  geom_vline(x=0, color = "darkgrey") +
+  geom_path(data=circle_0.25, aes(x,y), color = "lightgrey") +
+  geom_path(data=circle_0.5, aes(x,y), color = "lightgrey") +
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
+  geom_text(data=df.prcc.output.subset_RelBen.target[df.prcc.output.subset_RelBen.target$disease == "All Diseases",], aes(x = Rel_Benefit, y = Rel_Benefit_per_Qday, label=parameter, color = parameter, size = ((abs(Rel_Benefit)^.5)+abs(Rel_Benefit_per_Qday)^.5)), angle=0) +
+  xlim(-1,1) +
+  ylim(-1,1) +
+  guides(size = FALSE, color = FALSE) +
+  coord_fixed() +
+  scale_size(range=c(2,6)) +
+  xlab(expression(paste("Relative Effectiveness of Quarantine ", frac(R[S]-R[Q],R[S]), sep=""))) +
+  ylab(expression(paste("Relative Effeciency of Quarantine ", (frac(R[S]-R[Q],R[S]))/d[Q], sep="")))
+
+
+  
 
 #### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
