@@ -36,7 +36,7 @@ ggplot(data.hr.mr.lr, aes(x=riskprofile, y=Rel_Benefit*100, color = Setting, fil
   scale_color_manual(values = gbr_cols, breaks = c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), name = "Setting") +
   scale_fill_manual(values = alpha(gbr_cols, 0.2), breaks = c("HR", "MR", "LR"), labels = c("High Resource", "Mid Resource", "Low Resource"), name = "Setting") +
   xlab(expression(paste("Fraction of Contacts Truly Infected (", P[inf], ")", sep=""))) +
-  ylab(expression(paste("Relative Diffrence ", frac(R[S]-R[Q],R[S]), sep=""))) +
+  ylab(expression(paste("Relative Difference ", frac(R[S]-R[Q],R[S]), sep=""))) +
   # scale_y_continuous(breaks = seq(0, 20, by=5), labels = c("0%", "5%", "10%", "15%", "20%")) +
   # scale_y_log10(breaks = c(0.005, 0.01, 0.05, 0.1, 0.5, 1), labels = c("0.005%", "0.01%", "0.05%", "0.1%", "0.5%", "1%")) +
   # scale_x_log10(breaks = c(0.01, 0.05, 0.1, 0.5, 1)) +
