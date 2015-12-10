@@ -20,7 +20,7 @@ load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
 
-desired_date <- "20151119"
+desired_date <- "20151210"
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
@@ -537,10 +537,7 @@ ggplot() +
   scale_size(range=c(2,6)) +
   xlab(expression(paste("Relative Effectiveness of Quarantine ", frac(R[S]-R[Q],R[S]), sep=""))) +
   ylab(expression(paste("Relative Effeciency of Quarantine ", (frac(R[S]-R[Q],R[S]))/d[Q], sep="")))
-
-
   
-
 #### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
