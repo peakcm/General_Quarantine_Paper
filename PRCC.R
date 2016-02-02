@@ -500,6 +500,7 @@ ggplot() +
   theme_bw() +
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
   geom_text(data=df.prcc.output.subset_R.target[df.prcc.output.subset_R.target$disease == "All Diseases",], aes(x = RSM, y = RQ, label=parameter, color = parameter, size = ((abs(RSM)^.1)+abs(RQ)^.1)), angle=0) +
+  geom_point(data=df.prcc.output.subset_R.target[df.prcc.output.subset_R.target$disease == "All Diseases",], aes(x = RSM, y = RQ, color = parameter), shape = 5) +
   xlim(-1,1) +
   ylim(-1,1) +
   guides(size = FALSE, color = FALSE) +
@@ -530,6 +531,7 @@ ggplot() +
   theme_bw() +
   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank())+
   geom_text(data=df.prcc.output.subset_RelBen.target[df.prcc.output.subset_RelBen.target$disease == "All Diseases",], aes(x = Rel_Benefit, y = Rel_Benefit_per_Qday, label=parameter, color = parameter, size = ((abs(Rel_Benefit)^.5)+abs(Rel_Benefit_per_Qday)^.5)), angle=0) +
+  geom_point(data=df.prcc.output.subset_RelBen.target[df.prcc.output.subset_RelBen.target$disease == "All Diseases",], aes(x = Rel_Benefit, y = Rel_Benefit_per_Qday, color = parameter), shape = 5) +
   xlim(-1,1) +
   ylim(-1,1) +
   guides(size = FALSE, color = FALSE) +
