@@ -8,6 +8,7 @@
 library(MASS)
 library(parallel)
 library(magrittr)
+source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Define a sample of initial parameters ####
 n_pop = 500
@@ -49,6 +50,8 @@ names(parms_serial_interval) <- c("dist","parm1","parm2")
 
 background_intervention <- "u"
 
+gamma <- 0.9
+
 #### Test Create_Pop ####
 Pop <- Create_Pop(n_pop=500, parms_T_inc, parms_T_lat, parms_d_inf, parms_d_symp, parms_R_0, parms_epsilon, generation = 1, background_intervention = "u", parms_CT_delay, gamma)
 Pop[1,]
@@ -79,9 +82,16 @@ dispersion = 2
 children <- infection_times_fcn(Pop[1,"T_lat"], Pop[1,"d_inf"], Pop[1,"t_iso"], Pop[1,"t_obs"], Pop[1, "R_0"], Pop[1, "R_0_hsb_adjusted"], gamma=gamma, distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, intervention = "s", background_intervention = "u", dispersion = dispersion)
 plot(children, main = "Children of person 1", xlab = "days since onset of infectiousness")
 
+#### Test infection_times_fcn_2 ####
+dispersion = 2
+children <- infection_times_fcn_2(Pop[1,"T_lat"], Pop[1,"d_inf"], Pop[1,"t_iso"], Pop[1,"t_obs"], Pop[1, "R_0"], Pop[1, "R_0_hsb_adjusted"], gamma=gamma, distribution = parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, intervention = "s", background_intervention = "u", dispersion = dispersion)
+plot(children, main = "Children of person 1", xlab = "days since onset of infectiousness")
+
 #### Test children_list_fcn ####
 dispersion = 2
+start <- proc.time()
 children_list <- children_list_fcn(Pop, pi_t_distribution=parms_pi_t$distribution, triangle_center = parms_pi_t$triangle_center, gamma=0.9, intervention = "u", background_intervention = "u", dispersion = dispersion)
+proc.time() - start
 cat('The hour(s) on which the first person transmitted is(are)',as.integer(which(children_list[[1]]==1)) )
 plot(children_list[[1]], xlab="hour")
 Num_Infected <- unlist(lapply(children_list, sum))
@@ -144,6 +154,7 @@ children_list <- children_list_fcn(Pop_beta, pi_t_distribution = parms_pi_t$dist
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 2 : n=', nrow(Pop_beta), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
 
+start <- proc.time()
 Pop_gamma <- next_generation_fcn(Pop_beta,
                                  children_list,
                                  parms_T_inc,
@@ -161,6 +172,7 @@ Pop_gamma <- observe_and_isolate_fcn(Pop_gamma, intervention = intervention)
 children_list <- children_list_fcn(Pop_gamma, parms_pi_t$distribution, parms_pi_t$triangle_center, gamma, intervention = intervention, background_intervention, dispersion = dispersion)
 Num_Infected <- unlist(lapply(children_list, sum))
 cat('Generation 3 : n=', nrow(Pop_gamma), '. Effective Reproductive Number:', mean(Num_Infected), '. Number of infections:', sum(Num_Infected))
+proc.time() - start
 
 #### Plot Results from alpha, beta, gamma runs ####
 plot((Pop_alpha$t_iso - Pop_alpha$T_inc)/24, ylim = c(0, max(Pop_alpha$t_iso - Pop_alpha$T_inc)/24), ylab = "Days from Symptoms to Isolation", xlab = "Person")
@@ -180,6 +192,7 @@ plot(apply(Pop_beta, 1, function(x) min(as.numeric(x['T_inc']), as.numeric(x['T_
 plot(apply(Pop_gamma, 1, function(x) min(as.numeric(x['T_inc']), as.numeric(x['T_lat']))), Pop_gamma$t_iso, xlim=c(0, max(apply(Pop_gamma, 1, function(x) min(as.numeric(x['T_inc']), as.numeric(x['T_lat']))))), ylim=c(0, max(Pop_gamma$t_iso)))
 
 #### Test repeat_call_fcn ####
+start <- proc.time()
 dispersion = 2
 In_Out <- repeat_call_fcn(n_pop = 200, 
                           parms_T_inc = parms_T_inc, 
@@ -198,6 +211,7 @@ In_Out <- repeat_call_fcn(n_pop = 200,
                           parms_serial_interval = parms_serial_interval,
                           dispersion = dispersion, 
                           cap_pop = FALSE)
+proc.time() - start
 In_Out$output
 # plot(In_Out$output$R)
 

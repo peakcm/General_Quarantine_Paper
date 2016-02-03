@@ -326,11 +326,51 @@ infection_times_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjuste
   return(children)
 }
 
+#### infection_times_fcn_2 ####
+# Infection times from one individual. Version two where we draw the number of onward infections for the person, then assign these different times.
+infection_times_fcn_2 <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention, dispersion = 1){
+  if (sum( sum(is.na(T_lat), is.na(d_inf), is.na(R_0))) > 0){cat("Error 1: infection_times_fcn_2")}
+  if (sum(is.na(pi_t)) > 0 | sum(pi_t < 0) > 0){cat("Error 2: infection_times_fcn_2")}
+  pi_t <- pi_t_fcn(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention)
+  
+  if (dispersion == 1){  # It's not necessary to have this if...else clause, but I wonder if rpois is faster than rpois.od when d = 1
+    cum_children <- rpois(1, lambda = sum(pi_t))
+  } else {
+    cum_children <- rpois.od(1, lambda = sum(pi_t), d = dispersion)
+  }
+  children <- rep(0, length(pi_t))
+  if (cum_children > 0){
+    pi_t_pdf <- round(pi_t / sum(pi_t), digits = 10)  # Create a pdf for the pi_t function
+    # if (sum(pi_t_pdf) != 1){cat("Error 3: infection_times_fcn_2\n")}
+    if (round(sum(pi_t_pdf), digits = 5) != 1){
+      cat("Error 3: infection_times_fcn_2", pi_t_pdf,"\n")
+      }
+    pi_t_cdf <- round(cumsum(pi_t_pdf), digits = 10)
+    if (max(pi_t_cdf) < 0.999){
+      cat("Error 4: infection_times_fcn_2", pi_t_cdf, "/n")
+    } else if (max(pi_t_cdf) < 1){
+        pi_t_cdf[length(pi_t_cdf)] <- 1   #S et the max to 1
+      }
+    
+    for (i in 1:cum_children){
+      draw <- runif(1)
+      if (draw < min(pi_t_cdf)){
+        hour <- 1
+      } else {
+        if (sum(is.na(which(pi_t_cdf <= draw))) > 0){cat("Error 5: infection_times_fcn_2", pi_t_cdf, "\n", draw, "\n")}
+        hour <- max(which(pi_t_cdf <= draw))
+      }
+      children[hour] <- children[hour] + 1
+    }
+  }
+  return(children)
+}
+
 #### children_list_fcn ####
 # Create a list of the children of the population
 children_list_fcn <- function(Pop, pi_t_distribution, triangle_center, gamma, intervention, background_intervention, dispersion = 1){
   children_list <- as.list(seq(1:nrow(Pop)))
-  children_list <- apply(Pop, 1, function(x) list(infection_times_fcn(as.numeric(x['T_lat']), as.numeric(x['d_inf']), as.numeric(x['t_iso']), as.numeric(x['t_obs']), as.numeric(x['R_0']),as.numeric(x['R_0_hsb_adjusted']), gamma, pi_t_distribution, triangle_center, intervention, background_intervention, dispersion)))
+  children_list <- apply(Pop, 1, function(x) list(infection_times_fcn_2(as.numeric(x['T_lat']), as.numeric(x['d_inf']), as.numeric(x['t_iso']), as.numeric(x['t_obs']), as.numeric(x['R_0']),as.numeric(x['R_0_hsb_adjusted']), gamma, pi_t_distribution, triangle_center, intervention, background_intervention, dispersion)))
   children_list <- lapply(children_list, "[[", 1)  #This removes one layer of [[ ]] from the list
   return(children_list)
 }
