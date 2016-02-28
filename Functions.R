@@ -330,8 +330,8 @@ infection_times_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjuste
 # Infection times from one individual. Version two where we draw the number of onward infections for the person, then assign these different times.
 infection_times_fcn_2 <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention, dispersion = 1){
   if (sum( sum(is.na(T_lat), is.na(d_inf), is.na(R_0))) > 0){cat("Error 1: infection_times_fcn_2")}
-  if (sum(is.na(pi_t)) > 0 | sum(pi_t < 0) > 0){cat("Error 2: infection_times_fcn_2")}
   pi_t <- pi_t_fcn(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, distribution, triangle_center, intervention, background_intervention)
+  if (sum(is.na(pi_t)) > 0 | sum(pi_t < 0) > 0){cat("Error 2: infection_times_fcn_2")}
   
   if (dispersion == 1){  # It's not necessary to have this if...else clause, but I wonder if rpois is faster than rpois.od when d = 1
     cum_children <- rpois(1, lambda = sum(pi_t))
