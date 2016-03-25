@@ -476,7 +476,6 @@ circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
 circle_0.25 <- circleFun(diameter = 0.5, npoints = 100)
 circle_0.5 <- circleFun(diameter = 1, npoints = 100)
 
-
 #### Make a "Target" Plot for R_SM and R_Q ####
 df.prcc.output.subset_R <- df.prcc.output.subset[is.element(df.prcc.output.subset$output, c("Symptom Monitoring R", "Quarantine R")), ]
 df.prcc.output.subset_R.melt <- melt(df.prcc.output.subset_R, id.vars = c("parameter", "disease", "output"))
@@ -493,8 +492,8 @@ for (i in 1:nrow(df.prcc.output.subset_R.target)){
 
 
 ggplot() +
-  geom_hline(y=0, color = "darkgrey") +
-  geom_vline(x=0, color = "darkgrey") +
+  geom_hline(yintercept=0, color = "darkgrey") +
+  geom_vline(xintercept=0, color = "darkgrey") +
   geom_path(data=circle_0.25, aes(x,y), color = "lightgrey") +
   geom_path(data=circle_0.5, aes(x,y), color = "lightgrey") +
   theme_bw() +
@@ -524,8 +523,8 @@ for (i in 1:nrow(df.prcc.output.subset_RelBen.target)){
 }
 
 ggplot() +
-  geom_hline(y=0, color = "darkgrey") +
-  geom_vline(x=0, color = "darkgrey") +
+  geom_hline(yintercept=0, color = "darkgrey") +
+  geom_vline(xintercept=0, color = "darkgrey") +
   geom_path(data=circle_0.25, aes(x,y), color = "lightgrey") +
   geom_path(data=circle_0.5, aes(x,y), color = "lightgrey") +
   theme_bw() +
@@ -540,6 +539,35 @@ ggplot() +
   xlab(expression(paste("Relative Effectiveness of Quarantine ", frac(R[S]-R[Q],R[S]), sep=""))) +
   ylab(expression(paste("Relative Effeciency of Quarantine ", (frac(R[S]-R[Q],R[S]))/d[Q], sep="")))
   
+
+#### Make a vertical bar plot grouped by parameter for comparative effectveness and efficiency ####
+# Pull df.prcc.output.subset from "Plot each disease, horizontal bar chart, subset of outputs" section above
+df.prcc.output.subset.plot1 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Relative Difference", "Relative Difference\nper Quarantine Day"),]
+df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[order(-df.prcc.output.subset.plot1$coef),]
+df.prcc.output.subset.plot1$parameter <- factor(df.prcc.output.subset.plot1$parameter, levels = unique(as.character(df.prcc.output.subset.plot1$parameter))[c(1,2,4,5,7,8,3,10,11,6,9,12)], ordered = TRUE)
+
+ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
+  theme_bw() + 
+  geom_bar(aes(x = parameter), stat = "identity", position = "dodge") +
+  geom_errorbar(aes(x = parameter, ymin = CImin, ymax = CImax, color = output), position = position_dodge(width=1), width=0) +
+  scale_fill_brewer(type = "qual", palette = 7) +
+  scale_color_brewer(type = "qual", palette = 7) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+#### Make a vertical bar plot grouped by parameter for impact of Q and SM ####
+# Pull df.prcc.output.subset from "Plot each disease, horizontal bar chart, subset of outputs" section above
+df.prcc.output.subset.plot2 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Quarantine R", "Symptom Monitoring R"),]
+df.prcc.output.subset.plot2 <- df.prcc.output.subset.plot2[order(-df.prcc.output.subset.plot2$coef),]
+df.prcc.output.subset.plot2$parameter <- factor(df.prcc.output.subset.plot2$parameter, levels = unique(as.character(df.prcc.output.subset.plot2$parameter))[c(1,2,3,4,5,8,9,6,10,7,11,12)], ordered = TRUE)
+
+ggplot(data = df.prcc.output.subset.plot2, aes(y = coef, fill = output)) +
+  theme_bw() + 
+  geom_bar(aes(x = parameter), stat = "identity", position = "dodge") +
+  geom_errorbar(aes(x = parameter, ymin = CImin, ymax = CImax, color = output), position = position_dodge(width=1), width=0) +
+  scale_fill_brewer(type = "qual", palette = 3) +
+  scale_color_brewer(type = "qual", palette = 3) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
 #### Save Workspace ####
 date <- format(Sys.time(), "%Y%m%d")
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
