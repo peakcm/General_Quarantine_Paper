@@ -362,7 +362,7 @@ while (SMC_break == FALSE){
     d_inf.theta <- lhs[,2]*(d_inf.max - d_inf.min) + d_inf.min
     pi_t_triangle_center.theta <- lhs[,3]*(pi_t_triangle_center.max - pi_t_triangle_center.min) + pi_t_triangle_center.min
   }
-    
+  
   for (i in 1:times){
     cat(".")
     if (i%%10 == 0){cat("|")}

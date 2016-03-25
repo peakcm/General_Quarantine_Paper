@@ -8,6 +8,8 @@
 library(MASS)
 library(parallel)
 library(magrittr)
+
+#### Source Functions ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Define a sample of initial parameters ####
@@ -118,7 +120,7 @@ dim(Pop_2)
 head(Pop_2)
 
 #### Test three generations of infection ####
-dispersion = 2
+dispersion = 1
 Pop_alpha <- Create_Pop(n_pop, 
                         parms_T_inc, 
                         parms_T_lat, 
