@@ -939,7 +939,7 @@ particle_filter_fcn <- function(T_lat_offset.max, T_lat_offset.min,
   }
 
   # Initialize Parameters
-  if (parms_d_inf == "default"){
+  if (parms_d_inf[1] == "default"){
     parms_d_inf = list("uniform", 1, 8, 999, "independent", "independent")
     names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
   }
@@ -1122,4 +1122,130 @@ particle_filter_fcn <- function(T_lat_offset.max, T_lat_offset.min,
   }
   return(list(data = data, ks_conv_stat = ks_conv_stat))
 }
+
+#### intervention_effect_fcn ####
+intervention_effect_fcn <- function(background_intervention = "u",
+                                    prob_CT = NA, gamma = NA, parms_epsilon = NA, parms_CT_delay = NA,
+                                    resource_level = NA,
+                                    n_pop, num_generations, times,
+                                    input_data,
+                                    parms_T_lat, parms_d_inf, parms_pi_t, parms_R_0, dispersion, 
+                                    parms_serial_interval,
+                                    printing = FALSE){
+  if (resource_level == "high"){
+    prob_CT <- 0.9
+    
+    gamma <- 0.9
+    
+    parms_epsilon = list("uniform", 0, 1, 999, "independent", "independent")
+    names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+    
+    parms_CT_delay = list("uniform", 0, 1, 999, "independent", "independent")
+    names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+  } else if (resource_level == "medium"){
+    prob_CT <- 0.75
+    
+    gamma <- 0.75
+    
+    parms_epsilon = list("uniform", 0, 2, 999, "independent", "independent")
+    names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+    
+    parms_CT_delay = list("uniform", 0, 2, 999, "independent", "independent")
+    names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+  } else if (resource_level == "low"){
+    prob_CT <- 0.5
+    
+    gamma <- 0.5
+    
+    parms_epsilon = list("uniform", 0, 4, 999, "independent", "independent")
+    names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+    
+    parms_CT_delay = list("uniform", 0, 4, 999, "independent", "independent")
+    names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+  }
+  names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+  output_data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+  names(output_data) <- names
+    
+  # sample from joint posterior distribution
+  sample <- sample(x = row.names(input_data), size = times, replace = FALSE)
+  params.set <- cbind(
+    T_lat_offset = input_data[sample, "T_lat_offset"],
+    d_inf = input_data[sample, "d_inf"],
+    pi_t_triangle_center = input_data[sample, "pi_t_triangle_center"],
+    dispersion = runif(n=times, min = 1, max = 1),
+    R_0 = runif(n = times, min = 1.72, max = 1.94)) # note this is changed
+  
+  for (i in 1:times){
+    cat(".")
+    if (i%%10 == 0){cat("|")}
+    if (i%%100 == 0){cat("\n")}
+    
+    parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
+    parms_d_inf$parm2 <- params.set[i,"d_inf"]
+    parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
+    parms_R_0$parm1 <- params.set[i,"R_0"]
+    parms_R_0$parm2 <- params.set[i,"R_0"]
+    dispersion <- params.set[i, "dispersion"]
+    
+    for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
+      if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
+        n_pop_input <- 200
+      } else if (subseq_interventions == "hsb" & parms_R_0$parm1 * (1-gamma) > 1){ 
+        n_pop_input <- 200
+      } else if ((subseq_interventions == "s" | subseq_interventions == "q") & parms_R_0$parm1 * (1-gamma*prob_CT) > 1.1){
+        n_pop_input <- 200
+      } else {n_pop_input <- n_pop}
+      In_Out <- repeat_call_fcn(n_pop=n_pop_input, 
+                                parms_T_inc, 
+                                parms_T_lat, 
+                                parms_d_inf, 
+                                parms_d_symp, 
+                                parms_R_0, 
+                                parms_epsilon, 
+                                parms_pi_t,
+                                num_generations,
+                                background_intervention,
+                                subseq_interventions,
+                                gamma,
+                                prob_CT,
+                                parms_CT_delay,
+                                parms_serial_interval,
+                                dispersion = dispersion,
+                                printing = printing)
+      if (subseq_interventions == background_intervention){
+        output_data[i,"R_0"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+        output_data[i,"ks"]  <- weighted.mean(x=In_Out$output[2:nrow(In_Out$output),"ks"], w=In_Out$output[2:nrow(In_Out$output),"n"])
+      }
+      if (subseq_interventions == "hsb"){
+        output_data[i,"R_hsb"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      }
+      if (subseq_interventions == "s"){
+        output_data[i,"R_s"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+      }
+      if (subseq_interventions == "q"){
+        output_data[i,"R_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"R"], w=In_Out$output[3:nrow(In_Out$output),"n"])
+        output_data[i,"obs_to_iso_q"] <- weighted.mean(x=In_Out$output[3:nrow(In_Out$output),"obs_to_iso"], w=In_Out$output[3:nrow(In_Out$output),"n"]) / 24
+      }
+    }
+  }
+  
+  output_data[,"Abs_Benefit"] <- output_data[,"R_s"] - output_data[,"R_q"]
+  output_data[,"Rel_Benefit"] <- output_data[,"Abs_Benefit"] / output_data[,"R_s"]
+  output_data[,"NNQ"] <- 1 / output_data[,"Abs_Benefit"]
+  output_data[output_data$NNQ < 1,"NNQ"] <- 1
+  output_data[output_data$NNQ > 9999,"NNQ"] <- 9999
+  output_data[output_data$NNQ == Inf,"NNQ"] <- 9999
+  output_data[,"Abs_Benefit_per_Qday"] <- output_data[,"Abs_Benefit"] / output_data[,"obs_to_iso_q"]
+  output_data$d_inf <- params.set[,"d_inf"]
+  output_data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
+  output_data$R_0_input <- params.set[,"R_0"]
+  output_data$T_lat_offset <- params.set[,"T_lat_offset"]
+  output_data$dispersion <- params.set[,"dispersion"]
+  
+  return(output_data)
+}
+
+
+#### 
 
