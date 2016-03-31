@@ -4,6 +4,8 @@
 #### Load Libraries ####
 library(MASS)
 library(lhs)
+library(reshape2)
+library(ggplot2)
 
 #### Source Functions ####
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
@@ -16,10 +18,10 @@ disease <- "SimvirusA"
 root <- paste(date, disease, sep = "_")
 
 # Fixed Disease Parameters
-parms_serial_interval <- list("gamma", 2, .1)   # This will actually be generated from the other inputs
+parms_serial_interval <- list("gamma", 2.5931, 0.1697)   # This will actually be generated from the other inputs
 names(parms_serial_interval) <- c("dist","parm1","parm2")
 
-parms_T_inc = list("gamma", 2, .1, 999, "independent", "independent", 1)
+parms_T_inc = list("gamma", 1.75, .182, 999, "independent", "independent", 1)
 names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
 
 parms_R_0 = list("uniform", 1.2, 1.2, 999, "independent", "independent")
@@ -114,8 +116,16 @@ sim_SI <- serial_interval_fcn(Pop_alpha, Pop_beta, parms_serial_interval, plot="
 parms_serial_interval[c(2,3)] <- as.numeric(sim_SI_fit$estimate[c(1,2)])
 
 #### Test particle_filter_fcn ####
+# Ranges for particle filter
+T_lat_offset.min <- -5
+T_lat_offset.max <- 5
+d_inf.min <- 1
+d_inf.max <- 40
+pi_t_triangle_center.min <- 0
+pi_t_triangle_center.max <- 1
+
 dir = c("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/")
-ks_stats <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.001, disease_name = "SimvirusA", n_pop = 1000, times = 1, SMC_times = 10, perturb_initial = 1/2500, perturb_final = 1/7500)
+ks_stats <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.001, disease_name = "SimvirusA", n_pop = 2000, times = 1, SMC_times = 10, perturb_initial = 1/2500, perturb_final = 1/7500)
 sd(ks_stats)/mean(ks_stats)
 
 #### What n_pop do we need to get a stable estimate for each set of parameters? ####
@@ -165,13 +175,35 @@ T_lat_offset.min <- 0
 T_lat_offset.max <- 0
 d_inf.min <- 10
 d_inf.max <- 10
-pi_t_triangle_center.min <- 0
-pi_t_triangle_center.max <- 1
+pi_t_triangle_center.min <- 0.5
+pi_t_triangle_center.max <- 0.5
 
-outputs <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.05, disease_name = "SimvirusA", n_pop = 1000, times = 500, num_generations = 2, SMC_times = 10, perturb_initial = 1/25, perturb_final = 1/75)
+outputs <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.05, disease_name = "SimvirusA", n_pop = 1000, times = 1000, num_generations = 2, SMC_times = 15, perturb_initial = 1/25, perturb_final = 1/75)
 
-head(data)
-head(data[order(data$ks),], 10)
+head(outputs$data)
+head(outputs$ks_conv_stat)
+
+# Explore bias and precision
+df_bias_precision <- data.frame(matrix(NA, nrow = 3, ncol = 5))
+names(df_bias_precision) <- c("variable", "true", "mean", "lower_ci", "upper_ci")
+df_bias_precision$variable <- c("T_lat_offset", "d_inf", "pi_t_triangle_center")
+df_bias_precision$true <- c(parms_T_lat$anchor_value, parms_d_inf$parm2, parms_pi_t$triangle_center)
+df_bias_precision$mean <- c(mean(outputs$data$T_lat_offset), mean(outputs$data$d_inf), mean(outputs$data$pi_t_triangle_center))
+df_bias_precision$lower_ci <- c(mean(outputs$data$T_lat_offset) - 1.96*sd(outputs$data$T_lat_offset),
+                                mean(outputs$data$d_inf) - 1.96*sd(outputs$data$d_inf),
+                                mean(outputs$data$pi_t_triangle_center) - 1.96*sd(outputs$data$pi_t_triangle_center))
+df_bias_precision$upper_ci <- c(mean(outputs$data$T_lat_offset) + 1.96*sd(outputs$data$T_lat_offset),
+                                mean(outputs$data$d_inf) + 1.96*sd(outputs$data$d_inf),
+                                mean(outputs$data$pi_t_triangle_center) + 1.96*sd(outputs$data$pi_t_triangle_center))
+
+df_gg <- melt(outputs$data)
+head(df_gg)
+
+ggplot(df_gg, aes(x = factor(variable), y = value)) +
+  geom_violin(data = df_gg[df_gg$variable == "T_lat_offset",], aes(y = value) ) +
+  geom_violin(data = df_gg[df_gg$variable == "d_inf",], aes(y = value) ) +
+  geom_violin(data = df_gg[df_gg$variable == "pi_t_triangle_center",], aes(y = value) ) +
+  geom_point(data = df_bias_precision, aes(x = variable, y = true), color = "darkred", shape = 8, size = 3)
 
 #### Compare intervention performance for input and fit parameters ####
 
