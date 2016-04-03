@@ -11,7 +11,7 @@ library(ggplot2)
 source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
 
 #### Disease: SimvirusA ####
-
+# Essentially Ebola in an ideal case
 # Name the trial
 date <- format(Sys.time(), "%Y%m%d")
 disease <- "SimvirusA"
@@ -35,6 +35,37 @@ parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")   # Set offset
 names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_inf = list("uniform", 1, 10, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")    # link to d_inf. Doesn't matter
+names(parms_d_symp) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+#### Disease: SimvirusB ####
+# Same as SimvirusA, but now the d_inf follows a triangular distribution and trying to fit it using a uniform distribution
+
+# Name the trial
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "SimvirusB"
+root <- paste(date, disease, sep = "_")
+
+# Fixed Disease Parameters
+parms_serial_interval <- list("gamma", 2.5931, 0.1697)   # This will actually be generated from the other inputs
+names(parms_serial_interval) <- c("dist","parm1","parm2")
+
+parms_T_inc = list("gamma", 1.75, .182, 999, "independent", "independent", 1)
+names(parms_T_inc) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target", "T_inc_stretch")
+
+parms_R_0 = list("uniform", 1.2, 1.2, 999, "independent", "independent")
+names(parms_R_0) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# Variable Disease Parameters
+parms_pi_t <- list("triangle", 0.50)
+names(parms_pi_t) <- c("distribution","triangle_center")
+
+parms_T_lat = list("triangle", 999, 999, 999, 0, "T_inc")   # Set offset
+names(parms_T_lat) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_d_inf = list("triangle", 1, 15, 5, "independent", "independent")
 names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
 
 parms_d_symp = list("uniform", 1, 8, 999, 0, "d_inf")    # link to d_inf. Doesn't matter
@@ -178,7 +209,10 @@ d_inf.max <- 10
 pi_t_triangle_center.min <- 0.5
 pi_t_triangle_center.max <- 0.5
 
-outputs <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.05, disease_name = "SimvirusA", n_pop = 1000, times = 1000, num_generations = 2, SMC_times = 15, perturb_initial = 1/25, perturb_final = 1/75)
+n_pop <- 500
+times <- 500
+
+outputs <- particle_filter_fcn(T_lat_offset.max = T_lat_offset.max, T_lat_offset.min = T_lat_offset.min, d_inf.max = d_inf.max, d_inf.min = d_inf.min, pi_t_triangle_center.max = pi_t_triangle_center.max, pi_t_triangle_center.min = pi_t_triangle_center.min, parms_serial_interval = parms_serial_interval,  dir = dir, ks_conv_criteria = 0.05, disease_name = "SimvirusB", n_pop = n_pop, times = times, num_generations = 2, SMC_times = 15, perturb_initial = 1/25, perturb_final = 1/75)
 
 head(outputs$data)
 head(outputs$ks_conv_stat)
@@ -206,4 +240,157 @@ ggplot(df_gg, aes(x = factor(variable), y = value)) +
   geom_point(data = df_bias_precision, aes(x = variable, y = true), color = "darkred", shape = 8, size = 3)
 
 #### Compare intervention performance for input and fit parameters ####
+
+# Settings
+n_pop = 500
+num_generations <- 5
+times <- 500
+names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
+data.mr <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
+names(data.mr) <- names
+
+background_intervention <- "u"
+
+prob_CT <- 0.75
+
+gamma <- 0.75
+
+parms_epsilon = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+parms_CT_delay = list("uniform", 0, 2, 999, "independent", "independent")
+names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
+
+# For the SMC fit data
+parms_d_inf = list("uniform", 1, 10, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+data_fit <- intervention_effect_fcn(background_intervention = "u", resource_level = "medium", n_pop = n_pop, num_generations = num_generations, times = times, input_data = outputs$data, parms_serial_interval = parms_serial_interval, parms_R_0 = parms_R_0, parms_T_lat = parms_T_lat, parms_d_inf = parms_d_inf, parms_pi_t = parms_pi_t)
+
+data_fit_melt <- melt(data_fit)
+
+
+# For the known SimvirusA characteristics
+parms_d_inf = list("uniform", 1, 10, 999, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+# For the known SimvirusB characteristics
+parms_d_inf = list("triangle", 1, 15, 5, "independent", "independent")
+names(parms_d_inf) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anchor_target")
+
+n_pop = 50000
+
+In_Out_known_u <- repeat_call_fcn(n_pop = n_pop, 
+                                   parms_T_inc = parms_T_inc, 
+                                   parms_T_lat = parms_T_lat, 
+                                   parms_d_inf = parms_d_inf, 
+                                   parms_d_symp = parms_d_symp, 
+                                   parms_R_0 = parms_R_0, 
+                                   parms_epsilon = parms_epsilon, 
+                                   parms_pi_t = parms_pi_t,
+                                   num_generations = num_generations,
+                                   background_intervention = "u",
+                                   subseq_interventions = "u",
+                                   gamma = gamma,
+                                   prob_CT = prob_CT,
+                                   parms_CT_delay = parms_CT_delay,
+                                   parms_serial_interval = parms_serial_interval,
+                                   dispersion = dispersion, 
+                                   cap_pop = TRUE)
+
+In_Out_known_hsb <- repeat_call_fcn(n_pop = n_pop, 
+                                  parms_T_inc = parms_T_inc, 
+                                  parms_T_lat = parms_T_lat, 
+                                  parms_d_inf = parms_d_inf, 
+                                  parms_d_symp = parms_d_symp, 
+                                  parms_R_0 = parms_R_0, 
+                                  parms_epsilon = parms_epsilon, 
+                                  parms_pi_t = parms_pi_t,
+                                  num_generations = num_generations,
+                                  background_intervention = "u",
+                                  subseq_interventions = "hsb",
+                                  gamma = gamma,
+                                  prob_CT = prob_CT,
+                                  parms_CT_delay = parms_CT_delay,
+                                  parms_serial_interval = parms_serial_interval,
+                                  dispersion = dispersion, 
+                                  cap_pop = TRUE)
+
+In_Out_known_q <- repeat_call_fcn(n_pop = n_pop, 
+                          parms_T_inc = parms_T_inc, 
+                          parms_T_lat = parms_T_lat, 
+                          parms_d_inf = parms_d_inf, 
+                          parms_d_symp = parms_d_symp, 
+                          parms_R_0 = parms_R_0, 
+                          parms_epsilon = parms_epsilon, 
+                          parms_pi_t = parms_pi_t,
+                          num_generations = num_generations,
+                          background_intervention = "u",
+                          subseq_interventions = "q",
+                          gamma = gamma,
+                          prob_CT = prob_CT,
+                          parms_CT_delay = parms_CT_delay,
+                          parms_serial_interval = parms_serial_interval,
+                          dispersion = dispersion, 
+                          cap_pop = TRUE)
+
+In_Out_known_sm <- repeat_call_fcn(n_pop = n_pop, 
+                                  parms_T_inc = parms_T_inc, 
+                                  parms_T_lat = parms_T_lat, 
+                                  parms_d_inf = parms_d_inf, 
+                                  parms_d_symp = parms_d_symp, 
+                                  parms_R_0 = parms_R_0, 
+                                  parms_epsilon = parms_epsilon, 
+                                  parms_pi_t = parms_pi_t,
+                                  num_generations = num_generations,
+                                  background_intervention = "u",
+                                  subseq_interventions = "s",
+                                  gamma = gamma,
+                                  prob_CT = prob_CT,
+                                  parms_CT_delay = parms_CT_delay,
+                                  parms_serial_interval = parms_serial_interval,
+                                  dispersion = dispersion, 
+                                  cap_pop = TRUE)
+
+# Compile "known"
+data_known_raw <- data.frame(matrix(NA, nrow = 4, ncol = 3))
+names(data_known_raw) <- c("variable", "value", "obs_to_iso")
+data_known_raw[,"variable"] <- c("R_0", "R_hsb", "R_s", "R_q")
+data_known_raw[,"value"] <- c(mean(In_Out_known_u$output[c(4,5), "R"]),
+                          mean(In_Out_known_hsb$output[c(4,5), "R"]),
+                          mean(In_Out_known_sm$output[c(4,5), "R"]),
+                          mean(In_Out_known_q$output[c(4,5), "R"]))
+data_known_raw[,"obs_to_iso"] <- c(mean(In_Out_known_u$output[c(4,5), "obs_to_iso"]),
+                          mean(In_Out_known_hsb$output[c(4,5), "obs_to_iso"]),
+                          mean(In_Out_known_sm$output[c(4,5), "obs_to_iso"]),
+                          mean(In_Out_known_q$output[c(4,5), "obs_to_iso"]))
+Rs_Rq <- data_known_raw[data_known_raw$variable == "R_s","value"] - data_known_raw[data_known_raw$variable == "R_q","value"]
+
+data_known_raw <- rbind(data_known_raw, c("Abs_Benefit", as.numeric(Rs_Rq), 0) )
+data_known_raw$value <- as.numeric(data_known_raw$value)
+
+data_known_raw <- rbind(data_known_raw, c("Rel_Benefit", as.numeric(Rs_Rq)/data_known_raw[data_known_raw$variable == "R_0", "value"], 0) )
+data_known_raw$value <- as.numeric(data_known_raw$value)
+
+
+# Compare 
+ggplot() +
+  geom_violin(data = data_fit_melt[data_fit_melt$variable == "R_s",], aes(x = variable, y = value)) +
+  geom_boxplot(data = data_fit_melt[data_fit_melt$variable == "R_s",], aes(x = variable, y = value), width = 0.1) +
+  geom_point(data = data_known_raw[data_known_raw$variable == "R_s",], aes(x = variable, y = value), color = "darkred", shape = 8, size = 3) +
+  
+  geom_violin(data = data_fit_melt[data_fit_melt$variable == "R_q",], aes(x = variable, y = value)) +
+  geom_boxplot(data = data_fit_melt[data_fit_melt$variable == "R_q",], aes(x = variable, y = value), width = 0.1) +
+
+  geom_point(data = data_known_raw[data_known_raw$variable == "R_q",], aes(x = variable, y = value), color = "darkred", shape = 8, size = 3) +
+  
+  geom_violin(data = data_fit_melt[data_fit_melt$variable == "Abs_Benefit",], aes(x = variable, y = value)) +
+  geom_boxplot(data = data_fit_melt[data_fit_melt$variable == "Abs_Benefit",], aes(x = variable, y = value), width = 0.1) +
+  geom_point(data = data_known_raw[data_known_raw$variable == "Abs_Benefit",], aes(x = variable, y = value), color = "darkred", shape = 8, size = 3) +
+  
+  geom_violin(data = data_fit_melt[data_fit_melt$variable == "Rel_Benefit",], aes(x = variable, y = value)) +
+  geom_boxplot(data = data_fit_melt[data_fit_melt$variable == "Rel_Benefit",], aes(x = variable, y = value), width = 0.1) +
+  geom_point(data = data_known_raw[data_known_raw$variable == "Rel_Benefit",], aes(x = variable, y = value), color = "darkred", shape = 8, size = 3) 
+  
+
 
