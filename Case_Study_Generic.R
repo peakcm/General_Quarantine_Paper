@@ -126,6 +126,7 @@ d_inf.max <- 50
 pi_t_triangle_center.min <- 0
 pi_t_triangle_center.max <- 1
  
+
 #### Disease: MERS ####
 
 # Name the trial
