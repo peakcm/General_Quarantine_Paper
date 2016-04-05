@@ -99,6 +99,7 @@ xlim.max <- 3
 ylim.min <- 0
 ylim.max <- 3
 
+#Alphabetical
 scale_colour_brewer(type="qual", palette=6)
 my.cols <- brewer.pal(n = 7, name = "Set1")
 my.cols <- my.cols[c(3, 7, 4, 5, 1, 6, 2)]
@@ -109,6 +110,7 @@ names(set_all) <- c("name", "lower", "upper", "Setting")
 
 plot1 <- # data
   ggplot(data_master, aes(color=disease)) + 
+  geom_vline(xintercept =1, col="grey") + geom_hline(yintercept =1, col="grey") +
   geom_point(data = data_master[data_master$disease == set_1["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
@@ -144,11 +146,32 @@ plot1 <- # data
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_7["Setting"],],
              aes(x=R_s, y=R_q)) +
-  scale_color_manual(values = my.cols)
+  scale_color_manual(values = my.cols, breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), name = "Disease") +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(legend.key = element_blank()) +
+  xlim(xlim.min, xlim.max) +
+  ylim(ylim.min, ylim.max) + 
+  xlab("Effective Reproductive Number under Symptom Monitoring") +
+  ylab("Effective Reproductive Number under Quarantine") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
+  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue") +
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+  guides(colour = guide_legend(override.aes = list(size=3)))
+plot1
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq1.pdf", sep=""))
+plot(plot1_pretty)
+dev.off()
 
 #### Plot 2: Disease-specific R ####
 plot2 <- # data
   ggplot(data_master, aes(color=disease)) +
+  geom_vline(xintercept =1, col="grey") + geom_hline(yintercept =1, col="grey") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .08, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .08, fill = "blue") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .08, fill = "green") +
   geom_point(data = data_master[data_master$disease == set_1["name"] &
                                   data_master$R_0 >= set_1["lower"] & 
                                   data_master$R_0 <= set_1["upper"] &
@@ -184,41 +207,21 @@ plot2 <- # data
                                   data_master$R_0 <= set_7["upper"] &
                                   data_master$Setting == set_7["Setting"],],
              aes(x=R_s, y=R_q)) +
-  scale_color_manual(values = my.cols)
-
-#### Plot with accoutrements ####
-plot1_pretty <- plot1 +
-  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(xlim.min, xlim.max) + ylim(ylim.min, ylim.max) + 
+  scale_color_manual(values = my.cols,  breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), name = "Disease") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(legend.key = element_blank()) +
+  xlim(xlim.min, xlim.max) + 
+  ylim(ylim.min, ylim.max) + 
   xlab("Effective Reproductive Number under Symptom Monitoring") +
   ylab("Effective Reproductive Number under Quarantine") +
-  geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
-  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
   annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue") +
-  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange")
-plot1_pretty
-
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq1.pdf", sep=""))
-plot(plot1_pretty)
-dev.off()
-
-plot2_pretty <- plot2 +
-  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(xlim.min, xlim.max) + ylim(ylim.min, ylim.max) + 
-  xlab("Effective Reproductive Number under Symptom Monitoring") +
-  ylab("Effective Reproductive Number under Quarantine") +
-  geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
-  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
-  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue") +
-  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange")
-plot2_pretty
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+  guides(colour = guide_legend(override.aes = list(size=3)))
+plot2
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq2.pdf", sep=""))
-plot(plot2_pretty)
+plot(plot2)
 dev.off()
 
 #### ggvis: Interactive Supplement for this figure ####

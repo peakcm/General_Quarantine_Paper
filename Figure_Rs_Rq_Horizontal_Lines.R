@@ -79,16 +79,26 @@ data_master_melt_mean_segment <- melt(data_master_melt_mean[data_master_melt_mea
 ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master_melt_mean$variable %in% c("R_0","R_s", "R_q"),]) +
   theme_bw() + 
   geom_vline(xintercept = 1, color = "darkgrey") +
-  # geom_errorbarh(aes(y = disease, x = mean, xmin = mean - sd, xmax = mean + sd)) +
-  geom_line(data = data_master_melt_mean_segment, aes(y = disease, x = value, color = disease, fill = disease), lwd = 1) +
-  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 3, color = "darkgrey") +
+
   scale_shape_manual(values = c(23, 24, 21),
                      name="Intervention",
                      breaks=c("R_0", "R_s", "R_q"),
-                     labels=c(expression(paste("None (",R[0], ")")), expression(paste("Symptom Monitoring (", R[S], ")")), expression(paste("Quarantine (", R[Q], ")")))) +
-  theme(legend.text.align = 0) +
+                     labels=c(  expression(paste("None (",R[0], ")")), expression(paste("Symptom Monitoring (", R[S], ")")),expression(paste("Quarantine (", R[Q], ")")))) +
+  theme(legend.text.align = 0)+
+  # theme(legend.position=c(.8, .25)) +
+  # theme(legend.background = element_rect(color = "white")) +
+  # theme(legend.text = element_text(size = 10, face = "bold")) +
+  # theme(legend.title = element_blank()) +
   scale_color_manual(values = my.cols, guide = FALSE) +
   scale_fill_manual(values = my.cols, guide = FALSE) +
   theme(axis.title.y=element_blank()) +
-  xlim(0,4.5) + 
-  xlab("Reproductive Number")
+  geom_line(data = data_master_melt_mean_segment, aes(y = disease, x = value, color = disease, fill = disease), lwd = 1) +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 0.5, ymax = 2.5, alpha = .08, fill = "green") +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
+  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 3, color = "darkgrey") +
+  xlim(0,5) + 
+  xlab("Reproductive Number") +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.key = element_blank())
+  
