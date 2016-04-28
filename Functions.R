@@ -1128,10 +1128,16 @@ intervention_effect_fcn <- function(background_intervention = "u",
                                     prob_CT = NA, gamma = NA, parms_epsilon = NA, parms_CT_delay = NA,
                                     resource_level = NA,
                                     n_pop, num_generations, times,
-                                    input_data,
-                                    parms_T_lat, parms_d_inf, parms_pi_t, parms_R_0, dispersion, 
+                                    input_data = NA,
+                                    parms_T_lat, parms_d_inf, parms_pi_t, parms_R_0, dispersion = 1, 
                                     parms_serial_interval,
                                     printing = FALSE){
+  
+  prob_CT_input <- prob_CT
+  gamma_input <- gamma
+  parms_epsilon_input <- parms_epsilon
+  parms_CT_delay_input <- parms_CT_delay
+  
   if (resource_level == "high"){
     prob_CT <- 0.9
     
@@ -1163,18 +1169,37 @@ intervention_effect_fcn <- function(background_intervention = "u",
     parms_CT_delay = list("uniform", 0, 4, 999, "independent", "independent")
     names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
   }
+  
+  if (is.na(prob_CT_input) == 0){
+    prob_CT <- prob_CT_input
+  }
+  if (is.na(gamma_input) == 0){
+    gamma <- gamma_input
+  }
+  if (is.na(parms_epsilon_input[1]) == 0){
+    parms_epsilon <- parms_epsilon_input
+  }
+  if (is.na(parms_CT_delay_input[1]) == 0){
+    parms_CT_delay <- parms_CT_delay_input
+  }
+  
   names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks")
   output_data <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
   names(output_data) <- names
     
-  # sample from joint posterior distribution
-  sample <- sample(x = row.names(input_data), size = times, replace = FALSE)
-  params.set <- cbind(
-    T_lat_offset = input_data[sample, "T_lat_offset"],
-    d_inf = input_data[sample, "d_inf"],
-    pi_t_triangle_center = input_data[sample, "pi_t_triangle_center"],
-    dispersion = runif(n=times, min = 1, max = 1),
-    R_0 = runif(n = times, min = 1.72, max = 1.94)) # note this is changed
+  # If you have "input_data", then sample from joint posterior distribution
+  if (is.na(input_data)==0){
+    sample <- sample(x = row.names(input_data), size = times, replace = FALSE)
+    params.set <- cbind(
+      T_lat_offset = input_data[sample, "T_lat_offset"],
+      d_inf = input_data[sample, "d_inf"],
+      pi_t_triangle_center = input_data[sample, "pi_t_triangle_center"])
+  } else {
+    params.set <- cbind(
+      T_lat_offset = rep(parms_T_lat$anchor_value, times),
+      d_inf = rep(parms_d_inf$parm2, times),
+      pi_t_triangle_center = rep(parms_pi_t$triangle_center, times))
+  }
   
   for (i in 1:times){
     cat(".")
@@ -1184,9 +1209,6 @@ intervention_effect_fcn <- function(background_intervention = "u",
     parms_T_lat$anchor_value <- params.set[i,"T_lat_offset"]
     parms_d_inf$parm2 <- params.set[i,"d_inf"]
     parms_pi_t$triangle_center <- params.set[i,"pi_t_triangle_center"]
-    parms_R_0$parm1 <- params.set[i,"R_0"]
-    parms_R_0$parm2 <- params.set[i,"R_0"]
-    dispersion <- params.set[i, "dispersion"]
     
     for (subseq_interventions in c(background_intervention, "hsb", "s","q")){      
       if (subseq_interventions == background_intervention & parms_R_0$parm1 > 1){
@@ -1239,9 +1261,9 @@ intervention_effect_fcn <- function(background_intervention = "u",
   output_data[,"Abs_Benefit_per_Qday"] <- output_data[,"Abs_Benefit"] / output_data[,"obs_to_iso_q"]
   output_data$d_inf <- params.set[,"d_inf"]
   output_data$pi_t_triangle_center <- params.set[,"pi_t_triangle_center"]
-  output_data$R_0_input <- params.set[,"R_0"]
+  output_data$R_0_input <- parms_R_0$parm1
   output_data$T_lat_offset <- params.set[,"T_lat_offset"]
-  output_data$dispersion <- params.set[,"dispersion"]
+  output_data$dispersion <- dispersion
   
   return(output_data)
 }
