@@ -322,6 +322,9 @@ cat(date)
 date <- "20151119"
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PRCC.RData", sep=""))
 
+#### Load Workspaces ####
+load("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/20151210_PRCC.RData")
+
 #### Calculate PRCC for many diseases together ####
 dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "NQD", "Rel_Benefit","obs_to_iso_q","ks", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp")
 indep_var <- c("gamma","prob_CT","CT_delay", "epsilon", "riskprofile", "R_0_mean", "R_0_spread","dispersion","T_inc_stretch","pi_t_triangle_center","T_lat_offset","d_inf")
@@ -332,6 +335,15 @@ output.all <- prcc_fcn(input_data = df.prcc.temporary, dep_var = dep_var, indep_
 # Add output.all to the df.prcc.output file so an all-diseases bar can be added to the horizontal grouped bar chart
 output.all$disease <- "all"
 df.prcc.output.temporary <- rbind(df.prcc.output.temporary, output.all)
+
+# Repeat, controlling for disease? Conclusion - it doesn't make a difference really
+df.prcc.temporary.b <- df.prcc.temporary
+df.prcc.temporary$disease <- as.numeric(as.factor(df.prcc.temporary$disease))
+dep_var <- c("R_0", "R_hsb","R_s", "R_q", "Abs_Benefit","Abs_Benefit_per_Qday", "NNQ", "NQD", "Rel_Benefit","obs_to_iso_q","ks", "Rel_Benefit_per_Qday", "Rel_Benefit_per_Qday_rp")
+indep_var <- c("gamma","prob_CT","CT_delay", "epsilon", "riskprofile", "R_0_mean", "R_0_spread","dispersion","T_inc_stretch","pi_t_triangle_center","T_lat_offset","d_inf", "disease")
+source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functions.R")
+output.all.b <- prcc_fcn(input_data = df.prcc.temporary, dep_var = dep_var, indep_var = indep_var, 
+                       nboot = 100, package = "sensitivity", standardize = TRUE)
 
 #### Plot all diseases ####
 plot_prcc_2 <- ggplot(output.all, aes(x = parameter, y= coef)) +
@@ -347,6 +359,15 @@ cat(date)
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_Plot_prcc_2.pdf", sep=""))
 plot(plot_prcc_2)
 dev.off()
+
+plot_prcc_2.b <- ggplot(output.all.b, aes(x = parameter, y= coef)) +
+  facet_grid(output ~ .) +
+  geom_point() +
+  geom_hline(yintercept=0, color="red", size=0.25) +
+  theme_bw() +
+  geom_errorbar(data = output.all, aes(ymin = CImin, ymax = CImax), width = 0.1) +
+  ggtitle("All diseases")
+plot_prcc_2.b
 
 # Note that obs_to_iso_q is NOT monotonic for the pooled estimate for T_lat_offset, pi_t_triangle_center, d_inf, and gamma.
 for (covariate in indep_var){
@@ -367,11 +388,11 @@ plot_prcc_3
 
 #### Plot each disease, horizontal bar chart, subset of outputs ####
 df.prcc.outut.subset <- NA
-df.prcc.output.subset <- df.prcc.output.temporary[is.element(df.prcc.output.temporary$output, c("R_s", "R_q", "Rel_Benefit", "Rel_Benefit_per_Qday_rp")),]
+df.prcc.output.subset <- df.prcc.output.temporary[is.element(df.prcc.output.temporary$output, c("R_s", "R_q", "Rel_Benefit", "Rel_Benefit_per_Qday_rp", "Abs_Benefit", "Abs_Benefit_per_Qday")),]
 df.prcc.output.subset$parameter <- factor(df.prcc.output.subset$parameter, levels = rev(c("gamma", "prob_CT", "riskprofile", "epsilon", "CT_delay", "R_0_mean", "R_0_spread", "T_inc_stretch", "T_lat_offset", "pi_t_triangle_center", "d_inf", "dispersion")), ordered = TRUE,
                                           labels = rev(c("Isolation\nEffectiveness","Fraction of\n Contacts Traced", "Fraction of Traced\nContacts who are Infected", "Delay from Symptom Onset\nto Isolation", "Delay in Tracing\na Contact", "R_0 Mean", "R_0 Spread", "Incubation\nPeriod", "Latent\nPeriod", "Time of Peak\nInfectiousness", "Duration of\nInfectiousness", "Super-Spreading\nDispersion Factor")))
-df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Rel_Benefit", "Rel_Benefit_per_Qday_rp"), ordered = TRUE,
-                                       labels = c("Symptom Monitoring R", "Quarantine R", "Relative Difference", "Relative Difference\nper Quarantine Day"))
+df.prcc.output.subset$output <- factor(df.prcc.output.subset$output, levels = c("R_s","R_q", "Rel_Benefit", "Rel_Benefit_per_Qday_rp","Abs_Benefit", "Abs_Benefit_per_Qday"), ordered = TRUE,
+                                       labels = c("Symptom Monitoring R", "Quarantine R", "Relative Difference", "Relative Difference\nper Quarantine Day", "Absolute Difference", "Absolute Difference\nper Quarantine Day"))
 df.prcc.output.subset$disease <- factor(df.prcc.output.subset$disease, levels = rev(c("Ebola","HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox", "all")), ordered = TRUE, labels = rev(c("Ebola","Hepatitis A", "Influenza A", "MERS", "Pertussis", "SARS", "Smallpox", "All Diseases")))
 
 scale_colour_brewer(type="qual", palette=6)
@@ -464,6 +485,94 @@ pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Pape
 plot(plot_prcc_6)
 dev.off()
 
+#### Mini-plots of select variables to compliment PRCC barplots ####
+df.prcc.temporary
+plot(df.prcc.temporary[df.prcc.temporary$disease == "InfluenzaA","prob_CT"], df.prcc.temporary[df.prcc.temporary$disease == "InfluenzaA","Abs_Benefit"])
+
+ggplot(df.prcc.temporary[df.prcc.temporary$disease == "InfluenzaA",]) +
+  geom_boxplot(aes(x = prob_CT, group = cut_width(prob_CT, 0.1), y = Abs_Benefit))
+
+desired_root <- "20151028_InfluenzaA" # Paste the desired root here "YYYYMMDD_DISEASE"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
+
+# Vary Prob_CT
+prob_CT_range <- seq(0,1,0.1)
+prob_CT_data <- data.frame(prob_CT = NA, R_s = NA, R_q = NA, Abs_Benefit = NA, Abs_Benefit_per_Qday = NA)
+
+for (prob_CT in prob_CT_range){
+
+  out <- intervention_effect_fcn(background_intervention = "u",
+                                        prob_CT = prob_CT, gamma = NA, parms_epsilon = NA, parms_CT_delay = NA,
+                                        resource_level = "high",
+                                        n_pop = 2000, num_generations = 5, times = 5,
+                                        input_data = data,
+                                        parms_T_lat, parms_d_inf, parms_pi_t, parms_R_0, dispersion, 
+                                        parms_serial_interval,
+                                        printing = FALSE)
+  out$prob_CT <- prob_CT
+  prob_CT_data <- rbind(prob_CT_data, out[,c("prob_CT", "R_s", "R_q","Abs_Benefit","Abs_Benefit_per_Qday")])
+  
+}
+
+ggplot(prob_CT_data, aes(x = prob_CT)) +
+  theme_classic() +
+  geom_point(aes(y = Abs_Benefit), color = "darkred") +
+  geom_point(aes(y = Abs_Benefit_per_Qday), color = "blue")
+
+ggplot(prob_CT_data, aes(x = prob_CT)) + 
+  theme_classic() +
+  geom_boxplot(aes(group = cut_interval(prob_CT, 10), y = Abs_Benefit), color = "darkred")
+
+ggplot(prob_CT_data, aes(x = prob_CT)) + 
+  theme_classic() +
+  geom_smooth(aes(y = Abs_Benefit), color = "darkred") +
+  geom_smooth(aes(y = Abs_Benefit_per_Qday), color = "blue")
+
+ggplot(prob_CT_data, aes(x = prob_CT)) + 
+  theme_classic() +
+  # geom_point(aes(y = R_s), color = "darkred", alpha = 0.1) +
+  geom_smooth(aes(y = R_s), color = "darkred") +
+  # geom_point(aes(y = R_q), color = "blue", alpha = 0.1) +
+  geom_smooth(aes(y = R_q), color = "blue")
+  
+# Vary gamma
+gamma_range <- seq(0,1,0.1)
+gamma_data <- data.frame(gamma = NA, R_s = NA, R_q = NA, Abs_Benefit = NA, Abs_Benefit_per_Qday = NA)
+
+for (gamma in gamma_range){
+  
+  out <- intervention_effect_fcn(background_intervention = "u",
+                                 prob_CT = NA, gamma = gamma, parms_epsilon = NA, parms_CT_delay = NA,
+                                 resource_level = "high",
+                                 n_pop = 5000, num_generations = 5, times = 5,
+                                 input_data = data,
+                                 parms_T_lat, parms_d_inf, parms_pi_t, parms_R_0, dispersion, 
+                                 parms_serial_interval,
+                                 printing = FALSE)
+  out$gamma <- gamma
+  gamma_data <- rbind(gamma_data, out[,c("gamma", "R_s", "R_q","Abs_Benefit","Abs_Benefit_per_Qday")])
+  
+}
+
+ggplot(gamma_data, aes(x = gamma)) +
+  theme_classic() +
+  geom_point(aes(y = Abs_Benefit), color = "darkred") +
+  geom_point(aes(y = Abs_Benefit_per_Qday), color = "blue")
+
+ggplot(gamma_data, aes(x = gamma)) + 
+  theme_classic() +
+  geom_boxplot(aes(group = cut_interval(gamma, 10), y = Abs_Benefit), color = "darkred")
+
+ggplot(gamma_data, aes(x = gamma)) + 
+  theme_classic() +
+  geom_smooth(aes(y = Abs_Benefit), color = "darkred") +
+  geom_smooth(aes(y = Abs_Benefit_per_Qday), color = "blue")
+
+ggplot(gamma_data, aes(x = gamma)) + 
+  theme_classic() +
+  geom_smooth(aes(y = R_s), color = "darkred") +
+  geom_smooth(aes(y = R_q), color = "blue")
+
 #### circleFun for plotting on ggplot ####
 circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
   r = diameter / 2
@@ -552,7 +661,29 @@ ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
   geom_errorbar(aes(x = parameter, ymin = CImin, ymax = CImax, color = output), position = position_dodge(width=1), width=0) +
   scale_fill_brewer(type = "qual", palette = 7) +
   scale_color_brewer(type = "qual", palette = 7) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Partial Rank Correlation Coefficient")
+
+df.prcc.output.subset.plot1 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Absolute Difference", "Absolute Difference\nper Quarantine Day"),]
+df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[order(-df.prcc.output.subset.plot1$coef),]
+(df.prcc.output.subset.plot1$parameter <- factor(df.prcc.output.subset.plot1$parameter, levels = unique(as.character(df.prcc.output.subset.plot1$parameter)), ordered = TRUE))
+df.prcc.output.subset.plot1$parameter <- factor(df.prcc.output.subset.plot1$parameter, levels = unique(as.character(df.prcc.output.subset.plot1$parameter))[c(1,2,3,4,5,8,6,10,7,9,11,12)], ordered = TRUE)
+
+ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
+  theme_classic() + 
+  geom_bar(aes(x = parameter), stat = "identity", position = "dodge") +
+  geom_errorbar(aes(x = parameter, ymin = CImin, ymax = CImax, color = output), position = position_dodge(width=1), width=0) +
+  scale_fill_brewer(type = "qual", palette = 7, name = "Comparative Metric", 
+                    labels = c(expression(paste("Absolute Difference ", (R[S]-R[Q]), sep="")),
+                               expression(paste("Absolute Diffrence\nper Quarantine Day  ", (frac(R[S]-R[Q],d[Q])), sep="")))) +
+  scale_color_brewer(type = "qual", palette = 7, name = "Comparative Metric", 
+                     labels = c(expression(paste("Absolute Difference ", (R[S]-R[Q]), sep="")),
+                                expression(paste("Absolute Diffrence\nper Quarantine Day  ", (frac(R[S]-R[Q],d[Q])), sep="")))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), axis.title.x = element_blank()) +
+  theme(legend.text.align = 0) +
+  theme(legend.position = c(0.8, 0.8)) +
+  ylim(c(-0.5, 0.5)) + 
+  ylab("Partial Rank Correlation Coefficient")
 
 #### Make a vertical bar plot grouped by parameter for impact of Q and SM ####
 # Pull df.prcc.output.subset from "Plot each disease, horizontal bar chart, subset of outputs" section above
