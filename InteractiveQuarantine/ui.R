@@ -28,7 +28,10 @@ shinyUI(fluidPage(
   sidebarLayout(
     
     sidebarPanel(
-      p("Ideally I'll have all the feature selection\non this panel.\nIt's a work in progress"),
+      h6("This website is a <draft> interactive supplement to\n
+'Containing Emerging Epidemics: a Quantitative Comparison of Quarantine and Symptom Monitoring'\n
+by Corey M Peak, Lauren M Childs, Yonatan H Grad, and Caroline O Buckee.\n
+         Please contact peak@mail.harvard.edu for issues and comments."),
       # uiOutput("plot1_ui"),
       # uiOutput("plot2_ui"),
       width = 3
@@ -37,10 +40,10 @@ shinyUI(fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(
-        tabPanel("R_s and R_q", wellPanel(p("Interactive Supplement to Figure 3")), 
+        tabPanel("Figure 3A", wellPanel(p("Interactive Supplement to Figure 3A")), 
                  uiOutput("plot1_ui"),
                  ggvisOutput("plot1")),
-        tabPanel("Model Outputs vs R_0", wellPanel(p("Interactive Supplement to Figure 2")),
+        tabPanel("Additional Model Outputs", wellPanel(p("Interactive Supplement for Intermediate Outputs from Model Simulations")),
                  uiOutput("plot2_ui"),
                  ggvisOutput("plot2"))
     ),
