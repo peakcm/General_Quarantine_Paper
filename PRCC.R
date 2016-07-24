@@ -25,8 +25,8 @@ load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
 
 # For the pooled PRCC data
-# desired_date <- "20151210"
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
+desired_date <- "20160507"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
 
@@ -626,7 +626,7 @@ ggplot() +
   ylab(expression(paste("Relative Effeciency of Quarantine ", (frac(R[S]-R[Q],R[S]))/d[Q], sep="")))
   
 
-#### Make a horizontal bar plot grouped by parameter for comparative effectveness and efficiency ####
+#### Make a horizontal bar plot grouped by parameter for absolute and relative comparative effectveness ####
 # Pull df.prcc.output.subset from "Plot each disease, horizontal bar chart, subset of outputs" section above
 df.prcc.output.subset.plot1 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Relative Difference", "Absolute Difference"),]
 df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[order(-df.prcc.output.subset.plot1$coef),]
@@ -638,7 +638,7 @@ levels(df.prcc.output.subset.plot1$parameter )
 df.prcc.output.subset.plot1$output <- factor(df.prcc.output.subset.plot1$output, levels = rev(c("Absolute Difference", "Relative Difference"))) # Reverse it so absolute difference is on top after coord flip
 levels(df.prcc.output.subset.plot1$output)
 
-ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
+plot_1 <- ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
   # theme_bw() +
   theme_classic() + 
   geom_bar(aes(x = parameter), stat = "identity", position = "dodge") +
@@ -667,7 +667,13 @@ ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output)) +
                             expression(paste("Latent Period\nOffset ", (T[OFFSET]), sep="")),
                             expression(paste("Duration of\nInfectiousness ", (d[INF]), sep="")))) +
   theme(legend.position = c(0.75, 0.75)) +
+  theme(text = element_text(size=18)) +
   coord_flip()
+plot_1
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC_Plot1_10by7.pdf", sep=""), width = 10, height = 7)
+plot(plot_1)
+dev.off()
 
 # Comparative cost-effectiveness of Q and SM
 df.prcc.output.subset.plot2 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Relative Difference\nper Quarantine Day", "Absolute Difference\nper Quarantine Day"),]

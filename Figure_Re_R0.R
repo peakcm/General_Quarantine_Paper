@@ -16,7 +16,7 @@ desired_root <- "20151104_InfluenzaA" # Paste the desired root here "YYYYMMDD_DI
 # If workspaces are in their own folder, named the same as the root
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_HR.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_LR.RData", sep=""))
-# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_Plots.RData", sep=""))
 
 #### Create new dataset ####
 # Set range for relevant R_0 values
@@ -29,7 +29,7 @@ data.hr.lr <- rbind(data.hr, data.lr)
 
 #### Plot 1 ####
 plot1 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
-  geom_vline(x=1, col="grey") + geom_hline(y=1, col="grey") +
+  geom_vline(xintercept=1, col="grey") + geom_hline(yintercept=1, col="grey") +
   annotate("rect", xmin = 0, xmax = 1, ymin = 1, ymax = 4, alpha = .1, fill = "yellow") + 
   annotate("rect", xmin = 1, xmax = 4, ymin = 0, ymax = 1, alpha = .1, fill = "blue") +
   annotate("rect", xmin = 0, xmax = 1, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
@@ -51,7 +51,7 @@ plot1
 #### Plot 2 ####
 plot2 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min & data.hr.lr$R_0 < R_0_relevant.max,]) +
   annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
-  geom_hline(y=1, col = "grey") +
+  geom_hline(yintercept=1, col = "grey") +
   geom_point(aes(x=R_0, y=R_s, shape = Setting), col = "darkgreen", alpha = 0.7) +
   geom_point(aes(x=R_0, y=R_q, shape = Setting), col = "blue", alpha = 0.7) +
   stat_smooth(aes(x=R_0, y=R_s, shape = Setting), method = "loess", color="darkgreen", size = 1.2) +
@@ -74,22 +74,52 @@ plot3 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min &
                                     data.hr.lr$R_0 < R_0_relevant.max &
                                     data.hr.lr$Setting == "HR",]) +
   annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
-  geom_hline(y=1, col = "grey") +
-  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.7) +
-  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.7) +
-  geom_point(aes(x=R_0, y=R_s), col = "darkgoldenrod", alpha = 0.7) +
-  geom_point(aes(x=R_0, y=R_q), col = "cornflowerblue", alpha = 0.7) +
-  stat_smooth(aes(x=R_0, y=R_hsb), method = "loess", color="mediumturquoise", size = 1.2, se=FALSE) +
-  stat_smooth(aes(x=R_0, y=R_s), method = "loess", color="darkgoldenrod", size = 1.2, se=FALSE) +
-  stat_smooth(aes(x=R_0, y=R_q), method = "loess", color="cornflowerblue", size = 1.2, se=FALSE) +
+  geom_hline(yintercept=1, col = "grey") +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_s), col = "darkgoldenrod", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_q), col = "cornflowerblue", alpha = 0.5, size = 0.5) +
+  stat_smooth(aes(x=R_0, y=R_hsb), method = "loess", color="mediumturquoise", size = 1, se=FALSE) +
+  stat_smooth(aes(x=R_0, y=R_s), method = "loess", color="darkgoldenrod", size = 1, se=FALSE) +
+  stat_smooth(aes(x=R_0, y=R_q), method = "loess", color="cornflowerblue", size = 1, se=FALSE) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
   geom_text(data = NULL, x = 1.46, y = 0, label = "*") +
-  ggtitle(paste("Disease: ", disease))
+  # geom_text(data = NULL, x = 1.83, y = 0, label = "*") +
+  theme(text = element_text(size=10)) +
+  ggtitle(paste("Influenza A"))
+  # ggtitle(paste("Ebola"))
 plot3
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot2.pdf", sep=""))
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot3.pdf", sep=""), width = 3, height = 3)
 plot(plot3)
+dev.off()
+
+
+#### Plot 3 FOR POSTER ####
+plot3_poster <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min &
+                                    data.hr.lr$R_0 < R_0_relevant.max &
+                                    data.hr.lr$Setting == "HR",]) +
+  annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
+  geom_hline(yintercept=1, col = "grey") +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_s), col = "darkgoldenrod", alpha = 0.5, size = 0.5) +
+  geom_point(aes(x=R_0, y=R_q), col = "cornflowerblue", alpha = 0.5, size = 0.5) +
+  stat_smooth(aes(x=R_0, y=R_hsb), method = "loess", color="mediumturquoise", size = 1, se=FALSE) +
+  stat_smooth(aes(x=R_0, y=R_s), method = "loess", color="darkgoldenrod", size = 1, se=FALSE) +
+  stat_smooth(aes(x=R_0, y=R_q), method = "loess", color="cornflowerblue", size = 1, se=FALSE) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
+  geom_text(data = NULL, x = 1.46, y = 0, label = "*") +
+  # geom_text(data = NULL, x = 1.83, y = 0, label = "*") +
+  theme(text = element_text(size=18)) +
+  ggtitle(paste("Influenza A"))
+# ggtitle(paste("Ebola"))
+plot3_poster
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot3_5by5.pdf", sep=""), width = 5, height = 5)
+plot(plot3_poster)
 dev.off()
 
 #### Save Workspace ####

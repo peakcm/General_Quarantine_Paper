@@ -1,14 +1,15 @@
 #### Header ####
 # Make a spaghetti plot with many trials starting with one individual and tracing how many are in her infection tree as a function of generations. Then apply an intervention in generation 4 or so. Color code by u, hsb, s, q
 
+#### Load Libraries ####
+library(ggplot2)
+
 #### Load PlotTrajectories Workspace ####
-desired_root <- "20151028_InfluenzaA"
-# desired_root <- "20151028_InfluenzaA"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTrajectories.RData", sep=""))
+desired_root <- "20151104_Ebola"
+load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PlotTrajectories.RData", sep=""))
 
 #### Load SMC Workspaces ####
 desired_root <- "20151028_InfluenzaA"
-# desired_root <- "20151028_InfluenzaA"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 #### Disease: Ebola ####
@@ -161,24 +162,49 @@ for (i in 1:times){
 #### Plot Results ####
 plot_traj <- ggplot(data_traj, aes(x=generation, y=count, group=trial, color=intervention)) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  geom_vline(x=(num_generations_u+1), col = "grey") +
+  geom_vline(xintercept=(num_generations_u+1), col = "grey") +
   geom_line(alpha = 0.3) +
-  stat_smooth(aes(group = intervention), size = 2, method = "loess", se = FALSE) +
+  stat_smooth(aes(group = intervention), size = 1, method = "loess", se = FALSE) +
   scale_x_continuous(breaks = seq(1:length(count))) +
   xlab("Generation") + ylab("Incident Cases") +
-  scale_color_manual(name="Intervention",
+  scale_color_manual(name="Intervention\n",
                      values = c("coral3", "mediumturquoise", "darkgoldenrod", "cornflowerblue"),
                        breaks=c("u", "hsb", "s", "q"),
-                       labels=c("None", "Health-\nSeeking\nBehavior", "Symptom\nMonitoring", "Quarantine")) +
+                       labels=c("\nNone\n", "\nHealth-\nSeeking\nBehavior\n", "\nSymptom\nMonitoring\n", "\nQuarantine\n")) +
   theme(legend.direction = "vertical", 
         legend.position = "right",
         legend.key=element_rect(size=5, color="white"))+
-  ggtitle(paste(disease)) +
+  ggtitle("Ebola") +
   scale_y_continuous(breaks = seq(0, 1400, by=100))
 plot_traj
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj.pdf", sep=""))
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj_5by3.pdf", sep=""), width = 5, height = 3) # Dimensions are in inches
 plot(plot_traj)
+dev.off()
+
+#### Plot Results FOR POSTER ####
+plot_traj_poster <- ggplot(data_traj, aes(x=generation, y=count, group=trial, color=intervention)) +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  geom_vline(xintercept=(num_generations_u+1), col = "grey") +
+  geom_line(alpha = 0.3) +
+  stat_smooth(aes(group = intervention), size = 1, method = "loess", se = FALSE) +
+  scale_x_continuous(breaks = seq(1:length(count))) +
+  xlab("Generation") + ylab("Incident Cases") +
+  scale_color_manual(name="Intervention\n",
+                     values = c("coral3", "mediumturquoise", "darkgoldenrod", "cornflowerblue"),
+                     breaks=c("u", "hsb", "s", "q"),
+                     labels=c("\nNone\n", "\nHealth-\nSeeking\nBehavior\n", "\nSymptom\nMonitoring\n", "\nQuarantine\n")) +
+  theme(legend.direction = "vertical", 
+        legend.position = "right",
+        legend.key=element_rect(size=5, color="white"))+
+  ggtitle("Influenza A") +
+  theme(text = element_text(size=18)) +
+  scale_y_continuous(breaks = seq(0, 1400, by=100))
+plot_traj_poster
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj_7by5.pdf", sep=""), width = 7, height = 5) # Dimensions are in inches
+plot(plot_traj_poster)
 dev.off()
 
 #### Save Workspace ####

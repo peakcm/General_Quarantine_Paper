@@ -67,7 +67,7 @@ grouped <- group_by(data_master_melt, disease, Setting, variable)
 data_master_melt_mean <- summarise(grouped, mean=mean(value), sd=sd(value))
 
 # reorder diseases
-data_master_melt_mean$disease <- factor(data_master_melt_mean$disease, levels = rev(c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS")), ordered = TRUE)
+data_master_melt_mean$disease <- factor(data_master_melt_mean$disease, levels = rev(c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS")), labels = rev(c("Pertussis", "Smallpox", "SARS", "Hepatitis A", "Influenza A", "Ebola", "MERS")), ordered = TRUE)
 
 my.cols <- brewer.pal(n = 7, name = "Set1")
 my.cols <- my.cols[c(5, 3, 4, 7, 6, 2, 1)]
@@ -76,7 +76,7 @@ my.cols <- my.cols[c(5, 3, 4, 7, 6, 2, 1)]
 data_master_melt_mean_segment <- melt(data_master_melt_mean[data_master_melt_mean$variable %in% c("R_s", "R_q"),], id.vars = c("disease"), measure.vars = c("mean"))
 
 #### Plot ####
-ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master_melt_mean$variable %in% c("R_0","R_s", "R_q"),]) +
+plot <- ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master_melt_mean$variable %in% c("R_0","R_s", "R_q"),]) +
   theme_bw() + 
   geom_vline(xintercept = 1, color = "darkgrey") +
 
@@ -97,8 +97,54 @@ ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master
   annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
   geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 3, color = "darkgrey") +
   xlim(0,5) + 
-  xlab("Reproductive Number") +
+  xlab(expression(R[0])) +
+  theme(text = element_text(size=10)) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         legend.key = element_blank())
+plot
+
+date <- format(Sys.time(), "%Y%m%d")
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal_8by2-5.pdf", sep=""), width = 8, height = 2.5)
+plot(plot)
+dev.off()
+
   
+
+#### Plot FOR POSTER ####
+plot_poster <- ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master_melt_mean$variable %in% c("R_0","R_s", "R_q"),]) +
+  theme_bw() + 
+  geom_vline(xintercept = 1, color = "darkgrey") +
+  
+  scale_shape_manual(values = c(23, 24, 21),
+                     name="Intervention",
+                     breaks=c("R_0", "R_s", "R_q"),
+                     labels=c(  expression(paste("None (",R[0], ")")), expression(paste("Symptom Monitoring (", R[S], ")")),expression(paste("Quarantine (", R[Q], ")")))) +
+  theme(legend.text.align = 0)+
+  # theme(legend.position=c(.8, .25)) +
+  # theme(legend.background = element_rect(color = "white")) +
+  # theme(legend.text = element_text(size = 10, face = "bold")) +
+  # theme(legend.title = element_blank()) +
+  scale_color_manual(values = my.cols, guide = FALSE) +
+  scale_fill_manual(values = my.cols, guide = FALSE) +
+  theme(axis.title.y=element_blank()) +
+  geom_line(data = data_master_melt_mean_segment, aes(y = disease, x = value, color = disease, fill = disease), lwd = 1) +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 0.5, ymax = 2.5, alpha = .08, fill = "green") +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
+  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 3, color = "darkgrey") +
+  xlim(0,5) + 
+  xlab(expression(R[0])) +
+  theme(text = element_text(size=18)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.key = element_blank())
+plot_poster
+
+date <- format(Sys.time(), "%Y%m%d")
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal_8by2-5.pdf", sep=""), width = 10, height = 2.5)
+plot(plot_poster)
+dev.off()
+
+

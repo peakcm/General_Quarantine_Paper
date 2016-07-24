@@ -9,7 +9,7 @@ library(dplyr)
 library(RColorBrewer)
 
 #### Load Workspace ####
-date_desired <- "20151104"
+date_desired <- "20151113"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date_desired, "_FigureRsRq.RData", sep=""))
 
 #### Load data from case_study_generic outputs ####
@@ -108,60 +108,63 @@ my.cols <- my.cols[c(3, 7, 4, 5, 1, 6, 2)]
 set_all <- c("All", 2.5, 3, "HR")
 names(set_all) <- c("name", "lower", "upper", "Setting")
 
-plot1 <- # data
+plot1_pretty <- # data
   ggplot(data_master, aes(color=disease)) + 
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
   geom_vline(xintercept =1, col="grey") + geom_hline(yintercept =1, col="grey") +
-  geom_point(data = data_master[data_master$disease == set_1["name"] &
-                                  data_master$R_0 >= set_all["lower"] & 
-                                  data_master$R_0 <= set_all["upper"] &
-                                  data_master$Setting == set_1["Setting"],],
-               aes(x=R_s, y=R_q)) +
   geom_point(data = data_master[data_master$disease == set_2["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_2["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_3["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_3["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_4["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_4["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_5["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_5["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_6["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_6["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_7["name"] &
                                   data_master$R_0 >= set_all["lower"] & 
                                   data_master$R_0 <= set_all["upper"] &
                                   data_master$Setting == set_7["Setting"],],
-             aes(x=R_s, y=R_q)) +
-  scale_color_manual(values = my.cols, breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), name = "Disease") +
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_1["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_1["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  scale_color_manual(values = my.cols, breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), labels = c("Pertussis", "Smallpox", "SARS", "Hepatitis A", "Influenza A", "Ebola", "MERS"), name = "Disease") +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(legend.key = element_blank()) +
   xlim(xlim.min, xlim.max) +
   ylim(ylim.min, ylim.max) + 
-  xlab("Effective Reproductive Number under Symptom Monitoring") +
-  ylab("Effective Reproductive Number under Quarantine") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
-  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
-  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
-  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue") +
-  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+  xlab(expression(R[S])) +
+  ylab(expression(R[Q])) +
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom\nMonitoring", col = "orange", size = 2.5) +
+  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue", size = 2.5) +
+  theme(text = element_text(size=10)) +
   guides(colour = guide_legend(override.aes = list(size=3)))
-plot1
+plot1_pretty
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq1.pdf", sep=""))
+date <- format(Sys.time(), "%Y%m%d")
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq1.pdf", sep=""), width = 5, height = 3)
 plot(plot1_pretty)
 dev.off()
 
@@ -172,57 +175,183 @@ plot2 <- # data
   annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .08, fill = "yellow") + 
   annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .08, fill = "blue") +
   annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .08, fill = "green") +
-  geom_point(data = data_master[data_master$disease == set_1["name"] &
-                                  data_master$R_0 >= set_1["lower"] & 
-                                  data_master$R_0 <= set_1["upper"] &
-                                  data_master$Setting == set_1["Setting"],],
-             aes(x=R_s, y=R_q)) +
   geom_point(data = data_master[data_master$disease == set_2["name"] &
                                   data_master$R_0 >= set_2["lower"] & 
                                   data_master$R_0 <= set_2["upper"] &
                                   data_master$Setting == set_2["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_3["name"] &
                                   data_master$R_0 >= set_3["lower"] & 
                                   data_master$R_0 <= set_3["upper"] &
                                   data_master$Setting == set_3["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_4["name"] &
                                   data_master$R_0 >= set_4["lower"] & 
                                   data_master$R_0 <= set_4["upper"] &
                                   data_master$Setting == set_4["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_5["name"] &
                                   data_master$R_0 >= set_5["lower"] & 
                                   data_master$R_0 <= set_5["upper"] &
                                   data_master$Setting == set_5["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_6["name"] &
                                   data_master$R_0 >= set_6["lower"] & 
                                   data_master$R_0 <= set_6["upper"] &
                                   data_master$Setting == set_6["Setting"],],
-             aes(x=R_s, y=R_q)) +
+             aes(x=R_s, y=R_q), size = 0.5) +
   geom_point(data = data_master[data_master$disease == set_7["name"] &
                                   data_master$R_0 >= set_7["lower"] & 
                                   data_master$R_0 <= set_7["upper"] &
                                   data_master$Setting == set_7["Setting"],],
-             aes(x=R_s, y=R_q)) +
-  scale_color_manual(values = my.cols,  breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), name = "Disease") +
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_1["name"] &
+                                  data_master$R_0 >= set_1["lower"] & 
+                                  data_master$R_0 <= set_1["upper"] &
+                                  data_master$Setting == set_1["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  scale_color_manual(values = my.cols,  breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), labels = c("Pertussis", "Smallpox", "SARS", "Hepatitis A", "Influenza A", "Ebola", "MERS"), name = "Disease") +
   theme_bw() + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(legend.key = element_blank()) +
   xlim(xlim.min, xlim.max) + 
   ylim(ylim.min, ylim.max) + 
-  xlab("Effective Reproductive Number under Symptom Monitoring") +
-  ylab("Effective Reproductive Number under Quarantine") +
-  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue") +
-  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom Monitoring", col = "orange") +
+  xlab(expression(R[S])) +
+  ylab(expression(R[Q])) +
+  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue", size = 2.5) +
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom\nMonitoring", col = "orange", size = 2.5) +
+  theme(text = element_text(size=10)) +
   guides(colour = guide_legend(override.aes = list(size=3)))
 plot2
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq2.pdf", sep=""))
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq2.pdf", sep=""), width = 5, height = 3)
 plot(plot2)
 dev.off()
+
+#### Plot 1: All same R FOR POSTER ####
+set_all <- c("All", 2.5, 3, "HR")
+names(set_all) <- c("name", "lower", "upper", "Setting")
+
+plot1_poster <- # data
+  ggplot(data_master, aes(color=disease)) + 
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .1, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .1, fill = "blue") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .1, fill = "green") +
+  geom_vline(xintercept =1, col="grey") + geom_hline(yintercept =1, col="grey") +
+  geom_point(data = data_master[data_master$disease == set_2["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_2["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_3["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_3["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_4["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_4["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_5["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_5["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_6["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_6["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_7["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_7["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_1["name"] &
+                                  data_master$R_0 >= set_all["lower"] & 
+                                  data_master$R_0 <= set_all["upper"] &
+                                  data_master$Setting == set_1["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  scale_color_manual(values = my.cols, breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), labels = c("Pertussis", "Smallpox", "SARS", "Hepatitis A", "Influenza A", "Ebola", "MERS"), name = "Disease") +
+  theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(legend.key = element_blank()) +
+  xlim(xlim.min, xlim.max) +
+  ylim(ylim.min, ylim.max) + 
+  xlab(expression(R[S])) +
+  ylab(expression(R[Q])) +
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom\nMonitoring", col = "orange", size = 5) +
+  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue", size = 5) +
+  theme(text = element_text(size=18)) +
+  guides(colour = guide_legend(override.aes = list(size=3)))
+plot1_poster
+
+date <- format(Sys.time(), "%Y%m%d")
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq1_6by4.pdf", sep=""), width = 6, height = 4)
+plot(plot1_poster)
+dev.off()
+
+#### Plot 2: Disease-specific R FOR POSTER ####
+plot2_poster <- # data
+  ggplot(data_master, aes(color=disease)) +
+  geom_vline(xintercept =1, col="grey") + geom_hline(yintercept =1, col="grey") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = 1, ymax = ylim.max, alpha = .08, fill = "yellow") + 
+  annotate("rect", xmin = 1, xmax = xlim.max, ymin = ylim.min, ymax = 1, alpha = .08, fill = "blue") +
+  annotate("rect", xmin = xlim.min, xmax = 1, ymin = ylim.min, ymax = 1, alpha = .08, fill = "green") +
+  geom_point(data = data_master[data_master$disease == set_2["name"] &
+                                  data_master$R_0 >= set_2["lower"] & 
+                                  data_master$R_0 <= set_2["upper"] &
+                                  data_master$Setting == set_2["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_3["name"] &
+                                  data_master$R_0 >= set_3["lower"] & 
+                                  data_master$R_0 <= set_3["upper"] &
+                                  data_master$Setting == set_3["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_4["name"] &
+                                  data_master$R_0 >= set_4["lower"] & 
+                                  data_master$R_0 <= set_4["upper"] &
+                                  data_master$Setting == set_4["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_5["name"] &
+                                  data_master$R_0 >= set_5["lower"] & 
+                                  data_master$R_0 <= set_5["upper"] &
+                                  data_master$Setting == set_5["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_6["name"] &
+                                  data_master$R_0 >= set_6["lower"] & 
+                                  data_master$R_0 <= set_6["upper"] &
+                                  data_master$Setting == set_6["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_7["name"] &
+                                  data_master$R_0 >= set_7["lower"] & 
+                                  data_master$R_0 <= set_7["upper"] &
+                                  data_master$Setting == set_7["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  geom_point(data = data_master[data_master$disease == set_1["name"] &
+                                  data_master$R_0 >= set_1["lower"] & 
+                                  data_master$R_0 <= set_1["upper"] &
+                                  data_master$Setting == set_1["Setting"],],
+             aes(x=R_s, y=R_q), size = 0.5) +
+  scale_color_manual(values = my.cols,  breaks = c("Pertussis", "Smallpox", "SARS", "HepatitisA", "InfluenzaA", "Ebola", "MERS"), labels = c("Pertussis", "Smallpox", "SARS", "Hepatitis A", "Influenza A", "Ebola", "MERS"),  name = "Disease") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(legend.key = element_blank()) +
+  xlim(xlim.min, xlim.max) + 
+  ylim(ylim.min, ylim.max) + 
+  xlab(expression(R[S])) +
+  ylab(expression(R[Q])) +
+  annotate("text", x = xlim.max - 1, y = ylim.min + 0.1, label = "Control with Quarantine", col = "blue", size = 5) +
+  annotate("text", x = xlim.min + 0.5, y = 1.5, label = "Control with\nSymptom\nMonitoring", col = "orange", size = 5) +
+  theme(text = element_text(size=18)) +
+  guides(colour = guide_legend(override.aes = list(size=3)))
+plot2_poster
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq2_6by4.pdf", sep=""), width = 6, height = 4)
+plot(plot2_poster)
+dev.off()
+
 
 #### ggvis: Interactive Supplement for this figure ####
 diseases <- unique(data_master$disease)

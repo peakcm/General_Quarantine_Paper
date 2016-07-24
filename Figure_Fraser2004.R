@@ -4,7 +4,7 @@
 library(ggplot2)
 
 #### Define root ####
-desired_root <- "20151022_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151024_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 root <- desired_root
 
 #### Load _Figure_Doomsday.RData Workspace ####
@@ -104,17 +104,25 @@ if (sum(no_control$counts)==0){
 
 # Plot
 plot_fraser <- ggplot() +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$R_0 < Q_max & data.doomsday$theta == 0,],  aes(theta-0.02, R_0), color = "cornflowerblue", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "cornflowerblue", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$R_0 < S_max & data.doomsday$theta == 0,],  aes(theta-0.01, R_0), color = "darkgoldenrod", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "darkgoldenrod", size = 3) +  
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$R_0 < HSB_max & data.doomsday$theta == 0,],  aes(theta, R_0), color = "mediumturquoise", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "mediumturquoise", size = 3) +
-  theme_bw() + xlim(c(-0.02,1)) + xlab ("Theta = Proportion of infections that occur prior to\nsymptoms or by asymptomatic infection") +
-  ylim(c(0, 10))
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$R_0 < Q_max & data.doomsday$theta == 0,],  aes(theta-0.02, R_0), color = "cornflowerblue", size = 1.4) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "cornflowerblue", size = 1.4) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$R_0 < S_max & data.doomsday$theta == 0,],  aes(theta-0.01, R_0), color = "darkgoldenrod", size = 1.4) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "darkgoldenrod", size = 1.4) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$R_0 < HSB_max & data.doomsday$theta == 0,],  aes(theta, R_0), color = "mediumturquoise", size = 1.4) +
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "mediumturquoise", size = 1.4) +
+  theme_bw() + 
+  xlim(c(-0.02,1)) +
+  xlab(expression(paste("Proportion of infections that occur prior to\nsymptoms or by asymptomatic infection (",theta,")", sep = ""))) +
+  theme(axis.title.x=element_text(margin=margin(20,0,0,0))) +
+  ylim(c(0, 10)) +
+  ylab(expression(R[0]))
 plot_fraser
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser.pdf", sep=""))
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser.pdf", sep=""), width = 3, height = 3)
+plot(plot_fraser)
+dev.off()
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser_5by5.pdf", sep=""), width = 5, height = 5)
 plot(plot_fraser)
 dev.off()
 
