@@ -95,10 +95,10 @@ plot <- ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & dat
   geom_line(data = data_master_melt_mean_segment, aes(y = disease, x = value, color = disease, fill = disease), lwd = 1) +
   annotate("rect", xmin = 0, xmax = 5, ymin = 0.5, ymax = 2.5, alpha = .08, fill = "green") +
   annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
-  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 3, color = "darkgrey") +
+  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 2, color = "darkgrey") +
   xlim(0,5) + 
   xlab(expression(R[0])) +
-  theme(text = element_text(size=10)) +
+  theme(text = element_text(size=8)) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         legend.key = element_blank())
@@ -106,7 +106,7 @@ plot
 
 date <- format(Sys.time(), "%Y%m%d")
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal_8by2-5.pdf", sep=""), width = 8, height = 2.5)
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal.pdf", sep=""), width = 6, height = 1.5)
 plot(plot)
 dev.off()
 
