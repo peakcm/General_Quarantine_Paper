@@ -7,14 +7,14 @@
 
 # Check out http://shiny.rstudio.com/gallery/movie-explorer.html
 # Check out https://github.com/hrbrmstr/ggvis-maps
-library(shiny)
-library(ggvis)
-library(dplyr)
-library(magrittr)
-library(foreign)
-library(RCurl)
+require(shiny)
+require(ggvis)
+require(dplyr)
+require(magrittr)
+require(foreign)
+require(RCurl)
 
-url <- "https://raw.githubusercontent.com/peakcm/InteractiveQuarantine/master/20151113_FigureRsRq.csv"
+url <- "https://raw.githubusercontent.com/peakcm/InteractiveQuarantine/master/20170328_FigureRsRq.csv"
 getURL <- getURL(url) 
 data_master <- read.csv(textConnection(getURL))
 
@@ -28,10 +28,10 @@ shinyUI(fluidPage(
   sidebarLayout(
     
     sidebarPanel(
-      h6("This website is a <draft> interactive supplement to\n
-'Containing Emerging Epidemics: a Quantitative Comparison of Quarantine and Symptom Monitoring'\n
-by Corey M Peak, Lauren M Childs, Yonatan H Grad, and Caroline O Buckee.\n
-         Please contact peak@mail.harvard.edu for issues and comments."),
+      h6("This website is an interactive supplement to:"),
+      h6(a("Comparing nonpharmaceutical interventions for containing emerging epidemics", href="http://www.pnas.org/content/early/2017/03/27/1616438114")),
+      h6("by Corey M Peak, Lauren M Childs, Yonatan H Grad, and Caroline O Buckee"),
+      h6("Please contact peak@mail.harvard.edu for comments and issues."),
       # uiOutput("plot1_ui"),
       # uiOutput("plot2_ui"),
       width = 3
@@ -40,10 +40,10 @@ by Corey M Peak, Lauren M Childs, Yonatan H Grad, and Caroline O Buckee.\n
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(
-        tabPanel("Figure 3A", wellPanel(p("Interactive Supplement to Figure 3A")), 
+        tabPanel("Figure 3A", wellPanel(p("Below is an interactive supplement to Figure 3A.")), 
                  uiOutput("plot1_ui"),
                  ggvisOutput("plot1")),
-        tabPanel("Additional Model Outputs", wellPanel(p("Interactive Supplement for Intermediate Outputs from Model Simulations")),
+        tabPanel("Additional Model Outputs", wellPanel(p("Below are additional outputs from the transmission model.")),
                  uiOutput("plot2_ui"),
                  ggvisOutput("plot2"))
     ),

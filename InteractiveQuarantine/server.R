@@ -5,12 +5,12 @@
 # http://shiny.rstudio.com
 #
 
-library(shiny)
-library(ggvis)
-library(dplyr)
-library(magrittr)
-library(foreign)
-library(RCurl)
+require(shiny)
+require(ggvis)
+require(dplyr)
+require(magrittr)
+require(foreign)
+require(RCurl)
 
 url <- "https://raw.githubusercontent.com/peakcm/InteractiveQuarantine/master/20151113_FigureRsRq.csv"
 getURL <- getURL(url) 
