@@ -1,9 +1,4 @@
-
 # This is the server logic for a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
 
 require(shiny)
 require(ggvis)
@@ -13,7 +8,7 @@ require(foreign)
 require(RCurl)
 
 url <- "https://raw.githubusercontent.com/peakcm/InteractiveQuarantine/master/20151113_FigureRsRq.csv"
-getURL <- getURL(url) 
+getURL <- getURL(url)
 data_master <- read.csv(textConnection(getURL))
 
 data_master$disease <- factor(data_master$disease, levels = c("Ebola", "HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox"), labels = c("Ebola", "HepatitisA", "InfluenzaA", "MERS", "Pertussis", "SARS", "Smallpox"), ordered = TRUE)
