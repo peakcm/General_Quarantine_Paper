@@ -46,13 +46,22 @@ for (i in 1:nrow(data.doomsday)){
 }
 
 #### Fraser 2004 Plot ####
+point_size <- 0.3
 plot_doomsday <- ggplot(data.doomsday) +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(theta, R_0), color = "cornflowerblue", size = 3) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(theta, R_0), color = "darkgoldenrod", size = 3) +  
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(theta, R_0), color = "mediumturquoise", size = 3) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(theta, R_0), color = "cornflowerblue", size = point_size) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(theta, R_0), color = "darkgoldenrod", size = point_size) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(theta, R_0), color = "mediumturquoise", size = point_size) +
   theme_bw() + xlim(c(0,1)) +
-  ylim(c(0, max(data.doomsday$R_0)))
+  theme(text = element_text(size=8)) +
+  theme(axis.title.x=element_text(size=5)) +
+  ylim(c(0, max(data.doomsday$R_0))) +
+  ylab(expression(R[0])) +
+  xlab("Theta = Proportion of infections that occur\nprior to symptoms or by asymptomatic infection")
 plot_doomsday
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Fraser.pdf", sep=""), width = 2, height = 2)
+plot(plot_doomsday)
+dev.off()
 
 #### Zero adapted Fraser 2004 plot ####
 # Need some way of showing what's happening in the theta = 0. Need to show the proportion of trials where there was control.
@@ -104,21 +113,22 @@ if (sum(no_control$counts)==0){
 
 # Plot
 plot_fraser <- ggplot() +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$R_0 < Q_max & data.doomsday$theta == 0,],  aes(theta-0.02, R_0), color = "cornflowerblue", size = 1.4) +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "cornflowerblue", size = 1.4) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$R_0 < S_max & data.doomsday$theta == 0,],  aes(theta-0.01, R_0), color = "darkgoldenrod", size = 1.4) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "darkgoldenrod", size = 1.4) +  
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$R_0 < HSB_max & data.doomsday$theta == 0,],  aes(theta, R_0), color = "mediumturquoise", size = 1.4) +
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "mediumturquoise", size = 1.4) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$R_0 < Q_max & data.doomsday$theta == 0,],  aes(theta-0.02, R_0), color = "cornflowerblue", size = 1.4, alpha = 0.8) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "cornflowerblue", size = 1.4, alpha = 0.8) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$R_0 < S_max & data.doomsday$theta == 0,],  aes(theta-0.01, R_0), color = "darkgoldenrod", size = 1.4, alpha = 0.8) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "darkgoldenrod", size = 1.4, alpha = 0.8) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$R_0 < HSB_max & data.doomsday$theta == 0,],  aes(theta, R_0), color = "mediumturquoise", size = 1.4, alpha = 0.8) +
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1 & data.doomsday$theta > 0,], aes(theta, R_0), color = "mediumturquoise", size = 1.4, alpha = 0.8) +
   theme_bw() + 
   xlim(c(-0.02,1)) +
-  xlab(expression(paste("Proportion of infections that occur prior to\nsymptoms or by asymptomatic infection (",theta,")", sep = ""))) +
+  xlab(expression(paste(" Proportion of Infections by\n Asymptomatic Infection ",(theta), sep = ""))) +
+  theme(text = element_text(size=10), legend.text=element_text(size=10), legend.title=element_text(size=10)) +
   theme(axis.title.x=element_text(margin=margin(20,0,0,0))) +
   ylim(c(0, 10)) +
   ylab(expression(R[0]))
 plot_fraser
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser.pdf", sep=""), width = 3, height = 3)
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotFraser.pdf", sep=""), width = 2.5, height = 2.5)
 plot(plot_fraser)
 dev.off()
 

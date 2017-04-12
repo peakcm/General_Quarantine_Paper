@@ -15,18 +15,18 @@ source("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/Functi
 #### Load Workspaces ####
 
 # To load SMC data for a disease and then generate PRCC outputs for that disease
-desired_root <- "20160507_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
+desired_root <- "20151104_Ebola" # Paste the desired root here "YYYYMMDD_DISEASE"
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "_SMC.RData", sep=""))
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 # To load the PRCC outputs for one disease
-desired_root <- "20160507_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",  desired_root, "_PRCC.RData", sep=""))
+# desired_root <- "20160507_SARS" # Paste the desired root here "YYYYMMDD_DISEASE"
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/",  desired_root, "_PRCC.RData", sep=""))
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PRCC.RData", sep=""))
 
 # For the pooled PRCC data
-desired_date <- "20160507"
-load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
+# desired_date <- "20160507"
+# load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_date, "_PRCC.RData", sep=""))
 
 #### Pull from SMC data with independent draws ####
 
@@ -47,6 +47,7 @@ names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "a
 n_pop = 500
 num_generations <- 5
 times <- 5000
+# times <- 500 # December 6, 2016
 names <- c("R_0", "R_hsb", "R_s", "R_q", "Abs_Benefit","Rel_Benefit","NNQ","obs_to_iso_q","Abs_Benefit_per_Qday", "ks", "Rel_Benefit_per_Qday","Rel_Benefit_per_Qday_rp", "NQD")
 data.prcc <- data.frame(matrix(rep(NA, length(names)*times), nrow=times))
 names(data.prcc) <- names
@@ -74,7 +75,8 @@ riskprofile.max <- 1
 R_0_mean.min <- 1
 R_0_mean.max <- 5
 dispersion.min <- 1
-dispersion.max <- 4
+# dispersion.max <- 4 # Should increase this to 100. k=0.01 in some of Lloyd-Smith 2005 Nature
+dispersion.max <- 100  # December 6, 2016
 T_inc_stretch.min <- 0.5
 T_inc_stretch.max <- 1.5
 
@@ -163,7 +165,7 @@ while (i <= times){
   
 }
 
-# Check for missing data
+ # Check for missing data
 if (sum(is.na(data.prcc[,1:4]))>0){cat("Something's missing")}
 
 data.prcc[,"Abs_Benefit"] <- data.prcc[,"R_s"] - data.prcc[,"R_q"]
@@ -286,9 +288,9 @@ plot_prcc_1
 # dev.off()
 
 #### Save Workspace and .csv's ####
-# cat(desired_root)
-# date <- format(Sys.time(), "%Y%m%d")
-# disease <- "SARS"
+cat(desired_root)
+date <- format(Sys.time(), "%Y%m%d")
+disease <- "Ebola"
 (root <- paste(date, disease, sep = "_"))
 save.image(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC.RData", sep=""))
 write.csv(data.prcc, paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_dataprcc.csv", sep=""), row.names = FALSE)
@@ -296,14 +298,12 @@ write.csv(output, paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quaran
 
 #### Load PRCC data for multiple diseases ####
 # desired_roots_list <- c("20151022_SARS", "20151024_Ebola", "20151026_HepatitisA", "20151026_Pertussis", "20151027_MERS", "20151028_InfluenzaA", "20151028_Smallpox")
-desired_roots_list <- c("20160505_Ebola", "20160506_InfluenzaA", "20160506_MERS", "20160506_Smallpox", "20160507_HepatitisA", "20160507_Pertussis", "20160507_SARS")
-# desired_roots_list <- c("20151022_SARS", "20151028_InfluenzaA")
+desired_roots_list <- c("20161207_Ebola", "20160506_InfluenzaA", "20160506_MERS", "20160506_Smallpox", "20160507_HepatitisA", "20160507_Pertussis", "20161206_SARS")
+desired_roots_list <- c("20161206_SARS", "20161207_Ebola")
 
 # load the first one to get a list of the headers
 # load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_roots_list[1], "/", desired_roots[1], "_PRCC.RData", sep=""))
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_roots_list[1], "_PRCC.RData", sep=""))
-
-desired_roots_list <- c("20160505_Ebola", "20160506_InfluenzaA", "20160506_MERS", "20160506_Smallpox", "20160507_HepatitisA", "20160507_Pertussis", "20160507_SARS")
 
 names <- c(names(data.prcc), "disease")
 length(names)
@@ -631,7 +631,7 @@ ggplot() +
 df.prcc.output.subset.plot1 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Relative Difference", "Absolute Difference"),]
 df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[order(-df.prcc.output.subset.plot1$coef),]
 
-# df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[(df.prcc.output.subset.plot1$parameter %in% c("R_0 Spread"))==0,]
+df.prcc.output.subset.plot1 <- df.prcc.output.subset.plot1[(df.prcc.output.subset.plot1$parameter %in% c("R_0 Spread"))==0,]
 
 df.prcc.output.subset.plot1$parameter <- factor(df.prcc.output.subset.plot1$parameter, levels = (unique(as.character(df.prcc.output.subset.plot1$parameter))), ordered = TRUE)
 levels(df.prcc.output.subset.plot1$parameter )
@@ -643,16 +643,16 @@ plot_1 <- ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output
   theme_classic() + 
   geom_bar(aes(x = parameter), stat = "identity", position = "dodge") +
   geom_errorbar(aes(x = parameter, ymin = CImin, ymax = CImax, color = output), position = position_dodge(width=1), width=0) +
-  scale_fill_brewer(type = "qual", palette = 7, name = "Comparative Metric", 
+  scale_fill_brewer(type = "qual", palette = 7, name = "Metric", 
                      breaks = c("Absolute Difference", "Relative Difference"),
-                     labels = c(expression(paste("Absolute Difference  ", (R[S]-R[Q]), sep="")),
-                                expression(paste("Relative Difference  ", (frac(R[S]-R[Q],R[S])), sep="")))) +
-  scale_color_brewer(type = "qual", palette = 7, name = "Comparative Metric", 
+                     labels = c(expression(paste((R[S]-R[Q]), sep="")),
+                                expression(paste((frac(R[S]-R[Q],R[S])), sep="")))) +
+  scale_color_brewer(type = "qual", palette = 7, name = "Metric", 
                     breaks = c("Absolute Difference", "Relative Difference"),
-                    labels = c(expression(paste("Absolute Difference  ", (R[S]-R[Q]), sep="")),
-                               expression(paste("Relative Difference  ", (frac(R[S]-R[Q],R[S])), sep="")))) +
+                    labels = c(expression(paste((R[S]-R[Q]), sep="")),
+                               expression(paste((frac(R[S]-R[Q],R[S])), sep="")))) +
   theme(axis.text.y = element_text(hjust = 0)) +
-  ylab("Partial Rank Correlation Coefficient") +
+  ylab("PRCC") +
   theme(axis.ticks.y = element_blank()) +
   scale_x_discrete(name = element_blank(),
                    labels=c(expression(paste("Fraction of\nContacts Traced ", (P[CT]), sep="")),
@@ -666,12 +666,14 @@ plot_1 <- ggplot(data = df.prcc.output.subset.plot1, aes(y = coef, fill = output
                             expression(paste("Time of Peak\nInfectiousness ", (tau[beta]), sep="")),
                             expression(paste("Latent Period\nOffset ", (T[OFFSET]), sep="")),
                             expression(paste("Duration of\nInfectiousness ", (d[INF]), sep="")))) +
-  theme(legend.position = c(0.75, 0.75)) +
-  theme(text = element_text(size=18)) +
+  theme(legend.position = c(0.65, 0.75)) +
+  scale_y_continuous(limits = c(-0.33, 0.48), breaks = c(-0.4, -0.2, 0, 0.2, 0.4))  +
+  theme(plot.margin = unit(c(0,0,0,0), units = "cm")) +
+  theme(text = element_text(size=9)) +
   coord_flip()
 plot_1
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC_Plot1_10by7.pdf", sep=""), width = 10, height = 7)
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PRCC_Plot1.pdf", sep=""), width = 4, height = 3)
 plot(plot_1)
 dev.off()
 
@@ -679,7 +681,7 @@ dev.off()
 df.prcc.output.subset.plot2 <- df.prcc.output.subset[df.prcc.output.subset$disease == "All Diseases" & df.prcc.output.subset$output %in% c("Relative Difference\nper Quarantine Day", "Absolute Difference\nper Quarantine Day"),]
 df.prcc.output.subset.plot2 <- df.prcc.output.subset.plot2[order(-df.prcc.output.subset.plot2$coef),]
 
-# df.prcc.output.subset.plot2 <- df.prcc.output.subset.plot2[(df.prcc.output.subset.plot2$parameter %in% c("R_0 Spread"))==0,]
+df.prcc.output.subset.plot2 <- df.prcc.output.subset.plot2[(df.prcc.output.subset.plot2$parameter %in% c("R_0 Spread"))==0,]
 
 df.prcc.output.subset.plot2$parameter <- factor(df.prcc.output.subset.plot2$parameter, levels = (unique(as.character(df.prcc.output.subset.plot1$parameter))), ordered = TRUE)
 levels(df.prcc.output.subset.plot2$parameter) == levels(df.prcc.output.subset.plot1$parameter)

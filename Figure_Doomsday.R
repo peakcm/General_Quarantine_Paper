@@ -197,18 +197,19 @@ plot(plot_doomsday)
 dev.off()
 
 #### Plot Orientation 2 ####
+point_size <- 0.3
 plot_doomsday <- ggplot(data.doomsday) +
-  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(-T_lat_offset, R_0), color = "cornflowerblue", size = 0.7) +
-  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(-T_lat_offset, R_0), color = "darkgoldenrod", size = 0.7) +  
-  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(-T_lat_offset, R_0), color = "mediumturquoise", size = 0.7) +
+  geom_point(data = data.doomsday[data.doomsday$R_q < 1,], aes(-T_lat_offset, R_0), color = "cornflowerblue", size = point_size) +
+  geom_point(data = data.doomsday[data.doomsday$R_s < 1,], aes(-T_lat_offset, R_0), color = "darkgoldenrod", size = point_size) +  
+  geom_point(data = data.doomsday[data.doomsday$R_hsb < 1,], aes(-T_lat_offset, R_0), color = "mediumturquoise", size = point_size) +
   theme_bw() + xlim(c(min(-data.doomsday$T_lat_offset), max(-data.doomsday$T_lat_offset))) +
   ylim(c(0, 10)) + 
-  theme(text = element_text(size=10)) +
-  xlab(expression(T[OFFSET])) +
+  theme(text = element_text(size=8)) +
+  xlab(expression(paste(T[OFFSET], " (days)"))) +
   ylab(expression(R[0]))
 plot_doomsday
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal_2.pdf", sep=""), width = 3, height = 3)
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotDoomsday_Ideal_2.pdf", sep=""), width = 2, height = 2)
 plot(plot_doomsday)
 dev.off()
 

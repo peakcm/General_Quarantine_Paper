@@ -70,28 +70,30 @@ plot(plot2)
 dev.off()
 
 #### Plot 3 ####
+point_size = 0.1
+line_size = 1
 plot3 <- ggplot(data = data.hr.lr[data.hr.lr$R_0 > R_0_relevant.min &
                                     data.hr.lr$R_0 < R_0_relevant.max &
                                     data.hr.lr$Setting == "HR",]) +
   annotate("rect", xmin = R_0_relevant.min, xmax = R_0_relevant.max, ymin = 0, ymax = 1, alpha = .1, fill = "green") +
-  geom_hline(yintercept=1, col = "grey") +
-  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
-  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = 0.5) +
-  geom_point(aes(x=R_0, y=R_s), col = "darkgoldenrod", alpha = 0.5, size = 0.5) +
-  geom_point(aes(x=R_0, y=R_q), col = "cornflowerblue", alpha = 0.5, size = 0.5) +
-  stat_smooth(aes(x=R_0, y=R_hsb), method = "loess", color="mediumturquoise", size = 1, se=FALSE) +
-  stat_smooth(aes(x=R_0, y=R_s), method = "loess", color="darkgoldenrod", size = 1, se=FALSE) +
-  stat_smooth(aes(x=R_0, y=R_q), method = "loess", color="cornflowerblue", size = 1, se=FALSE) +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = point_size) +
+  geom_point(aes(x=R_0, y=R_hsb), col = "mediumturquoise", alpha = 0.5, size = point_size) +
+  geom_point(aes(x=R_0, y=R_s), col = "darkgoldenrod", alpha = 0.5, size = point_size) +
+  geom_point(aes(x=R_0, y=R_q), col = "cornflowerblue", alpha = 0.5, size = point_size) +
+  stat_smooth(aes(x=R_0, y=R_hsb), method = "loess", color="mediumturquoise", size = line_size, se=FALSE, alpha = 0.5) +
+  stat_smooth(aes(x=R_0, y=R_s), method = "loess", color="darkgoldenrod", size = line_size, se=FALSE, alpha = 0.5) +
+  stat_smooth(aes(x=R_0, y=R_q), method = "loess", color="cornflowerblue", size = line_size, se=FALSE, alpha = 0.5) +
+  geom_hline(yintercept=1, col = "grey", size = 0.5) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlab(expression("Basic Reproductive Number R" [0])) + ylab(expression("Effective Reproductive Number R" [e])) +
-  geom_text(data = NULL, x = 1.46, y = 0, label = "*") +
-  # geom_text(data = NULL, x = 1.83, y = 0, label = "*") +
-  theme(text = element_text(size=10)) +
-  ggtitle(paste("Influenza A"))
-  # ggtitle(paste("Ebola"))
+  xlab(expression("R" [0])) + ylab(expression("R" [e])) +
+  geom_text(data = NULL, x = 1.46, y = 0, label = "|", size = 2) +
+  # geom_text(data = NULL, x = 1.83, y = 0, label = "|", size = 2) +
+  # ggtitle(paste("Influenza A")) +
+  # ggtitle(paste("Ebola")) +
+  theme(text = element_text(size=8))
 plot3
 
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot3.pdf", sep=""), width = 3, height = 3)
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_Plot3.pdf", sep=""), width = 2, height = 2)
 plot(plot3)
 dev.off()
 

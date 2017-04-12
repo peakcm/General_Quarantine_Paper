@@ -9,7 +9,7 @@ desired_root <- "20151104_Ebola"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_PlotTrajectories.RData", sep=""))
 
 #### Load SMC Workspaces ####
-desired_root <- "20151028_InfluenzaA"
+desired_root <- "20151104_InfluenzaA"
 load(paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", desired_root, "/", desired_root, "_SMC.RData", sep=""))
 
 #### Disease: Ebola ####
@@ -83,7 +83,7 @@ names(parms_epsilon) <- c("dist","parm1","parm2",  "parm3","anchor_value", "anch
 parms_CT_delay = list("uniform", 0, 0, 999, "independent", "independent")
 names(parms_CT_delay) <- c("dist", "parm1", "parm2",  "parm3","anchor_value", "anchor_target")
 
-#### Model settings ###
+#### Model settings ####
 n_pop = 100
 num_generations_u <- 2
 num_generations_intervention <- 4
@@ -96,11 +96,13 @@ data_traj$trial <- rep(seq(1:(times*4)), each = (num_generations_u + num_generat
 data_traj$intervention <- rep(c("u", "hsb", "s", "q"), each = times * (num_generations_u + num_generations_intervention - 1))
 data_traj$intervention <- factor(data_traj$intervention, levels = c("u", "hsb", "s", "q"))
 
-#### Draw the median from SMC to represent each iteration
+#### Draw the median from SMC to represent each iteration ####
 # This is better than each iteration having a different set of attributes because the stochasticity in the model can be shown instead of just the uncertainty in the model inputs.
 parms_T_lat$anchor_value <- median(data[,"T_lat_offset"])
+parms_d_inf$parm1 <- median(data[,"d_inf"])
 parms_d_inf$parm2 <- median(data[,"d_inf"])
-parms_pi_t$triangle_center <- median(data[,"pi_t_triangle_center"])
+parms_pi_t$distribution <- "uniform"
+parms_pi_t$triangle_center<- median(data[,"pi_t_triangle_center"])
 
 #### Run model ####
 for (i in 1:times){
@@ -163,23 +165,26 @@ for (i in 1:times){
 plot_traj <- ggplot(data_traj, aes(x=generation, y=count, group=trial, color=intervention)) +
   theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   geom_vline(xintercept=(num_generations_u+1), col = "grey") +
-  geom_line(alpha = 0.3) +
-  stat_smooth(aes(group = intervention), size = 1, method = "loess", se = FALSE) +
+  geom_line(alpha = 0.15) +
+  stat_smooth(aes(group = intervention), size = .5, method = "loess", se = FALSE, alpha = 0.5) +
   scale_x_continuous(breaks = seq(1:length(count))) +
   xlab("Generation") + ylab("Incident Cases") +
-  scale_color_manual(name="Intervention\n",
+  scale_color_manual(name="Intervention:\n",
                      values = c("coral3", "mediumturquoise", "darkgoldenrod", "cornflowerblue"),
                        breaks=c("u", "hsb", "s", "q"),
                        labels=c("\nNone\n", "\nHealth-\nSeeking\nBehavior\n", "\nSymptom\nMonitoring\n", "\nQuarantine\n")) +
   theme(legend.direction = "vertical", 
         legend.position = "right",
         legend.key=element_rect(size=5, color="white"))+
-  ggtitle("Ebola") +
-  scale_y_continuous(breaks = seq(0, 1400, by=100))
+  # guides(colour = FALSE) +
+  # theme(legend.position="bottom",legend.direction="horizontal") +
+  # scale_y_continuous(breaks = seq(0, 1400, by=200)) + ggtitle("Ebola") +
+  scale_y_continuous(breaks = seq(0, 600, by=200)) + ggtitle("Influenza") +
+  theme(text = element_text(size=8))
 plot_traj
 
-
-pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj_5by3.pdf", sep=""), width = 5, height = 3) # Dimensions are in inches
+# pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj.pdf", sep=""), width = 2, height = 2) # Dimensions are in inches
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", root, "_PlotTraj_legend.pdf", sep=""), width = 4, height = 1) # Dimensions are in inches
 plot(plot_traj)
 dev.off()
 

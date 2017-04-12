@@ -96,7 +96,8 @@ plot <- ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & dat
   annotate("rect", xmin = 0, xmax = 5, ymin = 0.5, ymax = 2.5, alpha = .08, fill = "green") +
   annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
   geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 2, color = "darkgrey") +
-  xlim(0,5) + 
+  scale_x_continuous(limits = c(0,5), name= "Reproductive Number")+
+  # xlim(0,5) + 
   xlab(expression(R[0])) +
   theme(text = element_text(size=8)) +
   theme(panel.grid.major = element_blank(),
@@ -107,8 +108,50 @@ plot
 date <- format(Sys.time(), "%Y%m%d")
 
 pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal.pdf", sep=""), width = 6, height = 1.5)
+
 plot(plot)
 dev.off()
+
+#### Plot tall ####
+plot <- ggplot(data_master_melt_mean[data_master_melt_mean$Setting == "HR" & data_master_melt_mean$variable %in% c("R_0","R_s", "R_q"),]) +
+  theme_bw() + 
+  geom_vline(xintercept = 1, color = "darkgrey") +
+  
+  scale_shape_manual(values = c(23, 24, 21),
+                     # name="Intervention",
+                     name = element_blank(),
+                     breaks=c("R_0", "R_s", "R_q"),
+                     labels=c(  expression(paste(R[0])), expression(paste(R[S])),expression(paste(R[Q])))) +
+  theme(legend.text.align = 0) +
+  # theme(legend.position=c(.8, .25)) +
+  # theme(legend.background = element_rect(color = "white")) +
+  # theme(legend.text = element_text(size = 10, face = "bold")) +
+  # theme(legend.title = element_blank()) +
+  scale_color_manual(values = my.cols, guide = FALSE) +
+  scale_fill_manual(values = my.cols, guide = FALSE) +
+  theme(axis.title.y=element_blank()) +
+  geom_line(data = data_master_melt_mean_segment, aes(y = disease, x = value, color = disease, fill = disease), lwd = 1) +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 0.5, ymax = 2.5, alpha = .08, fill = "green") +
+  annotate("rect", xmin = 0, xmax = 5, ymin = 2.5, ymax = 6.5, alpha = .08, fill = "blue") +
+  geom_point(aes(x = mean, y = disease, group = disease, fill = disease, shape = variable), size = 2, color = "darkgrey") +
+  scale_x_continuous(limits = c(0,5), name= "Reproductive Number")+
+  # xlim(0,5) + 
+  xlab(expression(R[0])) +
+  theme(text = element_text(size=8)) +
+  theme(axis.text.y=element_text(size=9)) +
+  theme(legend.position = c(.89, .25)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.key = element_blank())
+plot
+
+date <- format(Sys.time(), "%Y%m%d")
+
+pdf(file=paste("~/Dropbox/Ebola/General_Quarantine_Paper/General_Quarantine_Paper/", date, "_PlotRsRq_horizontal_tall.pdf", sep=""), width = 4.3, height = 2.5)
+
+plot(plot)
+dev.off()
+
 
   
 

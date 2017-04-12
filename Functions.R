@@ -23,6 +23,7 @@ rpois.od<-function (n, lambda,d=1) {
 #### Draw_Dist_fcn #### 
 # Draw from Distributions of Disease Attributes
 Draw_Dist_fcn <- function(Vector, distribution, parm1, parm2, parm3){
+  Vector = length(Vector) # Added on December 7, 2016 to allow n_pop = 1
   # Unit is days
   if (distribution == "gamma"){
     Draw_Dist <- rgamma(Vector, shape=parm1, rate=parm2)
@@ -272,20 +273,23 @@ pi_t_fcn <- function(T_lat, d_inf, t_iso, t_obs, R_0, R_0_hsb_adjusted, gamma, d
     pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
   
   } else if (distribution == "triangle"){
-    if (floor(d_inf*triangle_center) == 0){ # linearly decreasing
+    floor <- floor(d_inf*triangle_center)
+    ceiling <- ceiling(d_inf*triangle_center)
+    if (floor == 0){ # linearly decreasing
       pi_t <- seq(d_inf, 1)
-      pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
-    } else if (ceiling(d_inf*triangle_center) == d_inf){ # linearly increasing
+      pi_t <- R_0 * pi_t/sum(pi_t)  # Previously R_0 * (2*pi_t-1) / (d_inf)^2
+    } else if (ceiling == d_inf){ # linearly increasing
       pi_t <- seq(1, d_inf)
-      pi_t <- R_0 * (2*pi_t-1) / (d_inf)^2
+      pi_t <- R_0 * pi_t/sum(pi_t) # Previously R_0 * (2*pi_t-1) / (d_inf)^2
     } else if (triangle_center > 0 & triangle_center < 1){
-      pi_t.early <- seq(from=1, to=floor(d_inf*triangle_center), by=1)
-      pi_t.late  <- seq(from=d_inf - floor(d_inf*triangle_center), to=1)
-      pi_t.late  <- pi_t.late / ( (d_inf - floor(d_inf*triangle_center)) / floor(d_inf*triangle_center) )
+      pi_t.early <- seq(from=1, to=floor, by=1)
+      pi_t.late  <- seq(from=d_inf - floor, to=1)
+      pi_t.late  <- pi_t.late / ( (d_inf - floor) / floor )
       pi_t       <- R_0 * ( c(pi_t.early, pi_t.late) / sum(c(pi_t.early, pi_t.late)) )
     } else if (triangle_center < 0){ # This is a trick so that we can set it to be uniform
       pi_t <- rep(R_0 / (d_inf), d_inf) # Uniform Distribution
     }
+    rm("floor", "ceiling")
   
   }  else {cat("Error 4: pi_t_fcn you must define an appropriate distribution (eg. uniform, linear_increase, triangle)")}
   
