@@ -1,0 +1,10 @@
+name: InteractiveQuarantine
+title:
+account: coreypeak
+server: shinyapps.io
+appId: 68682
+bundleId: 767960
+url: https://coreypeak.shinyapps.io/InteractiveQuarantine/
+when: 1490749403.33306
+asMultiple: FALSE
+asStatic: FALSE
